@@ -1,0 +1,20 @@
+import { defineConfig } from "tsup";
+
+export default defineConfig({
+  entry: {
+    index: "src/index.ts",
+    "schemas/index": "src/schemas/index.ts",
+    "i18n/index": "src/i18n/index.ts",
+    "i18n/react": "src/i18n/react.tsx",
+    "motion/index": "src/motion/index.ts",
+    "brand/tokens": "src/brand/tokens.ts",
+    "brand/tailwind-preset": "src/brand/tailwind-preset.ts",
+  },
+  format: ["esm", "cjs"],
+  dts: true,
+  splitting: false,
+  sourcemap: true,
+  clean: true,
+  treeshake: true,
+  external: ["react", "react-dom", "zod"],
+});
