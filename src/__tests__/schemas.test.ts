@@ -1,0 +1,163 @@
+import { describe, expect, it } from "vitest";
+import {
+  BlogPostCreateSchema,
+  ContactSchema,
+  LoginSchema,
+} from "../schemas";
+
+describe("ContactSchema", () => {
+  const valid = {
+    name: "Julian",
+    email: "hello@example.de",
+    message: "This is at least twenty characters long.",
+    consent: true,
+  };
+
+  it("accepts a minimal valid payload", () => {
+    expect(ContactSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("rejects too-short name", () => {
+    const res = ContactSchema.safeParse({ ...valid, name: "J" });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error.issues[0]?.message).toBe("name");
+    }
+  });
+
+  it("rejects an invalid email", () => {
+    const res = ContactSchema.safeParse({ ...valid, email: "not-an-email" });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error.issues[0]?.message).toBe("email");
+    }
+  });
+
+  it("rejects too-short message", () => {
+    const res = ContactSchema.safeParse({ ...valid, message: "short" });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error.issues[0]?.message).toBe("message");
+    }
+  });
+
+  it("rejects missing consent", () => {
+    const { consent: _drop, ...rest } = valid;
+    const res = ContactSchema.safeParse(rest);
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects consent=false explicitly", () => {
+    const res = ContactSchema.safeParse({ ...valid, consent: false });
+    expect(res.success).toBe(false);
+  });
+
+  it("allows optional company", () => {
+    const res = ContactSchema.safeParse({ ...valid, company: "Acme GmbH" });
+    expect(res.success).toBe(true);
+  });
+
+  it("rejects non-empty honeypot (website)", () => {
+    const res = ContactSchema.safeParse({ ...valid, website: "spambot" });
+    expect(res.success).toBe(false);
+  });
+
+  it("accepts empty honeypot", () => {
+    const res = ContactSchema.safeParse({ ...valid, website: "" });
+    expect(res.success).toBe(true);
+  });
+});
+
+describe("BlogPostCreateSchema", () => {
+  const valid = {
+    slug: "my-first-post",
+    lang: "de" as const,
+    category: "engineering",
+    title: "A first post",
+    excerpt: "A teaser that exists.",
+    body: "This is the body and is long enough.",
+  };
+
+  it("accepts a minimal valid payload and defaults draft=false", () => {
+    const res = BlogPostCreateSchema.safeParse(valid);
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data.draft).toBe(false);
+      expect(res.data.lang).toBe("de");
+    }
+  });
+
+  it("defaults lang to de when omitted", () => {
+    const { lang: _drop, ...rest } = valid;
+    const res = BlogPostCreateSchema.safeParse(rest);
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data.lang).toBe("de");
+    }
+  });
+
+  it("rejects uppercase slug", () => {
+    const res = BlogPostCreateSchema.safeParse({ ...valid, slug: "My-Post" });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects slug with spaces", () => {
+    const res = BlogPostCreateSchema.safeParse({ ...valid, slug: "my post" });
+    expect(res.success).toBe(false);
+  });
+
+  it("accepts hyphenated lowercase slug with digits", () => {
+    const res = BlogPostCreateSchema.safeParse({ ...valid, slug: "post-42-final" });
+    expect(res.success).toBe(true);
+  });
+
+  it("rejects unsupported lang", () => {
+    const res = BlogPostCreateSchema.safeParse({ ...valid, lang: "fr" });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects too-short body", () => {
+    const res = BlogPostCreateSchema.safeParse({ ...valid, body: "too short" });
+    expect(res.success).toBe(false);
+  });
+
+  it("coerces a publishedAt ISO string to Date", () => {
+    const res = BlogPostCreateSchema.safeParse({
+      ...valid,
+      publishedAt: "2026-05-12T10:00:00Z",
+    });
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data.publishedAt).toBeInstanceOf(Date);
+    }
+  });
+
+  it("accepts null publishedAt + coverHint", () => {
+    const res = BlogPostCreateSchema.safeParse({
+      ...valid,
+      publishedAt: null,
+      coverHint: null,
+    });
+    expect(res.success).toBe(true);
+  });
+});
+
+describe("LoginSchema", () => {
+  it("accepts the customer payload (email + password)", () => {
+    const res = LoginSchema.safeParse({
+      email: "customer@example.de",
+      password: "hunter22hunter22",
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("accepts the admin payload (token)", () => {
+    const res = LoginSchema.safeParse({ token: "deadbeef" });
+    expect(res.success).toBe(true);
+  });
+
+  it("rejects an invalid email shape", () => {
+    const res = LoginSchema.safeParse({ email: "bad", password: "x" });
+    expect(res.success).toBe(false);
+  });
+});

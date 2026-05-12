@@ -51,6 +51,8 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
     "clean": "rimraf dist"
   },
   "peerDependencies": {
@@ -69,6 +71,7 @@
     "rimraf": "^6.0.0",
     "tsup": "^8.3.0",
     "typescript": "^5.6.0",
+    "vitest": "^2.1.9",
     "zod": "^4.0.0"
   },
   "publishConfig": {
