@@ -85,14 +85,27 @@ read access to the repo's org packages — pass it through as
     NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-No additional secret needs to be created — the built-in
-`GITHUB_TOKEN` has `read:packages` for the org's own packages on
-push events.
+Two things have to line up for this to actually work:
 
-If a workflow runs from a fork or otherwise lacks access to the
-org's packages, create a fine-grained PAT with `read:packages`,
-store it as a repo secret (e.g. `TDS_NPM_TOKEN`), and reference
-that instead of `secrets.GITHUB_TOKEN`.
+1. **The workflow declares `packages: read`**. If you set an
+   explicit `permissions:` block (most non-trivial workflows do),
+   it REPLACES the defaults — so the implicit `packages: read` gets
+   stripped. Either include `packages: read` explicitly, or omit the
+   `permissions:` block entirely and rely on the repo default.
+2. **The package grants Actions access to the consuming repo**. Even
+   with both permissions set, GitHub Packages still rejects the read
+   with `403 read_package` unless the package has been told to trust
+   the source repo. Go to the package page → **Package settings** →
+   **Manage Actions access** → **Add repository** for each consumer.
+   (Alternative: flip the package visibility to public/internal in
+   the same screen.)
+
+If both conditions are met, the workflow uses the built-in
+`secrets.GITHUB_TOKEN` and needs no separate PAT. If a workflow
+runs from a fork or otherwise can't be granted access, create a
+fine-grained PAT with `read:packages`, store it as a repo secret
+(e.g. `TDS_NPM_TOKEN`), and reference that instead of
+`secrets.GITHUB_TOKEN`.
 
 ## Subpath imports
 
