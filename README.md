@@ -1,5 +1,12 @@
 # @tracht-digital-solutions/tds-shared
 
+> **Setting this up from scratch?** See [`INSTALL.md`](INSTALL.md) for
+> the step-by-step bring-up (build → publish → grant repo access).
+> This README documents the package contents + consumer patterns.
+
+---
+
+
 Shared TypeScript types, Zod schemas, i18n strings, brand tokens, and
 motion presets used across the TDS frontends. Internal package — not
 published to the public npm registry; lives on **GitHub Packages**
