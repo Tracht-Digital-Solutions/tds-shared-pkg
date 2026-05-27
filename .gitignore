@@ -7,3 +7,17 @@ dist/
 .env
 .env.local
 *.tsbuildinfo
+
+# Windows OS files
+Thumbs.db
+Desktop.ini
+
+# Editor backups
+*.swp
+*~
+
+# Test coverage
+coverage/
+
+# ESLint cache
+.eslintcache
