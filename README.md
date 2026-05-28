@@ -36,22 +36,22 @@ Setup differs between local dev and CI:
    scope. If your tokens require SSO, click "Configure SSO" next to
    the token and authorize it for the `Tracht-Digital-Solutions` org.
 
-2. Export the token as `NPM_TOKEN` whenever you `npm install` /
-   `npm ci` in a consumer repo. Two equivalent ways:
+2. Export the token as `NPM_TOKEN` whenever you `npm install` in a
+   consumer repo. Two equivalent ways:
 
    ```bash
    # one-off
-   NPM_TOKEN=ghp_xxxx npm ci
+   NPM_TOKEN=ghp_xxxx npm install
 
    # persistent for the shell session
    export NPM_TOKEN=ghp_xxxx
-   npm ci
+   npm install
    ```
 
    On Windows PowerShell:
    ```powershell
    $env:NPM_TOKEN = "ghp_xxxx"
-   npm ci
+   npm install
    ```
 
 3. Verify access works:
@@ -74,45 +74,49 @@ Setup differs between local dev and CI:
 
 ### CI (GitHub Actions)
 
-`actions/setup-node` configures the registry and scope automatically.
-`secrets.GITHUB_TOKEN` is populated for every workflow run with
-read access to the repo's org packages — pass it through as
-`NPM_TOKEN`:
+`actions/setup-node` configures the registry and scope. For the
+install token, use a **classic PAT stored as `secrets.NPM_TOKEN`** —
+the auto-provided `secrets.GITHUB_TOKEN` only authorizes packages
+owned by the same repo as the running workflow, so it 403s when a
+consumer repo (e.g. `tds-admin`) tries to read this package from
+`tds-shared`'s namespace.
 
 ```yaml
 - uses: actions/setup-node@v4
   with:
-    node-version: '20'
+    node-version: '22'
     registry-url: 'https://npm.pkg.github.com'
     scope: '@tracht-digital-solutions'
 
 - name: Install
-  run: npm ci
+  # See "Lockfile portability" below for why --no-package-lock
+  run: npm install --no-package-lock
   env:
-    NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
 
-Two things have to line up for this to actually work:
+The PAT needs `read:packages` on the
+`Tracht-Digital-Solutions` org (classic token, SSO-authorized).
+Stored once per consumer repo as the `NPM_TOKEN` secret.
 
-1. **The workflow declares `packages: read`**. If you set an
-   explicit `permissions:` block (most non-trivial workflows do),
-   it REPLACES the defaults — so the implicit `packages: read` gets
-   stripped. Either include `packages: read` explicitly, or omit the
-   `permissions:` block entirely and rely on the repo default.
-2. **The package grants Actions access to the consuming repo**. Even
-   with both permissions set, GitHub Packages still rejects the read
-   with `403 read_package` unless the package has been told to trust
-   the source repo. Go to the package page → **Package settings** →
-   **Manage Actions access** → **Add repository** for each consumer.
-   (Alternative: flip the package visibility to public/internal in
-   the same screen.)
+> **Why not `GITHUB_TOKEN` + "Manage Actions access"?** The package
+> settings UI does let you grant cross-repo Actions read, but that
+> path was unreliable in practice (still produced
+> `403 read_package` for us on several consumers even with the
+> right setup). A PAT bypasses the GitHub Packages
+> repo-trust model entirely.
 
-If both conditions are met, the workflow uses the built-in
-`secrets.GITHUB_TOKEN` and needs no separate PAT. If a workflow
-runs from a fork or otherwise can't be granted access, create a
-fine-grained PAT with `read:packages`, store it as a repo secret
-(e.g. `TDS_NPM_TOKEN`), and reference that instead of
-`secrets.GITHUB_TOKEN`.
+### Lockfile portability
+
+If you generate `package-lock.json` on Windows, npm only registers
+the win32 platform binaries under `node_modules/` for native deps
+(rollup, lightningcss, esbuild, sharp, tailwindcss-oxide). Both
+`npm ci` and `npm install` then honor that and skip the Linux
+binaries on the runner — `astro check` / `vite build` then crash
+with `Cannot find module @rollup/rollup-linux-x64-gnu`
+(npm/cli#4828). `--no-package-lock` makes npm ignore the lockfile
+and resolve from `package.json`, which picks the correct platform
+binaries.
 
 ## Subpath imports
 
@@ -159,7 +163,7 @@ git push --follow-tags  # CI publishes to GitHub Packages
 ### `npm error 401 Unauthorized` on install in a consumer repo
 
 The most common cause is `NPM_TOKEN` not being set in the shell
-when running `npm install` / `npm ci` from the project directory.
+when running `npm install` from the project directory.
 The project `.npmrc` ships with `_authToken=${NPM_TOKEN}` — if
 that env var is empty, npm sends the literal string `${NPM_TOKEN}`
 as the auth header and GitHub returns 401.
