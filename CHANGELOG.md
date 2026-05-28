@@ -13,6 +13,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Tracht-Digital-Solutions/tds-shared#4).
 - This `CHANGELOG.md` (closes Tracht-Digital-Solutions/tds-shared#5).
 
+## [0.2.1] — 2026-05-28
+
+### Changed
+- `translations.en` audit pass — repaired Germanisms, awkward phrasings
+  and one inverted portrait description. Highlights:
+  - `hero.cta1 / nav.cta` "Discuss a project" → "Start a project".
+  - `hero.cta2` "Discover services" → "Explore services".
+  - `hero.sub` softened "thought through individually" → "approached on
+    its own terms".
+  - `about.portraitPlaceholder` direction restored — German says "turned
+    toward the camera", English had "looking off-camera".
+  - `about.stat1Label` "Years experience" → "Years of experience".
+  - `about.stat3Label` "Personal collaboration" → "Personal support".
+  - `services.items[2].title` "Fullstack Engineering" → "Fullstack
+    Development" (consistent with sibling entries).
+  - `services.items[2].description` "all from one hand" Germanism → "all
+    from a single developer".
+  - `pricing.items[0].title` "Consulting & Concept" → "Consulting &
+    Strategy". `includes` list dropped German-style hyphenated compounds
+    and the "decision foundations" calque.
+  - `pricing.items[3].description` German word order
+    ("outside standard business hours possible") → "after-hours support
+    available on request".
+  - `pricing.ctaSub` "informal, free" → "no obligation, free" (closer to
+    "unverbindlich").
+- No API or type changes — pure copy refresh.
+
 ## [0.2.0] — 2026-05-07
 
 ### Added
@@ -41,7 +68,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tsup` dual ESM/CJS build with per-entry `exports` map.
 - Publish workflow on `v*.*.*` tags to GitHub Packages.
 
-[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Tracht-Digital-Solutions/tds-shared/releases/tag/v0.1.0
