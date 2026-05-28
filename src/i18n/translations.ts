@@ -337,7 +337,7 @@ export const translations = {
       process: "Process",
       blog: "Journal",
       contact: "Contact",
-      cta: "Discuss a project",
+      cta: "Start a project",
       pricing: "Pricing",
     },
     hero: {
@@ -346,9 +346,9 @@ export const translations = {
       headline: "Digital solutions,",
       headlineAccent: "personally",
       headlineSuffix: "crafted.",
-      sub: "Fullstack development, app engineering and digitalization expertise for mid-market companies. Built on the conviction that every project deserves to be thought through individually – not delivered off the shelf.",
-      cta1: "Discuss a project",
-      cta2: "Discover services",
+      sub: "Fullstack development, app engineering and digitalization expertise for mid-market companies. Built on the conviction that every project deserves to be approached on its own terms — not delivered off the shelf.",
+      cta1: "Start a project",
+      cta2: "Explore services",
       scrollHint: "Scroll",
     },
     about: {
@@ -359,13 +359,13 @@ export const translations = {
       p1: "My focus is fullstack web development, app engineering and end-to-end digitalization projects – from the first idea through technical architecture to launch and beyond.",
       p2: "What drives me? The conviction that every business has unique requirements – and that good software must reflect that uniqueness. Instead of off-the-shelf solutions, I build software that feels like it was made specifically for you. Because it was.",
       portraitPlaceholder:
-        "A black-and-white portrait of Julian — sitting slightly turned at his desk, soft natural light, looking off-camera.",
+        "A black-and-white portrait of Julian — seated at an angle at his desk, slightly turned toward the camera, soft natural light.",
       stat1Value: "5+",
-      stat1Label: "Years experience",
+      stat1Label: "Years of experience",
       stat2Value: "9",
       stat2Label: "Tech specializations",
       stat3Value: "1:1",
-      stat3Label: "Personal collaboration",
+      stat3Label: "Personal support",
     },
     services: {
       label: "— 02 / Services",
@@ -386,8 +386,8 @@ export const translations = {
         },
         {
           number: "03",
-          title: "Fullstack Engineering",
-          description: "Frontend, backend, database, deployment – all from one hand. One point of contact, one consistent vision, one result.",
+          title: "Fullstack Development",
+          description: "Frontend, backend, database, deployment — all from a single developer. One point of contact, one consistent vision, one result.",
           tags: ["Node.js", "SQL", "Vue", "Angular"],
         },
         {
@@ -463,7 +463,7 @@ export const translations = {
           number: "02",
           title: "Concept",
           duration: "1–2 weeks",
-          description: "I produce a concrete concept: architecture, scope, timeline, budget. Transparent and understandable.",
+          description: "I put together a concrete concept: architecture, scope, timeline, budget. Transparent and straightforward.",
         },
         {
           number: "03",
@@ -507,8 +507,8 @@ export const translations = {
         },
         {
           category: "Freelance",
-          title: "Why I don't scale – and consider that exactly right.",
-          excerpt: "Growth at any price is not an end in itself. Sometimes staying small is the braver decision.",
+          title: "Why I don't scale — and that's exactly right.",
+          excerpt: "Growth at any price isn't an end in itself. Sometimes staying small is the braver decision.",
           date: "2026-02-10",
           slug: "warum-ich-nicht-skaliere",
           imagePlaceholder:
@@ -520,7 +520,7 @@ export const translations = {
       label: "— 06 / Contact",
       headline: "Let's",
       headlineAccent: "talk.",
-      sub: "Have a project in mind or just want to explore whether I can help? Write to me – I usually respond within 24 hours.",
+      sub: "Have a project in mind or just want to explore whether I can help? Drop me a line — I usually respond within 24 hours.",
       form: {
         name: "Name",
         namePlaceholder: "Jane Smith",
@@ -564,15 +564,15 @@ export const translations = {
       includesLabel: "Included:",
       items: [
         {
-          title: "Consulting & Concept",
+          title: "Consulting & Strategy",
           rate: 130,
           description:
-            "Strategic guidance, architecture workshops, technical reviews. I listen, ask, and at the end deliver a clear concept – not just slides.",
+            "Strategic guidance, architecture workshops, technical reviews. I listen, ask the right questions, and end with a clear written concept — not just slides.",
           includes: [
             "Discovery call (free, up to 60 min)",
             "Architecture and requirements workshops",
-            "Code- and stack-reviews with documented recommendations",
-            "Written concepts and decision foundations",
+            "Code and stack reviews with documented recommendations",
+            "Written concepts and decision-making input",
           ],
           highlight: false,
         },
@@ -606,7 +606,7 @@ export const translations = {
           title: "Maintenance & Support",
           rate: 95,
           description:
-            "Maintain existing systems, roll out updates, fix bugs. Response times by agreement – outside standard business hours possible.",
+            "Maintain existing systems, roll out updates, fix bugs. Response times by agreement — after-hours support available on request.",
           includes: [
             "Bug fixes and hotfixes",
             "Dependency and security updates",
@@ -632,13 +632,13 @@ export const translations = {
       notesTitle: "Good to know",
       notes: [
         "All prices exclude German VAT (19 %).",
-        "Day rate available on request – discount from 5 days per month.",
-        "Fixed-price projects possible when the scope is clearly defined up front.",
+        "Day rate available on request — discount for 5+ days per month.",
+        "Fixed-price projects are possible when the scope is clearly defined up front.",
         "Travel costs are not included in the rates and are billed separately.",
       ],
       ctaTitle: "Sounds like a fit?",
-      ctaSub: "Let's set up a discovery call – informal, free, and without a sales pitch.",
-      ctaButton: "Discuss a project",
+      ctaSub: "Let's set up a discovery call — no obligation, free, and without a sales pitch.",
+      ctaButton: "Start a project",
       back: "Back",
     },
     footer: {
