@@ -13,6 +13,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Tracht-Digital-Solutions/tds-shared#4).
 - This `CHANGELOG.md` (closes Tracht-Digital-Solutions/tds-shared#5).
 
+## [0.2.2] — 2026-05-29
+
+### Added
+- `translations.services.items[4]` — a fifth offering, **Schnelles
+  Prototyping** / **Rapid Prototyping**, with Figma + React +
+  TypeScript + Claude as the tag set. tds-landingpage had been
+  carrying this as an inlined extra item; it now ships from the
+  shared bundle.
+
+### Changed
+- Replaced the generic Mustermann / Jane Smith placeholders on
+  `contact.form.*Placeholder` with warmer, story-style examples
+  ("Hanna Schmidt" at "Schmidt Manufaktur" in DE; "Alex Marlow"
+  at "Marlow Studios" in EN). The message placeholder now reads as
+  an opening line a real prospect might write rather than a
+  generic instruction.
+
 ## [0.2.1] — 2026-05-28
 
 ### Changed
@@ -68,7 +85,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tsup` dual ESM/CJS build with per-entry `exports` map.
 - Publish workflow on `v*.*.*` tags to GitHub Packages.
 
-[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.1.0...v0.1.1
