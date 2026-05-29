@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Tracht-Digital-Solutions/tds-shared#4).
 - This `CHANGELOG.md` (closes Tracht-Digital-Solutions/tds-shared#5).
 
+## [0.2.4] — 2026-05-29
+
+### Changed
+- CTA copy rewritten again. **"Pläne schmieden"** / **"Forge a plan"**
+  read too artisanal for the mid-market business audience; replaced
+  with the more professional **"Projekt starten"** / **"Start a
+  project"** across `nav.cta`, `hero.cta1`, and `pricing.ctaButton`.
+
 ## [0.2.3] — 2026-05-29
 
 ### Changed
@@ -94,7 +102,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tsup` dual ESM/CJS build with per-entry `exports` map.
 - Publish workflow on `v*.*.*` tags to GitHub Packages.
 
-[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.4...HEAD
+[0.2.4]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.0...v0.2.1

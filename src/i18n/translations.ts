@@ -8,7 +8,7 @@ export const translations = {
       process: "Prozess",
       blog: "Journal",
       contact: "Kontakt",
-      cta: "Pläne schmieden",
+      cta: "Projekt starten",
       pricing: "Preise",
     },
     hero: {
@@ -18,7 +18,7 @@ export const translations = {
       headlineAccent: "persönlich",
       headlineSuffix: "entwickelt.",
       sub: "Fullstack-, App- und Digitalisierungsexpertise für den Mittelstand. Mit dem Anspruch, jedes Projekt individuell zu denken – statt Standardlösungen zu liefern.",
-      cta1: "Pläne schmieden",
+      cta1: "Projekt starten",
       cta2: "Leistungen entdecken",
       scrollHint: "Scrollen",
     },
@@ -315,7 +315,7 @@ export const translations = {
       ],
       ctaTitle: "Klingt passend?",
       ctaSub: "Lass uns ein Erstgespräch vereinbaren – unverbindlich, kostenfrei und ohne Sales-Pitch.",
-      ctaButton: "Pläne schmieden",
+      ctaButton: "Projekt starten",
       back: "Zurück",
     },
     footer: {
@@ -343,7 +343,7 @@ export const translations = {
       process: "Process",
       blog: "Journal",
       contact: "Contact",
-      cta: "Forge a plan",
+      cta: "Start a project",
       pricing: "Pricing",
     },
     hero: {
@@ -353,7 +353,7 @@ export const translations = {
       headlineAccent: "personally",
       headlineSuffix: "crafted.",
       sub: "Fullstack development, app engineering and digitalization expertise for mid-market companies. Built on the conviction that every project deserves to be approached on its own terms — not delivered off the shelf.",
-      cta1: "Forge a plan",
+      cta1: "Start a project",
       cta2: "Explore services",
       scrollHint: "Scroll",
     },
@@ -650,7 +650,7 @@ export const translations = {
       ],
       ctaTitle: "Sounds like a fit?",
       ctaSub: "Let's set up a discovery call — no obligation, free, and without a sales pitch.",
-      ctaButton: "Forge a plan",
+      ctaButton: "Start a project",
       back: "Back",
     },
     footer: {
