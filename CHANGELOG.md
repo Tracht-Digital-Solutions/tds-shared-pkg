@@ -13,6 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Tracht-Digital-Solutions/tds-shared#4).
 - This `CHANGELOG.md` (closes Tracht-Digital-Solutions/tds-shared#5).
 
+## [0.2.6] — 2026-05-30
+
+### Changed
+- Hero headline rewritten for stronger SEO + marketing punch:
+  **"Digitale Lösungen, *persönlich* entwickelt."** → **"Maßgeschneiderte
+  Software, *persönlich* entwickelt."** in DE, and **"Digital solutions,
+  *personally* crafted."** → **"Bespoke software, *personally*
+  crafted."** in EN. Front-loads the keyword pair search engines and
+  buyers both scan for ("Maßgeschneiderte Software" / "Bespoke
+  software") while preserving the brand-distinctive italic emphasis
+  on "persönlich" / "personally". The footer slogan **"Digitales
+  Handwerk für den Mittelstand."** carries the audience-narrowing
+  "Mittelstand" claim, so the H1 doesn't need to repeat it.
+
 ## [0.2.5] — 2026-05-30
 
 ### Changed
@@ -128,7 +142,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tsup` dual ESM/CJS build with per-entry `exports` map.
 - Publish workflow on `v*.*.*` tags to GitHub Packages.
 
-[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.5...HEAD
+[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.6...HEAD
+[0.2.6]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.2...v0.2.3

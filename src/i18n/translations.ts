@@ -14,7 +14,7 @@ export const translations = {
     hero: {
       availability: "Verfügbar für Projekte · Q3 2026",
       location: "Schwarzenbek · Hamburg",
-      headline: "Digitale Lösungen,",
+      headline: "Maßgeschneiderte Software,",
       headlineAccent: "persönlich",
       headlineSuffix: "entwickelt.",
       sub: "Fullstack-, App- und Digitalisierungsexpertise für den Mittelstand. Mit dem Anspruch, jedes Projekt individuell zu denken – statt Standardlösungen zu liefern.",
@@ -360,7 +360,7 @@ export const translations = {
     hero: {
       availability: "Available for projects · Q3 2026",
       location: "Schwarzenbek · Hamburg",
-      headline: "Digital solutions,",
+      headline: "Bespoke software,",
       headlineAccent: "personally",
       headlineSuffix: "crafted.",
       sub: "Fullstack development, app engineering and digitalization expertise for mid-market companies. Built on the conviction that every project deserves to be approached on its own terms — not delivered off the shelf.",
