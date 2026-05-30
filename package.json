@@ -1,6 +1,6 @@
 {
   "name": "@tracht-digital-solutions/tds-shared",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Shared TypeScript types, Zod schemas, i18n strings, brand tokens, and motion presets used across the TDS frontends.",
   "license": "UNLICENSED",
   "private": false,
