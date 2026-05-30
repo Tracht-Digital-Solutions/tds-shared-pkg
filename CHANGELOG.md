@@ -13,6 +13,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Tracht-Digital-Solutions/tds-shared#4).
 - This `CHANGELOG.md` (closes Tracht-Digital-Solutions/tds-shared#5).
 
+## [0.2.8] — 2026-05-30
+
+### Changed
+- Hero headline rewritten one more time, aiming for a more
+  professional + creative read. **0.2.7's "Software, die mit
+  Ihrem *Unternehmen* wächst." / "Software that grows with *your*
+  business."** named an outcome buyers shop for, but stayed in
+  marketing-tagline territory. Replaced with **"Maßgefertigte
+  Software, die *Bestand* hat." / "Bespoke software, built *to
+  last*."** Durability-focused instead of growth-focused — speaks
+  to a mid-market buyer's actual fear (will this still work in
+  three years?) rather than just promising "more". Strong SEO via
+  "Maßgefertigte Software" / "Bespoke software"; the italic
+  accent shifts to "Bestand" / "to last" so the promise is
+  visually anchored.
+
 ## [0.2.7] — 2026-05-30
 
 ### Changed
@@ -165,7 +181,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tsup` dual ESM/CJS build with per-entry `exports` map.
 - Publish workflow on `v*.*.*` tags to GitHub Packages.
 
-[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.7...HEAD
+[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.8...HEAD
+[0.2.8]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.4...v0.2.5
