@@ -13,6 +13,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Tracht-Digital-Solutions/tds-shared#4).
 - This `CHANGELOG.md` (closes Tracht-Digital-Solutions/tds-shared#5).
 
+## [0.2.5] — 2026-05-30
+
+### Changed
+- Project CTA copy rewritten again — **"Projekt starten"** / **"Start
+  a project"** read professionally but had no character. Replaced
+  with **"Idee skizzieren"** / **"Sketch an idea"** across `nav.cta`,
+  `hero.cta1`, and `pricing.ctaButton`. Low-commitment, creative,
+  matches the editorial brand voice.
+- `footer.tagline` slimmed down — the locality clause survives, the
+  rest of the descriptive sentence is replaced by the new
+  `footer.slogan`.
+
+### Added
+- `footer.slogan` — **"Digitales Handwerk für den Mittelstand."** /
+  **"Digital craft for the mid-market."** Brand-tier line above the
+  full tagline.
+- `tech.body` — one-line description added between the Tech section
+  header and the marquee ("Werkzeuge, die sich in zehn Projekten
+  bewährt haben…").
+- `process.body` — one-line framing on Process section ("Kein
+  Standard-Workflow. Je nach Projekt und Aufgabe variieren die
+  Phasen…").
+- `consulting` — new section bundle (`label`, `headline`,
+  `headlineAccent`, `body`, `primaryCta`, `secondaryCta`) for the
+  upcoming consulting / digitalization CTA section on the landingpage.
+
 ## [0.2.4] — 2026-05-29
 
 ### Changed
@@ -102,7 +128,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tsup` dual ESM/CJS build with per-entry `exports` map.
 - Publish workflow on `v*.*.*` tags to GitHub Packages.
 
-[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.4...HEAD
+[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.5...HEAD
+[0.2.5]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.1...v0.2.2

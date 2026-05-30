@@ -8,7 +8,7 @@ export const translations = {
       process: "Prozess",
       blog: "Journal",
       contact: "Kontakt",
-      cta: "Projekt starten",
+      cta: "Idee skizzieren",
       pricing: "Preise",
     },
     hero: {
@@ -18,7 +18,7 @@ export const translations = {
       headlineAccent: "persönlich",
       headlineSuffix: "entwickelt.",
       sub: "Fullstack-, App- und Digitalisierungsexpertise für den Mittelstand. Mit dem Anspruch, jedes Projekt individuell zu denken – statt Standardlösungen zu liefern.",
-      cta1: "Projekt starten",
+      cta1: "Idee skizzieren",
       cta2: "Leistungen entdecken",
       scrollHint: "Scrollen",
     },
@@ -79,6 +79,7 @@ export const translations = {
       label: "Tech Stack",
       headline: "Womit ich",
       headlineAccent: "arbeite.",
+      body: "Werkzeuge, die sich in zehn Projekten bewährt haben — keine Religionskriege um Frameworks, sondern das Richtige fürs Problem. Sprachen und Bibliotheken wechseln, gute Architektur bleibt.",
     },
     portfolio: {
       label: "— 03 / Portfolio",
@@ -129,6 +130,7 @@ export const translations = {
       label: "— 04 / Vorgehen",
       headline: "Wie ich",
       headlineAccent: "arbeite.",
+      body: "Kein Standard-Workflow. Je nach Projekt und Aufgabe variieren die Phasen — manche Projekte starten mit einem Prototyp, andere mit einer Konzept-Skizze, wieder andere mit einem Audit. Die folgenden vier Schritte sind der typische Rahmen, kein Korsett.",
       steps: [
         {
           number: "01",
@@ -315,11 +317,20 @@ export const translations = {
       ],
       ctaTitle: "Klingt passend?",
       ctaSub: "Lass uns ein Erstgespräch vereinbaren – unverbindlich, kostenfrei und ohne Sales-Pitch.",
-      ctaButton: "Projekt starten",
+      ctaButton: "Idee skizzieren",
       back: "Zurück",
     },
+    consulting: {
+      label: "— Beratung",
+      headline: "Bereit, Ihr Unternehmen",
+      headlineAccent: "digital zu denken?",
+      body: "Vielleicht haben Sie ein klares Vorhaben. Vielleicht nur ein Bauchgefühl, dass etwas effizienter laufen könnte. Beides ist ein guter Ausgangspunkt für ein Erstgespräch — kostenfrei, unverbindlich, ohne Sales-Pitch.",
+      primaryCta: "Erstgespräch buchen",
+      secondaryCta: "Leistungen ansehen",
+    },
     footer: {
-      tagline: "Persönliche, individuell zugeschnittene digitale Lösungen für den Mittelstand. Aus Schwarzenbek bei Hamburg.",
+      slogan: "Digitales Handwerk für den Mittelstand.",
+      tagline: "Persönliche, individuell zugeschnittene digitale Lösungen — aus Schwarzenbek bei Hamburg.",
       nav: "Navigation",
       contactTitle: "Kontakt",
       copyright: "© 2026 Tracht Digital Solutions. Alle Rechte vorbehalten.",
@@ -343,7 +354,7 @@ export const translations = {
       process: "Process",
       blog: "Journal",
       contact: "Contact",
-      cta: "Start a project",
+      cta: "Sketch an idea",
       pricing: "Pricing",
     },
     hero: {
@@ -353,7 +364,7 @@ export const translations = {
       headlineAccent: "personally",
       headlineSuffix: "crafted.",
       sub: "Fullstack development, app engineering and digitalization expertise for mid-market companies. Built on the conviction that every project deserves to be approached on its own terms — not delivered off the shelf.",
-      cta1: "Start a project",
+      cta1: "Sketch an idea",
       cta2: "Explore services",
       scrollHint: "Scroll",
     },
@@ -414,6 +425,7 @@ export const translations = {
       label: "Tech Stack",
       headline: "What I",
       headlineAccent: "work with.",
+      body: "Tools that have proven themselves across ten projects — no religious wars about frameworks, just the right thing for the problem. Languages and libraries change; good architecture stays.",
     },
     portfolio: {
       label: "— 03 / Portfolio",
@@ -464,6 +476,7 @@ export const translations = {
       label: "— 04 / Process",
       headline: "How I",
       headlineAccent: "work.",
+      body: "No standard workflow. Phases vary by project and task — some start with a prototype, others with a concept sketch, others with an audit. The four steps below are a typical frame, not a corset.",
       steps: [
         {
           number: "01",
@@ -650,11 +663,20 @@ export const translations = {
       ],
       ctaTitle: "Sounds like a fit?",
       ctaSub: "Let's set up a discovery call — no obligation, free, and without a sales pitch.",
-      ctaButton: "Start a project",
+      ctaButton: "Sketch an idea",
       back: "Back",
     },
+    consulting: {
+      label: "— Consulting",
+      headline: "Ready to think your business",
+      headlineAccent: "digitally?",
+      body: "Maybe you have a clear plan. Maybe just a hunch that something could run more efficiently. Both are good starting points for a discovery call — free, no obligation, no sales pitch.",
+      primaryCta: "Book a discovery call",
+      secondaryCta: "See services",
+    },
     footer: {
-      tagline: "Personal, individually crafted digital solutions for the mid-market. From Schwarzenbek near Hamburg.",
+      slogan: "Digital craft for the mid-market.",
+      tagline: "Personal, individually crafted digital solutions — from Schwarzenbek near Hamburg.",
       nav: "Navigation",
       contactTitle: "Contact",
       copyright: "© 2026 Tracht Digital Solutions. All rights reserved.",
