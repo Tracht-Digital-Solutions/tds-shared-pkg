@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Tracht-Digital-Solutions/tds-shared#4).
 - This `CHANGELOG.md` (closes Tracht-Digital-Solutions/tds-shared#5).
 
+## [0.2.9] — 2026-06-01
+
+### Changed
+- Replaced the placeholder `contact.info.email` and `contact.info.phone`
+  values with the real production contact: **kontakt@tracht-digital.de**
+  (DE) / **contact@tracht-digital.de** (EN), both phones now read
+  **+49 178 822 4022**. `info.location` unchanged.
+
 ## [0.2.8] — 2026-05-30
 
 ### Changed
@@ -181,7 +189,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tsup` dual ESM/CJS build with per-entry `exports` map.
 - Publish workflow on `v*.*.*` tags to GitHub Packages.
 
-[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.8...HEAD
+[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.9...HEAD
+[0.2.9]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.5...v0.2.6
