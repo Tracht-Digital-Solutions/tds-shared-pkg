@@ -8,7 +8,7 @@ export const translations = {
       process: "Prozess",
       blog: "Journal",
       contact: "Kontakt",
-      cta: "Idee skizzieren",
+      cta: "Gespräch vereinbaren",
       pricing: "Preise",
     },
     hero: {
@@ -19,7 +19,7 @@ export const translations = {
       headlineSuffix: "hat.",
       tagline: "Beratung · Konzept · Code — alles aus einer Hand.",
       sub: "Fullstack-, App- und Digitalisierungsexpertise für den Mittelstand. Mit dem Anspruch, jedes Projekt individuell zu denken – statt Standardlösungen zu liefern.",
-      cta1: "Idee skizzieren",
+      cta1: "Gespräch vereinbaren",
       cta2: "Leistungen entdecken",
       scrollHint: "Scrollen",
     },
@@ -221,7 +221,7 @@ export const translations = {
       },
       info: {
         emailLabel: "E-Mail",
-        phoneLabel: "Telefon",
+        phoneLabel: "Handy",
         locationLabel: "Standort",
         socialLabel: "Social",
         email: "kontakt@tracht-digital.de",
@@ -318,7 +318,7 @@ export const translations = {
       ],
       ctaTitle: "Klingt passend?",
       ctaSub: "Lass uns ein Erstgespräch vereinbaren – unverbindlich, kostenfrei und ohne Sales-Pitch.",
-      ctaButton: "Idee skizzieren",
+      ctaButton: "Gespräch vereinbaren",
       back: "Zurück",
     },
     consulting: {
@@ -355,7 +355,7 @@ export const translations = {
       process: "Process",
       blog: "Journal",
       contact: "Contact",
-      cta: "Sketch an idea",
+      cta: "Book a call",
       pricing: "Pricing",
     },
     hero: {
@@ -366,7 +366,7 @@ export const translations = {
       headlineSuffix: "",
       tagline: "Consulting · concept · code — all from one source.",
       sub: "Fullstack development, app engineering and digitalization expertise for mid-market companies. Built on the conviction that every project deserves to be approached on its own terms — not delivered off the shelf.",
-      cta1: "Sketch an idea",
+      cta1: "Book a call",
       cta2: "Explore services",
       scrollHint: "Scroll",
     },
@@ -568,7 +568,7 @@ export const translations = {
       },
       info: {
         emailLabel: "Email",
-        phoneLabel: "Phone",
+        phoneLabel: "Mobile",
         locationLabel: "Location",
         socialLabel: "Social",
         email: "contact@tracht-digital.de",
@@ -665,7 +665,7 @@ export const translations = {
       ],
       ctaTitle: "Sounds like a fit?",
       ctaSub: "Let's set up a discovery call — no obligation, free, and without a sales pitch.",
-      ctaButton: "Sketch an idea",
+      ctaButton: "Book a call",
       back: "Back",
     },
     consulting: {
