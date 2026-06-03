@@ -213,6 +213,16 @@
   top: 0;
   z-index: 30;
   background: color-mix(in oklab, var(--color-paper) 85%, transparent);
+  /* CONTRACT: author `backdrop-filter` UNPREFIXED only — do not add
+     `-webkit-backdrop-filter` here. Consuming frontends minify with
+     lightningcss, which collapses a hand-authored pair down to the
+     `-webkit-` form alone, dropping the standard property and breaking
+     the blur in Firefox. Authoring just the standard property lets
+     lightningcss add the `-webkit-` prefix at build time — but only if
+     each consumer pins a Safari target via `vite.build.cssTarget` in its
+     astro.config (the minify step ignores `css.lightningcss.targets`).
+     Without that pin the prefix is never added and the blur breaks in
+     Safari <=17. See tds-landingpage commit e328ead and tds-shared#10. */
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--color-line);
 }
