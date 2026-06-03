@@ -8,6 +8,7 @@ export default defineConfig({
     "i18n/react": "src/i18n/react.tsx",
     "motion/index": "src/motion/index.ts",
     "components/index": "src/components/index.ts",
+    "astro/index": "src/astro/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,

@@ -1,6 +1,6 @@
 {
   "name": "@tracht-digital-solutions/tds-shared",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Shared design system (CSS foundation + React components), TypeScript types, Zod schemas, i18n strings, and motion presets used across the TDS frontends.",
   "license": "UNLICENSED",
   "private": false,
@@ -43,6 +43,11 @@
       "types": "./dist/components/index.d.ts",
       "import": "./dist/components/index.js",
       "require": "./dist/components/index.cjs"
+    },
+    "./astro": {
+      "types": "./dist/astro/index.d.ts",
+      "import": "./dist/astro/index.js",
+      "require": "./dist/astro/index.cjs"
     },
     "./styles/base.css": "./styles/base.css",
     "./styles/app.css": "./styles/app.css"
