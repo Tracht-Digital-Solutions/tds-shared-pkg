@@ -245,7 +245,7 @@ export const translations = {
       items: [
         {
           title: "Beratung & Konzeption",
-          rate: 130,
+          rate: 120,
           description:
             "Strategische Begleitung, Architektur-Workshops, technische Reviews. Ich höre zu, frage nach und liefere am Ende ein verständliches Konzept – nicht nur Folien.",
           includes: [
@@ -258,7 +258,7 @@ export const translations = {
         },
         {
           title: "Web- & App-Entwicklung",
-          rate: 115,
+          rate: 105,
           description:
             "Frontend, Backend, mobile und Desktop-Apps. Sauber gebaut, getestet, dokumentiert. Du bekommst Code, der nicht nur heute funktioniert, sondern in zwei Jahren noch wartbar ist.",
           includes: [
@@ -271,7 +271,7 @@ export const translations = {
         },
         {
           title: "Digitalisierung & Automation",
-          rate: 115,
+          rate: 105,
           description:
             "Manuelle Prozesse durch Workflows, Datenpipelines und Integrationen ablösen. Konkrete Umsetzung – kein PowerPoint-Zauber.",
           includes: [
@@ -284,7 +284,7 @@ export const translations = {
         },
         {
           title: "Wartung & Support",
-          rate: 95,
+          rate: 85,
           description:
             "Bestehende Systeme pflegen, Updates einspielen, Bugs beheben. Reaktionszeit nach Vereinbarung – auch außerhalb klassischer Geschäftszeiten möglich.",
           includes: [
@@ -297,7 +297,7 @@ export const translations = {
         },
         {
           title: "Workshops & Schulungen",
-          rate: 145,
+          rate: 135,
           description:
             "Wissen weitergeben statt zurückhalten. Maßgeschneiderte Workshops für dein Team – von TypeScript-Basics bis Architektur-Bootcamp.",
           includes: [
@@ -592,7 +592,7 @@ export const translations = {
       items: [
         {
           title: "Consulting & Strategy",
-          rate: 130,
+          rate: 120,
           description:
             "Strategic guidance, architecture workshops, technical reviews. I listen, ask the right questions, and end with a clear written concept — not just slides.",
           includes: [
@@ -605,7 +605,7 @@ export const translations = {
         },
         {
           title: "Web & App Development",
-          rate: 115,
+          rate: 105,
           description:
             "Frontend, backend, mobile and desktop apps. Cleanly built, tested, documented. You get code that not only works today but is still maintainable in two years.",
           includes: [
@@ -618,7 +618,7 @@ export const translations = {
         },
         {
           title: "Digitalization & Automation",
-          rate: 115,
+          rate: 105,
           description:
             "Replace manual processes with workflows, data pipelines and integrations. Concrete implementation – no PowerPoint magic.",
           includes: [
@@ -631,7 +631,7 @@ export const translations = {
         },
         {
           title: "Maintenance & Support",
-          rate: 95,
+          rate: 85,
           description:
             "Maintain existing systems, roll out updates, fix bugs. Response times by agreement — after-hours support available on request.",
           includes: [
@@ -644,7 +644,7 @@ export const translations = {
         },
         {
           title: "Workshops & Training",
-          rate: 145,
+          rate: 135,
           description:
             "Sharing knowledge instead of hoarding it. Tailored workshops for your team – from TypeScript basics to architecture bootcamp.",
           includes: [
