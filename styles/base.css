@@ -1,0 +1,251 @@
+/**
+ * TDS shared design foundation — the single source of truth for the
+ * brand design system used by every TDS frontend.
+ *
+ * Contains: colour + font tokens (`@theme`), the dark theme, base
+ * element resets, the brand scrollbar, the focus ring, the animated
+ * theme-switch (View Transitions), the editorial type primitives and
+ * the reduced-motion preferences.
+ *
+ * Import it once per app, after Tailwind and the font faces:
+ *
+ *   @import "tailwindcss";
+ *   @import "@fontsource/instrument-serif/400.css";
+ *   @import "@fontsource/instrument-serif/400-italic.css";
+ *   @import "@fontsource-variable/geist/index.css";
+ *   @import "@tracht-digital-solutions/tds-shared/styles/base.css";
+ *
+ * Shared application chrome (buttons, fields, chips, the sticky header
+ * shell) lives in the companion ./app.css. Marketing- or article-
+ * specific styles stay local to each app's own stylesheet.
+ */
+
+@theme inline {
+  /* Light theme — the default. The dark overrides below
+     (`:root[data-theme="dark"]`) flip the structural tokens
+     (paper / soft / line / muted / black / ink) but keep the brand
+     accents (primary navy, burgundy accent, pink accent) since they
+     read on both backgrounds. */
+  --color-primary: #050f68;
+  --color-accent: #820933;
+  --color-paper: #fafaf7;
+  --color-line: #e8e6df;
+  --color-muted: #6b6b66;
+  --color-soft: #f1efe8;
+  --color-accent-pink: #ff7a9c;
+  --color-black: #0b0a07;
+  --color-ink: #1a1a17;
+
+  /* Fixed brand surfaces — these stay dark in BOTH themes. The
+     structural tokens above flip in dark mode (so primary/black read as
+     foreground accents on a dark page), which would invert any section
+     that uses them as a *fixed dark backdrop*. These surface tokens give
+     those blocks (contact, footer, gradient cards, primary buttons) a
+     backdrop that never inverts. */
+  --color-surface-navy: #050f68;
+  --color-surface-accent: #820933;
+  --color-surface-ink: #0b0a07;
+  /* Elevated card / glass surface — flips with the theme. Translucent
+     glass references it through color-mix() so the light appearance is
+     unchanged while dark mode gets a dark glass instead of white. */
+  --color-card: #ffffff;
+
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-body: "Geist Variable", "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+/* Dark theme. Activated when html carries `data-theme="dark"` (set by
+   the inline no-flash script in each app's Layout from the localStorage
+   `tds-theme` preference or the OS `prefers-color-scheme` fallback).
+   Brand accents are nudged a little brighter so they read well on the
+   new dark backgrounds. */
+:root[data-theme="dark"] {
+  --color-primary: #8aa0ff;
+  --color-accent: #ff7a9c;
+  /* Deep navy ground (not a warm/neutral black) so the whole dark UI is
+     built from the brand navy — the navy panels, periwinkle primary and
+     pink accent all read as one family. Text stays warm ivory for a
+     deliberate warm-on-cool editorial contrast. */
+  --color-paper: #0a0d18;
+  --color-soft: #121627;
+  --color-line: rgb(255 255 255 / 0.12);
+  --color-muted: rgb(255 255 255 / 0.56);
+  --color-accent-pink: #ff9ab6;
+  --color-black: #fafaf7;
+  --color-ink: #f1efe8;
+
+  /* Brand surfaces + elevation ladder, all in the navy family
+     (paper < surface-ink < soft < card). The brand navy/burgundy are
+     lifted from their light values so panels, buttons and gradient cards
+     keep presence on the darker ground instead of sinking into it; the
+     ink/card neutrals are navy-tinted elevations, never a foreign warm
+     or grey dark. */
+  --color-surface-ink: #0e1322;
+  --color-card: #161b2e;
+  --color-surface-navy: #16245e;
+  --color-surface-accent: #9c1342;
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: light dark;
+  /* Firefox + IE/Edge legacy — the thin pill is rendered by the
+     WebKit rules below for everyone else. */
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-primary) 65%, transparent)
+    transparent;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* WebKit / Blink scrollbar — slender, brand-tinted, with a transparent
+   track. The 3px transparent border + padding-box background-clip trick
+   shrinks the thumb visually inside the 10px channel so the bar reads as
+   a 4px pill instead of a heavy slab. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 9999px;
+  transition: background-color 200ms ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-primary);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--color-accent);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Touch devices typically hide their own scrollbar already; nothing
+   to do beyond letting the OS handle it. */
+@media (pointer: coarse) {
+  html {
+    scrollbar-width: none;
+  }
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* === Theme switch animation ======================================= */
+
+/* Circular-reveal theme switch (see the shared ThemeToggle component).
+   The incoming theme is captured as the `::view-transition-new(root)`
+   snapshot and clipped to an expanding circle in JS; here we only
+   disable the default cross-fade and stack the new snapshot above the
+   old one so the circle wipes the new theme in over the old. Browsers
+   without the View Transitions API ignore this block and the toggle
+   falls back to an instant flip. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+/* === Editorial type primitives ==================================== */
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 0.96;
+}
+.display-tight {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1.02;
+}
+.accent-italic {
+  font-style: italic;
+  color: var(--color-accent);
+}
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-muted);
+  font-weight: 500;
+}
+.lead {
+  font-size: clamp(1.0625rem, 1.5vw, 1.1875rem);
+  line-height: 1.55;
+  color: var(--color-ink);
+}
+.tabular,
+.tabular * {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Section spacing — the vertical rhythm for a numbered section. Tuned
+   to keep editorial air without oversized whitespace: ~52px on phones
+   up to ~104px on wide screens. */
+.section-spacing {
+  padding: clamp(3.25rem, 6.5vw, 6.5rem) 0;
+}
+
+/* === Motion preferences =========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

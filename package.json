@@ -1,13 +1,16 @@
 {
   "name": "@tracht-digital-solutions/tds-shared",
-  "version": "0.2.10",
-  "description": "Shared TypeScript types, Zod schemas, i18n strings, brand tokens, and motion presets used across the TDS frontends.",
+  "version": "0.3.0",
+  "description": "Shared design system (CSS foundation + React components), TypeScript types, Zod schemas, i18n strings, and motion presets used across the TDS frontends.",
   "license": "UNLICENSED",
   "private": false,
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "*.css"
+  ],
   "files": [
     "dist",
+    "styles",
     "README.md"
   ],
   "exports": {
@@ -36,16 +39,13 @@
       "import": "./dist/motion/index.js",
       "require": "./dist/motion/index.cjs"
     },
-    "./brand": {
-      "types": "./dist/brand/tokens.d.ts",
-      "import": "./dist/brand/tokens.js",
-      "require": "./dist/brand/tokens.cjs"
+    "./components": {
+      "types": "./dist/components/index.d.ts",
+      "import": "./dist/components/index.js",
+      "require": "./dist/components/index.cjs"
     },
-    "./brand/tailwind-preset": {
-      "types": "./dist/brand/tailwind-preset.d.ts",
-      "import": "./dist/brand/tailwind-preset.js",
-      "require": "./dist/brand/tailwind-preset.cjs"
-    }
+    "./styles/base.css": "./styles/base.css",
+    "./styles/app.css": "./styles/app.css"
   },
   "scripts": {
     "build": "tsup",
@@ -57,17 +57,23 @@
   },
   "peerDependencies": {
     "react": ">=18",
+    "react-dom": ">=18",
     "zod": ">=4"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "react-dom": {
       "optional": true
     }
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "rimraf": "^6.0.0",
     "tsup": "^8.3.0",
     "typescript": "^5.6.0",

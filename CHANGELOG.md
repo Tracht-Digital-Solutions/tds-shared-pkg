@@ -6,12 +6,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-06-03
+
 ### Added
-- Vitest test suite for schemas + i18n shape (closes
-  Tracht-Digital-Solutions/tds-shared#3).
-- CI workflow (`type-check` + `test:run` + `build` on PR and main, closes
-  Tracht-Digital-Solutions/tds-shared#4).
-- This `CHANGELOG.md` (closes Tracht-Digital-Solutions/tds-shared#5).
+- **Shared design-system stylesheets.** `./styles/base.css` is now the
+  single source of truth for the brand `@theme` tokens, the dark theme,
+  base element resets, the brand scrollbar, the focus ring, the animated
+  theme-switch and the editorial type primitives. `./styles/app.css`
+  ships the shared application chrome (chips, buttons, fields, the sticky
+  header shell, hairlines, drop-cap, link/row interactions) for the
+  dashboard/content frontends. The four frontends previously duplicated
+  ~130 identical CSS lines each and had drifted.
+- **Shared `ThemeToggle` React component** at `./components` — the
+  circular-reveal View-Transition toggle, with optional `labelToDark` /
+  `labelToLight` props. Replaces the per-app island copies.
+
+### Changed
+- **Instrument Serif is now the single canonical display font** across
+  all frontends (previously the landingpage used Instrument Serif while
+  admin/blog/customer used Fraunces).
+
+### Removed
+- Stale, unused `./brand` (`tokens.ts`) and `./brand/tailwind-preset`
+  exports. They referenced the wrong fonts and a Tailwind-v3 preset shape
+  while the frontends run Tailwind v4 with `@theme`; nothing consumed
+  them. The brand tokens now live in `./styles/base.css`.
 
 ## [0.2.9] — 2026-06-01
 
