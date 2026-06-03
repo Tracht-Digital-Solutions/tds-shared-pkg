@@ -7,10 +7,10 @@
 ---
 
 
-Shared TypeScript types, Zod schemas, i18n strings, brand tokens, and
-motion presets used across the TDS frontends. Internal package — not
-published to the public npm registry; lives on **GitHub Packages**
-under the `@tracht-digital-solutions` scope.
+Shared design system (CSS foundation + React components), TypeScript
+types, Zod schemas, i18n strings, and motion presets used across the TDS
+frontends. Internal package — not published to the public npm registry;
+lives on **GitHub Packages** under the `@tracht-digital-solutions` scope.
 
 ## Install
 
@@ -126,21 +126,35 @@ import { ContactSchema, BlogPostCreateSchema } from "@tracht-digital-solutions/t
 import { translations, type Language } from "@tracht-digital-solutions/tds-shared/i18n";
 import { LanguageProvider, useLang } from "@tracht-digital-solutions/tds-shared/i18n/react";
 import { ease } from "@tracht-digital-solutions/tds-shared/motion";
-import { brandTokens } from "@tracht-digital-solutions/tds-shared/brand";
-import tailwindPreset from "@tracht-digital-solutions/tds-shared/brand/tailwind-preset";
+import { ThemeToggle } from "@tracht-digital-solutions/tds-shared/components";
 ```
 
-## Tailwind setup (in each frontend)
+## Design system (CSS, in each frontend)
 
-```ts
-// tailwind.config.ts
-import preset from "@tracht-digital-solutions/tds-shared/brand/tailwind-preset";
+The brand design system ships as two stylesheets. Tailwind v4 processes
+the `@theme` tokens they declare, so just `@import` them after Tailwind
+and the font faces — there is no Tailwind preset or `tailwind.config`.
 
-export default {
-  presets: [preset],
-  content: ["./src/**/*.{astro,ts,tsx}"],
-};
+```css
+/* src/styles/global.css */
+@import "tailwindcss";
+
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
+@import "@fontsource-variable/geist/index.css";
+
+/* Tokens, dark theme, base resets, scrollbar, focus, theme-switch,
+   editorial type primitives — imported by every frontend. */
+@import "@tracht-digital-solutions/tds-shared/styles/base.css";
+
+/* Shared application chrome (chips, buttons, fields, header shell,
+   hairlines, drop-cap, link/row interactions). Dashboard/content apps
+   only — the marketing site omits this and keeps bespoke section CSS. */
+@import "@tracht-digital-solutions/tds-shared/styles/app.css";
 ```
+
+Instrument Serif is the single canonical display font; Geist is the body
+font. Add app-specific CSS below the imports.
 
 ## Develop (this repo)
 

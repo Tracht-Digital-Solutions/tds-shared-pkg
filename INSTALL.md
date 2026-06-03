@@ -1,9 +1,9 @@
 # Installation — tds-shared
 
 > Part of the Tracht Digital Solutions multi-repo project.
-> This is the **shared TypeScript library** — types, zod schemas, i18n
-> translations, brand tokens, motion easing, Tailwind preset — published
-> to GitHub Packages and consumed by every frontend.
+> This is the **shared library** — the design system (CSS foundation +
+> React components), types, zod schemas, i18n translations, motion
+> easing — published to GitHub Packages and consumed by every frontend.
 >
 > **You install this once, then never think about it again.** Every other
 > frontend repo's `package.json` references `@tracht-digital-solutions/tds-shared`
@@ -16,7 +16,7 @@
 | Node.js | 20 LTS or 22 LTS | Build target |
 | npm | 10+ | Bundled with Node 20 |
 | Git | any | Repo hosting |
-| GitHub PAT (classic) | with `write:packages` | Manual publish (CI uses `GITHUB_TOKEN`) |
+| GitHub PAT (classic) | with `write:packages` | Manual publish (this repo's `publish.yml` uses `GITHUB_TOKEN`) |
 
 ## 1. Clone + install
 
@@ -82,36 +82,42 @@ git push --follow-tags
 You'll need a classic PAT with `write:packages` scope in
 `~/.npmrc`.
 
-## 5. Grant consumer repos access to the package
+## 5. Give consumer workflows an install token
 
-This step is easy to forget and produces a confusing 403 in the
-consuming workflow when missed.
+Consumer repos (tds-admin, tds-blog, tds-customer, tds-landingpage)
+need a `read:packages` token to install this package in CI. The
+auto-provided `secrets.GITHUB_TOKEN` does **not** work cross-repo
+— it only authorizes the workflow against packages owned by the
+running repo, so a `tds-admin` workflow asking GitHub Packages for
+`@tracht-digital-solutions/tds-shared` (owned by `tds-shared`) gets
+`403 read_package` even with `packages: read` set.
 
-After the first publish, the package is visible to the org but
-**only readable by the source repo (tds-shared) and its workflows**
-by default. Every other repo that runs `npm ci` against this
-package needs explicit access:
+The convention we settled on:
 
-1. Open <https://github.com/orgs/Tracht-Digital-Solutions/packages/npm/package/tds-shared>
-2. Right column → **Package settings**
-3. Scroll to **Manage Actions access**
-4. **Add repository** with role **Read** for each consumer:
-   - tds-landingpage
-   - tds-blog
-   - tds-admin
-   - tds-customer
+1. Mint a **classic** PAT with `read:packages` on the
+   `Tracht-Digital-Solutions` org. SSO-authorize it for the org if
+   your account requires it.
+2. Add it as a repo secret named **`NPM_TOKEN`** in each consumer
+   repo (`tds-admin`, `tds-blog`, `tds-customer`,
+   `tds-landingpage`). Same value in each.
+3. Consumer workflows reference it: `NPM_TOKEN: ${{ secrets.NPM_TOKEN }}`.
 
-(Alternative: in the same screen under **Danger Zone**, flip the
-package visibility to **Public** so any repo in the org can read
-it. Choose this if the package contents don't need to stay
-private.)
+> The GitHub UI's "Package settings → Manage Actions access → Add
+> repository" path is an alternative for keeping consumers on
+> `GITHUB_TOKEN`, but in our setup it produced inconsistent 403s
+> even when configured correctly. The PAT bypasses that model
+> entirely.
+
+(Alternative: flip the package visibility to **Public** under
+**Danger Zone** so any repo can read it. Choose this if the package
+contents don't need to stay private.)
 
 ## 6. Verify
 
 ```bash
 # In a consumer repo:
-npm ci
-# Should succeed without 403.
+NPM_TOKEN=ghp_xxxx npm install
+# Should succeed without 401 or 403.
 
 # Smoke-test the published exports:
 node -e "console.log(Object.keys(require('@tracht-digital-solutions/tds-shared')))"
@@ -121,10 +127,10 @@ node -e "console.log(Object.keys(require('@tracht-digital-solutions/tds-shared')
 
 This package is consumed by:
 
-- [tds-landingpage](https://github.com/Tracht-Digital-Solutions/tds-landingpage) — i18n strings, brand tokens, Tailwind preset
-- [tds-blog](https://github.com/Tracht-Digital-Solutions/tds-blog) — i18n strings, `BlogPost` type
-- [tds-admin](https://github.com/Tracht-Digital-Solutions/tds-admin) — types, zod schemas
-- [tds-customer](https://github.com/Tracht-Digital-Solutions/tds-customer) — types, zod schemas
+- [tds-landingpage](https://github.com/Tracht-Digital-Solutions/tds-landingpage) — design system (base.css), components, i18n strings, motion
+- [tds-blog](https://github.com/Tracht-Digital-Solutions/tds-blog) — design system (base + app.css), components, i18n strings, `BlogPost` type
+- [tds-admin](https://github.com/Tracht-Digital-Solutions/tds-admin) — design system (base + app.css), components, types, zod schemas
+- [tds-customer](https://github.com/Tracht-Digital-Solutions/tds-customer) — design system (base + app.css), components, types, zod schemas
 
 ## Troubleshooting
 
@@ -133,8 +139,9 @@ You need `NPM_TOKEN` set in the env (CI) or a classic PAT with
 `read:packages` in `~/.npmrc` (locally). See section 5 + README.
 
 **Consuming workflow returns `403 read_package`.**
-The token has the right scope but the package hasn't granted the
-consumer repo access. Do section 5 above.
+The workflow is using `secrets.GITHUB_TOKEN`, which can't read
+packages owned by a different repo. Swap to a PAT via `secrets.NPM_TOKEN`
+per section 5.
 
 **`npm publish` says "402 Payment Required" or "scope not found".**
 The `.npmrc` is targeting the public npm registry. Make sure
