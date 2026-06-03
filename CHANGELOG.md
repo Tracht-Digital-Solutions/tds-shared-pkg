@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-06-03
+
+### Fixed
+- `styles/app.css` `.field-boxed` now uses `var(--color-card)` instead of
+  a hardcoded `white`, so boxed inputs follow the theme. Light mode is
+  unchanged (`--color-card` is `#ffffff`); dark mode no longer renders a
+  white box on the dark ground.
+
 ## [0.3.0] — 2026-06-03
 
 ### Added
