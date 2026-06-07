@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-06-03
+
+### Added
+- **Shared Astro build preset** at `./astro`. Exports `cssTarget`
+  (`["chrome90", "edge90", "firefox103", "safari15"]`) and the drop-in
+  `tdsViteBuild` fragment (`{ cssMinify: "lightningcss", cssTarget }`).
+  Frontends spread it into `vite.build` so every site pins the same
+  lightningcss prefixing floor in one place. Without the Safari target,
+  lightningcss ships `backdrop-filter` unprefixed-only and the frosted
+  `.brand-header` blur silently dies in Safari ≤17 — no error, no test.
+  Replaces the hand-copied `cssTarget` array each frontend carried. See
+  tds-shared#10.
+
 ## [0.3.1] — 2026-06-03
 
 ### Fixed
@@ -216,7 +229,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tsup` dual ESM/CJS build with per-entry `exports` map.
 - Publish workflow on `v*.*.*` tags to GitHub Packages.
 
-[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.9...HEAD
+[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.3.1...v0.4.0
+[0.3.1]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.9...v0.3.0
 [0.2.9]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.6...v0.2.7

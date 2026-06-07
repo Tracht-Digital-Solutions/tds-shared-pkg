@@ -127,6 +127,7 @@ import { translations, type Language } from "@tracht-digital-solutions/tds-share
 import { LanguageProvider, useLang } from "@tracht-digital-solutions/tds-shared/i18n/react";
 import { ease } from "@tracht-digital-solutions/tds-shared/motion";
 import { ThemeToggle } from "@tracht-digital-solutions/tds-shared/components";
+import { tdsViteBuild, cssTarget } from "@tracht-digital-solutions/tds-shared/astro";
 ```
 
 ## Design system (CSS, in each frontend)
@@ -155,6 +156,29 @@ and the font faces — there is no Tailwind preset or `tailwind.config`.
 
 Instrument Serif is the single canonical display font; Geist is the body
 font. Add app-specific CSS below the imports.
+
+## Astro build preset (`./astro`)
+
+Every frontend must pin the same lightningcss prefixing floor, or the
+frosted `.brand-header` `backdrop-filter` blur silently dies in Safari
+≤17 (lightningcss only emits `-webkit-backdrop-filter` when it sees a
+Safari `cssTarget`, and it reads that target from `vite.build.cssTarget`,
+not `css.lightningcss.targets`). Import the preset instead of
+hand-copying the target array — then a new frontend can't forget it and
+the browser floor moves in one place:
+
+```js
+// astro.config.mjs
+import { tdsViteBuild } from "@tracht-digital-solutions/tds-shared/astro";
+
+export default defineConfig({
+  vite: { build: { ...tdsViteBuild } },
+});
+```
+
+`tdsViteBuild` is `{ cssMinify: "lightningcss", cssTarget }`; import the
+bare `cssTarget` array if you need to merge it into an existing
+`vite.build`.
 
 ## Develop (this repo)
 
