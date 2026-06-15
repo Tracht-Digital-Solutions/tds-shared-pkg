@@ -29,7 +29,7 @@ export const translations = {
       headlineAccent: "Julian.",
       lead: "Seit über fünf Jahren entwickle ich digitale Produkte für Unternehmen, die mehr wollen als Vorlagen aus dem Baukasten.",
       p1: "Mein Schwerpunkt liegt auf Fullstack-Webentwicklung, App-Entwicklung und der ganzheitlichen Begleitung von Digitalisierungsprojekten – von der ersten Idee über die technische Konzeption bis zum Launch und darüber hinaus.",
-      p2: "Was mich antreibt? Die Überzeugung, dass jedes Unternehmen einzigartige Anforderungen hat – und dass gute Software diese Einzigartigkeit widerspiegeln muss. Statt Lösungen von der Stange entwickle ich Software, die sich anfühlt, als wäre sie genau für dich gemacht. Weil sie es ist.",
+      p2: "Was mich antreibt? Die Überzeugung, dass jedes Unternehmen einzigartige Anforderungen hat – und dass gute Software diese Einzigartigkeit widerspiegeln muss. Statt Lösungen von der Stange entwickle ich Software, die sich anfühlt, als wäre sie genau für Sie gemacht. Weil sie es ist.",
       portraitPlaceholder:
         "Hier könnte ein Schwarz-Weiß-Portrait von Julian stehen — schräg sitzend am Schreibtisch, leicht zur Kamera gewandt, naturnahes Licht.",
       stat1Value: "5+",
@@ -41,7 +41,7 @@ export const translations = {
     },
     services: {
       label: "— 02 / Leistungen",
-      headline: "Was ich für dich",
+      headline: "Was ich für Sie",
       headlineAccent: "leiste.",
       items: [
         {
@@ -52,26 +52,20 @@ export const translations = {
         },
         {
           number: "02",
-          title: "App-Entwicklung",
-          description: "Mobile und Desktop-Anwendungen, die Nutzer wirklich gerne benutzen. Sauber gebaut, sauber dokumentiert, sauber wartbar.",
+          title: "Desktop- bis Mobile-Anwendungen",
+          description: "Native und plattformübergreifende Anwendungen vom Desktop bis zum Smartphone – konsequent auf UX und Bedienbarkeit ausgelegt, sauber gebaut und wartbar.",
           tags: ["C#", "TypeScript", "Node.js", "SQL"],
         },
         {
           number: "03",
-          title: "Fullstack-Entwicklung",
-          description: "Frontend, Backend, Datenbank, Deployment – alles aus einer Hand. Ein Ansprechpartner, ein roter Faden, ein Ergebnis.",
-          tags: ["Node.js", "SQL", "Vue", "Angular"],
-        },
-        {
-          number: "04",
           title: "Digitalisierung",
-          description: "Beratung und konkrete Umsetzung von Prozessdigitalisierung – damit dein Unternehmen weniger verwaltet und mehr arbeitet.",
+          description: "Beratung und konkrete Umsetzung von Prozessdigitalisierung – damit Ihr Unternehmen weniger verwaltet und mehr arbeitet.",
           tags: ["Python", "KNIME", "SQL", "Automation"],
         },
         {
-          number: "05",
-          title: "Schnelles Prototyping",
-          description: "Vom Whiteboard zum klickbaren Prototyp in wenigen Tagen. Validieren bevor entwickelt wird – spart Budget, Zeit und Frust am Ende des Projekts.",
+          number: "04",
+          title: "Schnelle Konzepte zugeschnitten auf Ihr Vorhaben",
+          description: "Vom Whiteboard zum klickbaren Konzept in wenigen Tagen. Validieren, bevor entwickelt wird – das spart Budget, Zeit und Frust am Ende des Projekts.",
           tags: ["Figma", "React", "TypeScript", "Claude"],
         },
       ],
@@ -137,7 +131,7 @@ export const translations = {
           number: "01",
           title: "Erstgespräch",
           duration: "Ca. 30–60 Min.",
-          description: "Ich kläre unverbindlich, was du brauchst und was du dir vorstellst – und ob wir zueinander passen. Kein Pitch, kein Druck.",
+          description: "Ich kläre unverbindlich, was Sie brauchen und was Sie sich vorstellen – und ob wir zueinander passen. Kein Pitch, kein Druck.",
         },
         {
           number: "02",
@@ -149,7 +143,7 @@ export const translations = {
           number: "03",
           title: "Entwicklung",
           duration: "Projektabhängig",
-          description: "Agile Entwicklung mit regelmäßigen Updates. Du bist immer im Bild – kein Blackbox-Development.",
+          description: "Agile Entwicklung mit regelmäßigen Updates. Sie sind immer im Bild – kein Blackbox-Development.",
         },
         {
           number: "04",
@@ -198,9 +192,9 @@ export const translations = {
     },
     contact: {
       label: "— 06 / Kontakt",
-      headline: "Lass uns",
+      headline: "Lassen Sie uns",
       headlineAccent: "reden.",
-      sub: "Du hast ein Projekt im Kopf oder willst einfach hören, ob ich helfen kann? Schreib mir – ich antworte in der Regel innerhalb von 24 Stunden.",
+      sub: "Sie haben ein Projekt im Kopf oder möchten einfach hören, ob ich helfen kann? Schreiben Sie mir – ich antworte in der Regel innerhalb von 24 Stunden.",
       form: {
         name: "Name",
         namePlaceholder: "Hanna Schmidt",
@@ -216,8 +210,8 @@ export const translations = {
         submit: "Nachricht senden",
         submitting: "Wird gesendet …",
         successTitle: "Nachricht erhalten!",
-        successMessage: "Danke für deine Nachricht. Ich melde mich in der Regel innerhalb von 24 Stunden.",
-        errorMessage: "Etwas ist schiefgelaufen. Bitte versuche es noch einmal.",
+        successMessage: "Danke für Ihre Nachricht. Ich melde mich in der Regel innerhalb von 24 Stunden.",
+        errorMessage: "Etwas ist schiefgelaufen. Bitte versuchen Sie es noch einmal.",
       },
       info: {
         emailLabel: "E-Mail",
@@ -233,7 +227,7 @@ export const translations = {
       label: "— Preise",
       headline: "Transparente",
       headlineAccent: "Stundensätze.",
-      sub: "Klare Preise, keine Pauschalpakete. Ich rechne stundengenau auf Basis der tatsächlichen Aufwände – mit ehrlicher Schätzung vorab und einer Obergrenze, auf die du dich verlassen kannst.",
+      sub: "Klare Preise, keine Pauschalpakete. Ich rechne stundengenau auf Basis der tatsächlichen Aufwände – mit ehrlicher Schätzung vorab und einer Obergrenze, auf die Sie sich verlassen können.",
       teaserLabel: "Preise",
       teaserHeadline: "Klare Sätze,",
       teaserHeadlineAccent: "keine Pauschalen.",
@@ -260,7 +254,7 @@ export const translations = {
           title: "Web- & App-Entwicklung",
           rate: 105,
           description:
-            "Frontend, Backend, mobile und Desktop-Apps. Sauber gebaut, getestet, dokumentiert. Du bekommst Code, der nicht nur heute funktioniert, sondern in zwei Jahren noch wartbar ist.",
+            "Frontend, Backend, mobile und Desktop-Apps. Sauber gebaut, getestet, dokumentiert. Sie bekommen Code, der nicht nur heute funktioniert, sondern in zwei Jahren noch wartbar ist.",
           includes: [
             "Komponentenentwicklung (React, Vue, Angular)",
             "API- und Backend-Entwicklung (Node.js, C#, SQL)",
@@ -299,11 +293,11 @@ export const translations = {
           title: "Workshops & Schulungen",
           rate: 135,
           description:
-            "Wissen weitergeben statt zurückhalten. Maßgeschneiderte Workshops für dein Team – von TypeScript-Basics bis Architektur-Bootcamp.",
+            "Wissen weitergeben statt zurückhalten. Maßgeschneiderte Workshops für Ihr Team – von TypeScript-Basics bis Architektur-Bootcamp.",
           includes: [
             "Inhouse- oder Remote-Workshops",
             "Maßgeschneiderte Schulungsunterlagen",
-            "Hands-on-Übungen mit deinem echten Code",
+            "Hands-on-Übungen mit Ihrem echten Code",
             "Nachgespräch und Aufzeichnung inklusive",
           ],
           highlight: false,
@@ -340,8 +334,8 @@ export const translations = {
       pricing: "Preise",
     },
     errors: {
-      name: "Bitte gib deinen Namen an.",
-      email: "Bitte gib eine gültige E-Mail-Adresse an.",
+      name: "Bitte geben Sie Ihren Namen an.",
+      email: "Bitte geben Sie eine gültige E-Mail-Adresse an.",
       message: "Mindestens 20 Zeichen, bitte.",
       consent: "Zustimmung erforderlich.",
     },
@@ -399,26 +393,20 @@ export const translations = {
         },
         {
           number: "02",
-          title: "App Development",
-          description: "Mobile and desktop applications that users genuinely enjoy. Cleanly built, cleanly documented, cleanly maintainable.",
+          title: "Desktop to Mobile Apps",
+          description: "Native and cross-platform applications from desktop to smartphone — built around UX and usability, cleanly built and maintainable.",
           tags: ["C#", "TypeScript", "Node.js", "SQL"],
         },
         {
           number: "03",
-          title: "Fullstack Development",
-          description: "Frontend, backend, database, deployment — all from a single developer. One point of contact, one consistent vision, one result.",
-          tags: ["Node.js", "SQL", "Vue", "Angular"],
-        },
-        {
-          number: "04",
           title: "Digitalization",
           description: "Consulting and hands-on implementation of process digitalization – so your business spends less time on admin and more time on work that matters.",
           tags: ["Python", "KNIME", "SQL", "Automation"],
         },
         {
-          number: "05",
-          title: "Rapid Prototyping",
-          description: "From whiteboard to a clickable prototype in days. Validate before you build — saves budget, time and frustration at the project's end.",
+          number: "04",
+          title: "Tailored concepts for your project",
+          description: "From whiteboard to a clickable concept in days. Validate before you build — saves budget, time and frustration at the project's end.",
           tags: ["Figma", "React", "TypeScript", "Claude"],
         },
       ],
