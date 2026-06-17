@@ -67,10 +67,10 @@
      built from the brand navy — the navy panels, periwinkle primary and
      pink accent all read as one family. Text stays warm ivory for a
      deliberate warm-on-cool editorial contrast. */
-  --color-paper: #0a0d18;
-  --color-soft: #121627;
-  --color-line: rgb(255 255 255 / 0.12);
-  --color-muted: rgb(255 255 255 / 0.56);
+  --color-paper: #0a0e1b;
+  --color-soft: #131829;
+  --color-line: rgb(255 255 255 / 0.14);
+  --color-muted: rgb(255 255 255 / 0.62);
   --color-accent-pink: #ff9ab6;
   --color-black: #fafaf7;
   --color-ink: #f1efe8;
@@ -81,10 +81,10 @@
      keep presence on the darker ground instead of sinking into it; the
      ink/card neutrals are navy-tinted elevations, never a foreign warm
      or grey dark. */
-  --color-surface-ink: #0e1322;
-  --color-card: #161b2e;
-  --color-surface-navy: #16245e;
-  --color-surface-accent: #9c1342;
+  --color-surface-ink: #0f1424;
+  --color-card: #1a2138;
+  --color-surface-navy: #1b2a66;
+  --color-surface-accent: #a4153f;
 }
 
 html {
