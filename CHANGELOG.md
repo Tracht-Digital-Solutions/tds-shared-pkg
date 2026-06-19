@@ -6,6 +6,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] — 2026-06-17
+
+### Changed
+- Retuned the dark-mode surface palette (`:root[data-theme="dark"]`):
+  adjusted `--color-paper`, `--color-soft`, `--color-line`, `--color-muted`,
+  `--color-card`, `--color-surface-ink`, `--color-surface-navy` and
+  `--color-surface-accent` for higher contrast and a more cohesive navy
+  elevation ladder. Token names and structure are unchanged — only the hex
+  values moved, so consumers inherit the new look on their next build.
+
+## [0.4.1] — 2026-06-15
+
+### Changed
+- i18n: switched all German copy to the formal *Sie* address (previously
+  informal *du*) across the about, services, process, contact and pricing
+  strings.
+- Revised the services list: renamed "App-Entwicklung" →
+  "Desktop- bis Mobile-Anwendungen", dropped the standalone Fullstack item and
+  renumbered, and reframed prototyping as "Schnelle Konzepte zugeschnitten auf
+  Ihr Vorhaben".
+- CI: bumped `actions/checkout` + `actions/setup-node` to v5 (Node 24).
+
 ## [0.4.0] — 2026-06-03
 
 ### Added
