@@ -1,0 +1,44 @@
+name: Deploy ping (reusable)
+
+# Reusable deploy-webhook ping, called by the API CIs and the frontend
+# build workflows after they publish. The deploy token is carried inside
+# DEPLOY_WEBHOOK_URL itself. A failed ping is deliberately non-fatal — by
+# the time it runs, the artifact (build branch / source) is already
+# published, so a wrong URL or host hiccup must not red the run.
+#
+# Call with:
+#   uses: Tracht-Digital-Solutions/tds-shared/.github/workflows/deploy-ping.yml@main
+#   secrets: inherit
+
+on:
+  workflow_call:
+    secrets:
+      DEPLOY_WEBHOOK_URL:
+        required: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Trigger deploy webhook
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_WEBHOOK_URL" ]; then
+            echo "DEPLOY_WEBHOOK_URL not set - skipping deploy ping."
+            exit 0
+          fi
+          echo "Pinging deploy webhook..."
+          # Non-fatal: capture the status, never exit non-zero, surface a
+          # failure as a loud warning. "000" = curl couldn't even connect.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            --retry 3 --retry-delay 5 --max-time 30 \
+            "$DEPLOY_WEBHOOK_URL" || echo "000")
+          if [ "$code" -ge 200 ] && [ "$code" -lt 300 ]; then
+            echo "Deploy webhook pinged (HTTP $code)."
+          else
+            echo "::warning title=Deploy webhook failed::Webhook returned HTTP $code - the host was not notified. Check the DEPLOY_WEBHOOK_URL secret."
+          fi
