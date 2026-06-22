@@ -1,8 +1,7 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
+  # PR-only gate; push-to-main publishes a prerelease via dev.yml.
   pull_request:
     branches: [main]
 
