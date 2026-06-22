@@ -1,0 +1,12 @@
+{
+  "pkg": "@tracht-digital-solutions/tds-shared",
+  "globalName": "TdsShared",
+  "projectId": "2138b4ee-6c75-46d4-9eef-8155e02bf3ca",
+  "shape": "package",
+  "buildCmd": "npm run build",
+  "componentSrcMap": { "ThemeToggle": "src/components/ThemeToggle.tsx" },
+  "cssEntry": ".design-sync/styles-compiled/tds.css",
+  "extraFonts": [".design-sync/fonts-vendor/fonts.css"],
+  "runtimeFontPrefixes": ["Geist"],
+  "readmeHeader": ".design-sync/conventions.md"
+}
