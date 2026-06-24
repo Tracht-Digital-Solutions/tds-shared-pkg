@@ -50,6 +50,37 @@
      unchanged while dark mode gets a dark glass instead of white. */
   --color-card: #ffffff;
 
+  /* === Semantic status palette ====================================
+     Operational state colours for the dashboard frontends (admin /
+     customer): success (paid/delivered/healthy), warning (open/pending),
+     danger (overdue/error), info (active/in-progress). Each carries a
+     brighter dark value below so it reads on the navy ground. These
+     used to be duplicated in each app's global.css — they live here now
+     so admin + customer share one source of truth.
+     TINT CONVENTION (use these everywhere, never bespoke alpha):
+       border : color-mix(in srgb, <token> 45%, transparent)
+       wash   : color-mix(in srgb, <token> 12%, transparent)
+       text   : the raw <token>
+       tile bg: color-mix(in srgb, <token>  9%, var(--color-card))
+       tile br: color-mix(in srgb, <token> 35%, var(--color-line))
+     The washes are decorative (border + text carry the meaning), so they
+     need not meet contrast; the raw tokens are AA as text on paper/card. */
+  --color-success: #2f7d51;
+  --color-warning: #b9791c;
+  --color-danger: #b3261e;
+  --color-info: #2f5fb0;
+
+  /* === Categorical / wayfinding hues ==============================
+     A distinct (non-semantic) set for category coding and nav
+     wayfinding — blog categories, project types, time-tracking project
+     chips, per-section header accents. Spaced around the wheel and tuned
+     to sit with the navy primary + burgundy accent; brighter in dark. */
+  --color-cat-violet: #5b3fb0;
+  --color-cat-teal: #0f766e;
+  --color-cat-amber: #a85d12;
+  --color-cat-rose: #a4153f;
+  --color-cat-cyan: #1f6f8b;
+
   --font-display: "Instrument Serif", ui-serif, Georgia, serif;
   --font-body: "Geist Variable", "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
@@ -85,6 +116,19 @@
   --color-card: #1a2138;
   --color-surface-navy: #1b2a66;
   --color-surface-accent: #a4153f;
+
+  /* Status + categorical hues, brightened so they read as text/borders on
+     the deep-navy ground (paper #0a0e1b, card #1a2138). */
+  --color-success: #5fcf8e;
+  --color-warning: #e2a93c;
+  --color-danger: #ff6b5e;
+  --color-info: #7aa0ff;
+
+  --color-cat-violet: #a78bfa;
+  --color-cat-teal: #5eead4;
+  --color-cat-amber: #f0b765;
+  --color-cat-rose: #ff7a9c;
+  --color-cat-cyan: #67c5e0;
 }
 
 html {

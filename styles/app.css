@@ -119,6 +119,237 @@
   border-color: var(--color-primary);
 }
 
+/* Coloured chip variants — text + 45% border + 12% wash (the shared tint
+   convention from base.css). Used for invoice/project/deployment status
+   and category labels across admin + customer. NB: the pill geometry
+   (border-radius) is intentionally app-local — the dashboards round these
+   to 0.75rem in their own global.css while landing/blog keep them fully
+   round, so only the *colour* lives here. */
+.chip--neutral {
+  color: var(--color-muted);
+  border-color: var(--color-line);
+  background: transparent;
+}
+.chip--success {
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+}
+.chip--warning {
+  color: var(--color-warning);
+  border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+}
+.chip--danger {
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 45%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+}
+.chip--info {
+  color: var(--color-info);
+  border-color: color-mix(in srgb, var(--color-info) 45%, transparent);
+  background: color-mix(in srgb, var(--color-info) 12%, transparent);
+}
+/* Categorical chips (non-semantic) — for category/type coding. */
+.chip--cat-violet {
+  color: var(--color-cat-violet);
+  border-color: color-mix(in srgb, var(--color-cat-violet) 45%, transparent);
+  background: color-mix(in srgb, var(--color-cat-violet) 12%, transparent);
+}
+.chip--cat-teal {
+  color: var(--color-cat-teal);
+  border-color: color-mix(in srgb, var(--color-cat-teal) 45%, transparent);
+  background: color-mix(in srgb, var(--color-cat-teal) 12%, transparent);
+}
+.chip--cat-amber {
+  color: var(--color-cat-amber);
+  border-color: color-mix(in srgb, var(--color-cat-amber) 45%, transparent);
+  background: color-mix(in srgb, var(--color-cat-amber) 12%, transparent);
+}
+.chip--cat-rose {
+  color: var(--color-cat-rose);
+  border-color: color-mix(in srgb, var(--color-cat-rose) 45%, transparent);
+  background: color-mix(in srgb, var(--color-cat-rose) 12%, transparent);
+}
+.chip--cat-cyan {
+  color: var(--color-cat-cyan);
+  border-color: color-mix(in srgb, var(--color-cat-cyan) 45%, transparent);
+  background: color-mix(in srgb, var(--color-cat-cyan) 12%, transparent);
+}
+
+/* === Status pills ================================================= */
+
+/* Small uppercase inline state badge (deployments / updates view).
+   Moved here from tds-admin so admin + customer share one definition. */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-line);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.status-pill--ok {
+  color: var(--color-muted);
+  border-color: var(--color-line);
+}
+.status-pill--accent {
+  color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+.status-pill--muted {
+  color: var(--color-muted);
+  border-color: var(--color-line);
+  font-style: italic;
+}
+.status-pill--success {
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+}
+.status-pill--warning {
+  color: var(--color-warning);
+  border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+}
+.status-pill--danger {
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 45%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+}
+.status-pill--info {
+  color: var(--color-info);
+  border-color: color-mix(in srgb, var(--color-info) 45%, transparent);
+  background: color-mix(in srgb, var(--color-info) 12%, transparent);
+}
+
+/* === Stat tiles =================================================== */
+
+/* KPI / overview tiles for the dashboard frontends. A tile is tinted by
+   setting `--tile-hue` (e.g. style="--tile-hue: var(--color-info)") and
+   adding `.stat-tile--toned`; the colour drives a 9% wash, a 35% border
+   and a 3px top rule — the main vibrancy lever — plus the figure colour
+   via .stat-tile__value. No gradients, no shadows: the lift is all flat
+   tint + rule, so it stays on-brand and theme-flips cleanly. */
+.stat-tile {
+  --tile-hue: var(--color-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.125rem 1.25rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  background: var(--color-card);
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease;
+}
+.stat-tile--toned {
+  background: color-mix(in srgb, var(--tile-hue) 9%, var(--color-card));
+  border-color: color-mix(in srgb, var(--tile-hue) 35%, var(--color-line));
+  border-top: 3px solid var(--tile-hue);
+}
+.stat-tile__value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-size: 1.75rem;
+  line-height: 1.05;
+}
+.stat-tile--toned .stat-tile__value {
+  color: var(--tile-hue);
+}
+.stat-tile__label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+/* Small tinted icon chip that anchors a tile/row to its hue. */
+.stat-tile__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  color: var(--tile-hue);
+  background: color-mix(in srgb, var(--tile-hue) 14%, transparent);
+}
+/* The lead tile: a fixed navy panel with white text (never inverts). */
+.stat-tile--hi {
+  background: var(--color-surface-navy);
+  border-color: transparent;
+  color: #fff;
+}
+.stat-tile--hi .stat-tile__label {
+  color: color-mix(in srgb, #fff 72%, transparent);
+}
+.stat-tile--hi .stat-tile__value {
+  color: #fff;
+}
+
+/* === Section accent ============================================== */
+
+/* Colour-codes a `.section-num` marker by its hue. Opt in by setting
+   `--section-hue` on (or above) the marker, e.g.
+   style="--section-hue: var(--color-cat-teal)" — the leading rule takes
+   the full hue (no longer the muted currentColor) so sections read as
+   distinct zones without a heavy header fill. */
+.section-accent {
+  --section-hue: var(--color-primary);
+}
+.section-accent .section-num::before,
+.section-num.section-accent::before {
+  background: var(--section-hue);
+  opacity: 1;
+}
+
+/* === Sidebar nav items =========================================== */
+
+/* Shared nav-link treatment for the admin + customer sidebars. The
+   active item gets a tinted wayfinding fill + a 2px left indicator bar
+   in the primary (or a per-item `--nav-hue`). Replaces the inline
+   `bg-card border text-accent` both apps hand-rolled. */
+.nav-item {
+  --nav-hue: var(--color-primary);
+  position: relative;
+  color: var(--color-muted);
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
+}
+.nav-item:hover {
+  color: var(--color-ink);
+  background: var(--color-soft);
+}
+.nav-item--active {
+  color: var(--nav-hue);
+  background: color-mix(in srgb, var(--nav-hue) 12%, var(--color-card));
+  border: 1px solid color-mix(in srgb, var(--nav-hue) 35%, var(--color-line));
+}
+.nav-item--active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 1.25rem;
+  border-radius: 1px;
+  background: var(--nav-hue);
+}
+/* Collapsed icon rail hides the indicator bar (the rail is centred). */
+.portal-sidebar.collapsed .nav-item--active::before {
+  display: none;
+}
+
 /* === Buttons ====================================================== */
 
 /* Pill-shaped buttons: primary (navy), accent (burgundy), ghost (line) */
