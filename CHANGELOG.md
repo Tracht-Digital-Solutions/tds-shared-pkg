@@ -6,6 +6,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] — 2026-06-24
+
+### Added
+- **Bold navy sidebar surface.** `.portal-sidebar` is now a fixed deep-navy
+  panel (`--color-surface-navy`) in both light and dark mode, with light
+  text/icons. Built by re-mapping the structural tokens (`--color-ink`,
+  `--color-muted`, `--color-line`, `--color-soft`, `--color-card`, `--nav-hue`)
+  to light/translucent-white *within the panel*, so every existing child reads
+  light without per-element edits. The active nav item gets a translucent-white
+  fill + white indicator; the wordmark italic + admin quick-action use
+  `--color-accent-pink` on navy; the floating expand button and `.nav-tip`
+  tooltip opt back out (they belong to the page surface).
+
+### Changed
+- `.brand-header` bottom rule is now a 2px hue-tinted line
+  (`color-mix(--color-primary 30%, --color-line)`) for a touch of brand colour
+  on the sticky top bar (the `backdrop-filter` authoring is unchanged).
+- `.section-accent` reads stronger: the `.section-num` eyebrow is hue-tinted
+  (70% toward `--section-hue`) and its leading rule widened to 2rem.
+
 ## [0.5.1] — 2026-06-24
 
 ### Added
@@ -281,7 +301,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tsup` dual ESM/CJS build with per-entry `exports` map.
 - Publish workflow on `v*.*.*` tags to GitHub Packages.
 
-[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.4.2...v0.5.1
 [0.4.0]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.3.0...v0.3.1

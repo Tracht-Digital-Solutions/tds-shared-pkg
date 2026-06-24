@@ -281,10 +281,14 @@
 .section-accent {
   --section-hue: var(--color-primary);
 }
+.section-accent .section-num {
+  color: color-mix(in srgb, var(--section-hue) 70%, var(--color-muted));
+}
 .section-accent .section-num::before,
 .section-num.section-accent::before {
   background: var(--section-hue);
   opacity: 1;
+  width: 2rem;
 }
 
 /* === Sidebar nav items =========================================== */
@@ -324,6 +328,61 @@
 /* Collapsed icon rail hides the indicator bar (the rail is centred). */
 .portal-sidebar.collapsed .nav-item--active::before {
   display: none;
+}
+
+/* === Sidebar surface (bold navy panel) =========================== */
+
+/* The admin + customer sidebars are a fixed deep-navy panel in BOTH
+   themes (`--color-surface-navy` never flips). Rather than restyle every
+   child, we re-map the structural tokens *within the panel* to light /
+   translucent-white — so the nav items, wordmark, collapse button,
+   version text, sign-out and the ThemeToggle's rest state all read light
+   automatically. `--color-primary` is deliberately NOT remapped (it would
+   make the active indicator vanish on navy); the active state is set to a
+   light treatment explicitly below. Children that visually belong to the
+   PAGE, not the panel (the floating expand button, the `.nav-tip`
+   tooltip), opt back out. */
+.portal-sidebar {
+  background: var(--color-surface-navy);
+  border-right-color: rgb(255 255 255 / 0.1);
+  --color-ink: #ffffff;
+  --color-muted: rgb(255 255 255 / 0.68);
+  --color-line: rgb(255 255 255 / 0.16);
+  --color-soft: rgb(255 255 255 / 0.08);
+  --color-card: var(--color-surface-navy);
+  --nav-hue: #ffffff;
+}
+/* Active nav item: translucent-white fill + white bar + white text. */
+.portal-sidebar .nav-item--active {
+  color: #ffffff;
+  background: rgb(255 255 255 / 0.12);
+  border-color: rgb(255 255 255 / 0.22);
+}
+/* Burgundy `--color-accent` is too dark on navy — lift the wordmark
+   italic to the light pink accent. */
+.portal-sidebar .accent-italic {
+  color: var(--color-accent-pink);
+}
+/* Admin quick action (.btn-primary) + collapsed round "+" : a navy fill
+   would disappear on navy, so use the light pink accent with navy text. */
+.portal-sidebar .btn-primary,
+.portal-sidebar .sidebar-show-collapsed {
+  background: var(--color-accent-pink);
+  color: var(--color-surface-navy);
+}
+/* The floating expand button sits half-outside on the page edge, so it
+   must contrast with the PAGE, not the panel — restore the real
+   card/line/muted surface values (literal, since the tokens are remapped
+   inside the panel). */
+.portal-sidebar .sidebar-expand {
+  background: #ffffff;
+  border-color: #e8e6df;
+  color: #6b6b66;
+}
+:root[data-theme="dark"] .portal-sidebar .sidebar-expand {
+  background: #1a2138;
+  border-color: rgb(255 255 255 / 0.14);
+  color: rgb(255 255 255 / 0.62);
 }
 
 /* === Buttons ====================================================== */
@@ -431,7 +490,9 @@
      Without that pin the prefix is never added and the blur breaks in
      Safari <=17. See tds-landingpage commit e328ead and tds-shared#10. */
   backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--color-line);
+  /* A hue-tinted bottom rule gives the sticky top bar a touch of brand
+     colour without a fill. */
+  border-bottom: 2px solid color-mix(in srgb, var(--color-primary) 30%, var(--color-line));
 }
 .brand-wordmark {
   font-family: var(--font-display);
