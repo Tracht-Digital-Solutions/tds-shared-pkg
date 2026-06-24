@@ -231,18 +231,16 @@
 
 /* === Stat tiles =================================================== */
 
-/* KPI / overview tiles for the dashboard frontends. A tile is tinted by
-   setting `--tile-hue` (e.g. style="--tile-hue: var(--color-info)") and
-   adding `.stat-tile--toned`; the colour drives a 9% wash, a 35% border
-   and a 3px top rule — the main vibrancy lever — plus the figure colour
-   via .stat-tile__value. No gradients, no shadows: the lift is all flat
-   tint + rule, so it stays on-brand and theme-flips cleanly. */
+/* KPI / overview tiles for the dashboard frontends. Surface-only so it
+   composes with each app's own padding + figure typography: a tile is
+   tinted by setting `--tile-hue` (e.g. style="--tile-hue: var(--color-info)")
+   and adding `.stat-tile--toned`, which drives a 9% wash, a 35% border and
+   a 3px top rule — the main vibrancy lever. Child figures pick up the hue
+   with `color: var(--tile-hue)` (custom properties inherit). No gradients,
+   no shadows: the lift is all flat tint + rule, so it stays on-brand and
+   theme-flips cleanly. */
 .stat-tile {
   --tile-hue: var(--color-primary);
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1.125rem 1.25rem;
   border: 1px solid var(--color-line);
   border-radius: 0.75rem;
   background: var(--color-card);
@@ -255,21 +253,11 @@
   border-color: color-mix(in srgb, var(--tile-hue) 35%, var(--color-line));
   border-top: 3px solid var(--tile-hue);
 }
-.stat-tile__value {
-  font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  font-size: 1.75rem;
-  line-height: 1.05;
-}
-.stat-tile--toned .stat-tile__value {
-  color: var(--tile-hue);
-}
-.stat-tile__label {
-  font-size: 0.6875rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-muted);
+/* The lead tile: a fixed navy panel with white text (never inverts). */
+.stat-tile--hi {
+  background: var(--color-surface-navy);
+  border-color: transparent;
+  color: #fff;
 }
 /* Small tinted icon chip that anchors a tile/row to its hue. */
 .stat-tile__icon {
@@ -281,18 +269,6 @@
   border-radius: 0.5rem;
   color: var(--tile-hue);
   background: color-mix(in srgb, var(--tile-hue) 14%, transparent);
-}
-/* The lead tile: a fixed navy panel with white text (never inverts). */
-.stat-tile--hi {
-  background: var(--color-surface-navy);
-  border-color: transparent;
-  color: #fff;
-}
-.stat-tile--hi .stat-tile__label {
-  color: color-mix(in srgb, #fff 72%, transparent);
-}
-.stat-tile--hi .stat-tile__value {
-  color: #fff;
 }
 
 /* === Section accent ============================================== */
