@@ -157,6 +157,15 @@ and the font faces — there is no Tailwind preset or `tailwind.config`.
 Instrument Serif is the single canonical display font; Geist is the body
 font. Add app-specific CSS below the imports.
 
+`base.css` declares three colour-token families — brand
+(`--color-primary`/`-accent`/surfaces/neutrals), semantic status
+(`--color-success`/`-warning`/`-danger`/`-info`) and categorical wayfinding
+(`--color-cat-*`) — each with light + navy-tinted dark values. `app.css`
+carries the dashboard surface classes that consume them: `.chip--*`,
+`.status-pill*`, `.stat-tile*`, `.section-accent` and `.nav-item*`. Use these
+rather than re-declaring status colours in a frontend (the admin + customer
+panels did, until 0.5.x).
+
 ## Astro build preset (`./astro`)
 
 Every frontend must pin the same lightningcss prefixing floor, or the
@@ -191,10 +200,15 @@ npm run type-check      # tsc --noEmit
 
 ## Release
 
-```bash
-npm version patch       # or minor / major — creates the tag
-git push --follow-tags  # CI publishes to GitHub Packages
-```
+Two workflows publish to GitHub Packages (no local `npm version` needed for a
+real release — the Release workflow bumps the version itself):
+
+- **Push to `main`** → auto-publishes a `@dev` prerelease (`<v>-dev.<run>`).
+- **Run the "Release (manual → GitHub Packages @latest)" workflow** (Actions →
+  Run workflow) → bumps + tags + publishes the real version to `@latest`.
+
+Land your change on `main` with a `CHANGELOG.md` entry, then press the Release
+button. Consumers on a `^x.y.z` range pick it up on their next install/build.
 
 ## Troubleshooting
 

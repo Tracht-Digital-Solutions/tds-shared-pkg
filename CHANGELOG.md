@@ -6,6 +6,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-06-24
+
+### Added
+- **Semantic status colour tokens** in `styles/base.css` — `--color-success`,
+  `--color-warning`, `--color-danger`, `--color-info`, each with a light value
+  and a brighter dark value tuned for the navy ground. These were previously
+  **duplicated, byte-identically, in both `tds-admin` and `tds-customer`**
+  `global.css`; they now live here as the single source of truth.
+- **Categorical / wayfinding hues** — `--color-cat-violet`, `--color-cat-teal`,
+  `--color-cat-amber`, `--color-cat-rose`, `--color-cat-cyan` (light + dark).
+  A non-semantic set for category coding and nav wayfinding (blog categories,
+  project types, per-section header accents).
+- **Dashboard surface classes** in `styles/app.css` so the admin + customer
+  panels share one definition: `.chip--{neutral,success,warning,danger,info}`
+  and `.chip--cat-*`; the `.status-pill` family (moved out of tds-admin); and
+  the "lively dashboard" surfaces `.stat-tile` / `.stat-tile--toned` /
+  `.stat-tile--hi` / `.stat-tile__icon` (tinted KPI tiles with a 3px hue
+  top-rule), `.section-accent` (hue-coloured `.section-num` marker) and
+  `.nav-item` / `.nav-item--active` (tinted active nav + 2px left indicator).
+- A documented **tint convention** in `base.css` (45% border / 12% wash / raw
+  token text / 9%+35% tile) so the colour maths stays consistent.
+
+### Notes
+- Flat tints only — no gradients or drop shadows (the editorial brand rule
+  holds). Consumers drop the duplicated palette + chip variants from their
+  `global.css` and bump to `^0.5.0`; only app-local pill *geometry*
+  (`border-radius`) stays in each frontend.
+- Published as `0.5.1` (the manual Release workflow auto-bumps the patch on
+  publish; `0.5.0` was the development tag that introduced the work).
+
 ## [0.4.2] — 2026-06-17
 
 ### Changed
@@ -251,7 +281,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tsup` dual ESM/CJS build with per-entry `exports` map.
 - Publish workflow on `v*.*.*` tags to GitHub Packages.
 
-[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.4.2...v0.5.1
 [0.4.0]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.9...v0.3.0

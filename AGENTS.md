@@ -21,6 +21,23 @@ validation they need, by design.
   here and bump the version — never duplicate into a frontend. Brand
   tokens live as the `@theme` block in `styles/base.css`; Instrument
   Serif is the canonical display font.
+- **Colour tokens come in three families, all in `base.css` (light) +
+  `:root[data-theme="dark"]` (dark).** (1) Brand: `--color-primary`/`-accent`/
+  `-accent-pink` + the structural neutrals + the fixed `--color-surface-*` /
+  `--color-card`. (2) Semantic status (since 0.5.x): `--color-success`/
+  `-warning`/`-danger`/`-info`. (3) Categorical wayfinding (since 0.5.x):
+  `--color-cat-violet`/`-teal`/`-amber`/`-rose`/`-cyan`. Every new token needs
+  **both** a light and a dark value (the dark ground is navy-tinted, so the
+  dark value is usually brighter), or it breaks under `data-theme="dark"`.
+  The status + categorical tokens used to be duplicated in tds-admin and
+  tds-customer — they live here now, so don't re-inline them into a frontend.
+- **The dashboard colour classes live in `app.css`, the geometry stays
+  app-local.** `.chip--*` (status + `cat-*`), `.status-pill*`, `.stat-tile*`
+  (tinted KPI tiles, 3px hue top-rule), `.section-accent` (hue-coloured
+  section marker) and `.nav-item*` (tinted active nav) are shared. The pill
+  `border-radius` override is **not** shared — landing/blog keep round pills,
+  the dashboards round to 0.75rem in their own `global.css`. All tints are
+  flat (the 45% border / 12% wash convention) — no gradients, no shadows.
 - **The lightningcss `cssTarget` lives in `src/astro` and nowhere else.**
   `styles/app.css` `.brand-header` authors `backdrop-filter` unprefixed;
   lightningcss only adds `-webkit-` when it sees a Safari build target,
@@ -52,12 +69,17 @@ src/
 
 ## Publishing
 
-CI (`.github/workflows/publish.yml`) publishes to GitHub Packages on
-tagged release `v*.*.*`. To cut a release locally:
+Two GitHub Actions workflows (the old tag-triggered `publish.yml` is gone):
 
-```bash
-npm version patch       # or minor / major
-git push --follow-tags
-```
+- **Dev prerelease (`push → GitHub Packages @dev`)** — every push to `main`
+  publishes a prerelease (`<version>-dev.<run>`) under the `@dev` dist-tag, so
+  consumers can opt into in-flight changes without a real release.
+- **Release (manual → GitHub Packages @latest)** — the `workflow_dispatch`
+  button: it bumps the version + tags, builds, and publishes the real version
+  to `@latest`. Because the workflow does the bump itself, you don't run
+  `npm version` for a release — just land your changes on `main` (commit a
+  CHANGELOG entry) and press the button. (Note: the bump means the published
+  version may be one patch above the version in your last commit.)
 
-The workflow does the rest.
+Consumers pin a caret range (e.g. `^0.5.0`), so any matching `@latest` patch
+resolves on their next install/build.
