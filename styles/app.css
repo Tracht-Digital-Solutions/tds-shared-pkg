@@ -352,11 +352,16 @@
   --color-card: var(--color-surface-navy);
   --nav-hue: #ffffff;
 }
-/* Active nav item: translucent-white fill + white bar + white text. */
+/* Active nav item: takes the per-item wayfinding hue (`--nav-hue`, set
+   inline per section in the admin/customer sidebars) so the sections read
+   as distinct colour-coded zones on the navy panel. The categorical hues
+   are bright enough to stay legible on navy; items without an explicit hue
+   fall back to the panel's white `--nav-hue`. The left indicator bar
+   (base `.nav-item--active::before`) already tracks `--nav-hue`. */
 .portal-sidebar .nav-item--active {
-  color: #ffffff;
-  background: rgb(255 255 255 / 0.12);
-  border-color: rgb(255 255 255 / 0.22);
+  color: var(--nav-hue);
+  background: color-mix(in srgb, var(--nav-hue) 16%, transparent);
+  border-color: color-mix(in srgb, var(--nav-hue) 42%, transparent);
 }
 /* Burgundy `--color-accent` is too dark on navy — lift the wordmark
    italic to the light pink accent. */
@@ -530,4 +535,18 @@
 }
 .entry-row:hover {
   background: var(--color-soft);
+}
+
+/* === Version marker =============================================== */
+
+/* Superscript the app version wherever it's shown (sidebar footers, about
+   pages). Authored once here so every current + future version display is
+   "hochgestellt" by default — wrap the version in
+   `<sup class="app-version">v{APP_VERSION}</sup>`. `vertical-align: super`
+   already raises it; the reset `line-height` keeps it from nudging the
+   baseline of the line it sits on. */
+.app-version {
+  font-size: 0.8em;
+  vertical-align: super;
+  line-height: 0;
 }

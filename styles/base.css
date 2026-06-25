@@ -89,22 +89,27 @@
 /* Dark theme. Activated when html carries `data-theme="dark"` (set by
    the inline no-flash script in each app's Layout from the localStorage
    `tds-theme` preference or the OS `prefers-color-scheme` fallback).
-   Brand accents are nudged a little brighter so they read well on the
-   new dark backgrounds. */
+
+   Re-themed (0.6.0): a deeper, more premium ink-navy. The ground drops to
+   a near-black blue (#070a14) so elevated surfaces read with real lift,
+   and the elevation ladder (paper < surface-ink < soft < card) gets a
+   clearer step between each rung. Brand accents are nudged a touch
+   brighter/cleaner and `--color-muted` is lifted to ~0.70 so secondary
+   text clears AA on the darker ground. Still one navy family — the panels,
+   periwinkle primary and pink accent all belong together; text stays warm
+   ivory for a deliberate warm-on-cool editorial contrast. */
 :root[data-theme="dark"] {
-  --color-primary: #8aa0ff;
-  --color-accent: #ff7a9c;
-  /* Deep navy ground (not a warm/neutral black) so the whole dark UI is
-     built from the brand navy — the navy panels, periwinkle primary and
-     pink accent all read as one family. Text stays warm ivory for a
-     deliberate warm-on-cool editorial contrast. */
-  --color-paper: #0a0e1b;
-  --color-soft: #131829;
-  --color-line: rgb(255 255 255 / 0.14);
-  --color-muted: rgb(255 255 255 / 0.62);
-  --color-accent-pink: #ff9ab6;
-  --color-black: #fafaf7;
-  --color-ink: #f1efe8;
+  --color-primary: #93a7ff;
+  --color-accent: #ff8fab;
+  /* Deep ink-navy ground (not a warm/neutral black) so the whole dark UI
+     is built from the brand navy. */
+  --color-paper: #070a14;
+  --color-soft: #10162a;
+  --color-line: rgb(255 255 255 / 0.12);
+  --color-muted: rgb(255 255 255 / 0.70);
+  --color-accent-pink: #ffa6c0;
+  --color-black: #f7f6f2;
+  --color-ink: #ebe9e1;
 
   /* Brand surfaces + elevation ladder, all in the navy family
      (paper < surface-ink < soft < card). The brand navy/burgundy are
@@ -112,23 +117,23 @@
      keep presence on the darker ground instead of sinking into it; the
      ink/card neutrals are navy-tinted elevations, never a foreign warm
      or grey dark. */
-  --color-surface-ink: #0f1424;
-  --color-card: #1a2138;
-  --color-surface-navy: #1b2a66;
-  --color-surface-accent: #a4153f;
+  --color-surface-ink: #0c1120;
+  --color-card: #161d33;
+  --color-surface-navy: #1d2e72;
+  --color-surface-accent: #b01a46;
 
   /* Status + categorical hues, brightened so they read as text/borders on
-     the deep-navy ground (paper #0a0e1b, card #1a2138). */
-  --color-success: #5fcf8e;
-  --color-warning: #e2a93c;
-  --color-danger: #ff6b5e;
-  --color-info: #7aa0ff;
+     the deep ink-navy ground (paper #070a14, card #161d33). */
+  --color-success: #5fd394;
+  --color-warning: #e9b455;
+  --color-danger: #ff7a6e;
+  --color-info: #84a8ff;
 
-  --color-cat-violet: #a78bfa;
+  --color-cat-violet: #b39bff;
   --color-cat-teal: #5eead4;
-  --color-cat-amber: #f0b765;
-  --color-cat-rose: #ff7a9c;
-  --color-cat-cyan: #67c5e0;
+  --color-cat-amber: #f3bd6e;
+  --color-cat-rose: #ff8fab;
+  --color-cat-cyan: #6fcfe8;
 }
 
 html {
