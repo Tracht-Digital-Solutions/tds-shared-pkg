@@ -341,8 +341,13 @@
    make the active indicator vanish on navy); the active state is set to a
    light treatment explicitly below. Children that visually belong to the
    PAGE, not the panel (the floating expand button, the `.nav-tip`
-   tooltip), opt back out. */
-.portal-sidebar {
+   tooltip), opt back out.
+
+   The mobile `.nav-drawer-panel` (below) reuses the exact same surface +
+   token remap so the slide-in drawer reads identically to the desktop
+   rail — it's added to each selector here rather than re-inlined. */
+.portal-sidebar,
+.nav-drawer-panel {
   background: var(--color-surface-navy);
   border-right-color: rgb(255 255 255 / 0.1);
   --color-ink: #ffffff;
@@ -358,20 +363,23 @@
    are bright enough to stay legible on navy; items without an explicit hue
    fall back to the panel's white `--nav-hue`. The left indicator bar
    (base `.nav-item--active::before`) already tracks `--nav-hue`. */
-.portal-sidebar .nav-item--active {
+.portal-sidebar .nav-item--active,
+.nav-drawer-panel .nav-item--active {
   color: var(--nav-hue);
   background: color-mix(in srgb, var(--nav-hue) 16%, transparent);
   border-color: color-mix(in srgb, var(--nav-hue) 42%, transparent);
 }
 /* Burgundy `--color-accent` is too dark on navy — lift the wordmark
    italic to the light pink accent. */
-.portal-sidebar .accent-italic {
+.portal-sidebar .accent-italic,
+.nav-drawer-panel .accent-italic {
   color: var(--color-accent-pink);
 }
 /* Admin quick action (.btn-primary) + collapsed round "+" : a navy fill
    would disappear on navy, so use the light pink accent with navy text. */
 .portal-sidebar .btn-primary,
-.portal-sidebar .sidebar-show-collapsed {
+.portal-sidebar .sidebar-show-collapsed,
+.nav-drawer-panel .btn-primary {
   background: var(--color-accent-pink);
   color: var(--color-surface-navy);
 }
@@ -388,6 +396,54 @@
   background: #1a2138;
   border-color: rgb(255 255 255 / 0.14);
   color: rgb(255 255 255 / 0.62);
+}
+
+/* === Mobile nav drawer (shared admin + customer) ================== */
+
+/* Below `lg` the persistent navy sidebar is replaced by a slide-in
+   drawer behind a hamburger in the mobile top bar. The panel carries
+   `.nav-drawer-panel` (navy surface + token remap, above) so it mirrors
+   the desktop rail; this block only owns the overlay + slide geometry.
+   Toggled via `data-open` on the `.nav-drawer` root. */
+.nav-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  visibility: hidden;
+  pointer-events: none;
+}
+.nav-drawer[data-open="true"] {
+  visibility: visible;
+  pointer-events: auto;
+}
+.nav-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(4 8 20 / 0.55);
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+.nav-drawer[data-open="true"] .nav-drawer-backdrop {
+  opacity: 1;
+}
+.nav-drawer-panel {
+  position: relative;
+  height: 100%;
+  width: min(82vw, 17rem);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 260ms cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+.nav-drawer[data-open="true"] .nav-drawer-panel {
+  transform: translateX(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-drawer-backdrop,
+  .nav-drawer-panel {
+    transition-duration: 0.01ms;
+  }
 }
 
 /* === Buttons ====================================================== */
