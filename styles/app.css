@@ -550,3 +550,24 @@
   vertical-align: super;
   line-height: 0;
 }
+
+/* === Touch / small-screen ergonomics ============================== */
+
+/* On touch devices give the interactive chrome a comfortable hit area
+   (~44px, the platform minimum) and bump text inputs to 16px so iOS
+   Safari doesn't auto-zoom the page when a field is focused. Scoped to
+   `pointer: coarse` so the tighter desktop sizing is unchanged, and to
+   the shared interactive primitives only (badges like .chip / .status-pill
+   stay compact — they're labels, not tap targets). Benefits admin,
+   customer and blog at once. */
+@media (pointer: coarse) {
+  .btn,
+  .nav-item {
+    min-height: 44px;
+  }
+  .field,
+  .field-boxed {
+    font-size: 16px;
+    min-height: 44px;
+  }
+}
