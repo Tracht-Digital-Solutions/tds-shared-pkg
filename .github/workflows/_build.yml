@@ -8,11 +8,13 @@ on:
   workflow_call:
     inputs:
       publish_tag:
-        description: "'' = build only (CI); 'dev' = prerelease @dev; 'latest' = real release."
+        description: "none = build only (CI); 'dev' = prerelease @dev; 'latest' = real release."
+        required: false
         type: string
-        default: ''
+        default: none
       bump:
         description: Version bump for a 'latest' release (patch | minor | major).
+        required: false
         type: string
         default: patch
 
