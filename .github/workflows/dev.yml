@@ -1,10 +1,10 @@
 name: Dev prerelease (push → GitHub Packages @dev)
 
-# Developer version of the shared package: on every push to main, publish a
-# prerelease (<version>-dev.<run>) under the `dev` dist-tag. It never becomes
-# `latest`, so consumers' ^x.y.z ranges are unaffected — opt in with
-# `@tracht-digital-solutions/tds-shared@dev`. Real versions ship via
-# release.yml (manual button).
+# On every push to main, publish a prerelease (<version>-dev.<run>) under the
+# `dev` dist-tag. It never becomes `latest`, so consumers' ^x.y.z ranges are
+# unaffected - opt in with `@tracht-digital-solutions/tds-shared@dev`. Real
+# versions ship via release.yml (manual button). Pipeline body in _build.yml.
+
 on:
   push:
     branches: [main]
@@ -16,33 +16,7 @@ concurrency:
 
 jobs:
   prerelease:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v5
-      - name: Set up Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-          cache: 'npm'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@tracht-digital-solutions'
-      - name: Install
-        run: npm ci
-      - name: Type check
-        run: npm run type-check
-      - name: Test
-        run: npm run test:run
-      - name: Build
-        run: npm run build
-      - name: Set prerelease version
-        run: |
-          base=$(node -p "require('./package.json').version")
-          npm version "${base}-dev.${{ github.run_number }}" --no-git-tag-version
-      - name: Publish prerelease (@dev)
-        run: npm publish --tag dev
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    uses: ./.github/workflows/_build.yml
+    with:
+      publish_tag: dev
+    secrets: inherit

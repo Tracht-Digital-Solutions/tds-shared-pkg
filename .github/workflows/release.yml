@@ -1,8 +1,9 @@
 name: Release (manual → GitHub Packages @latest)
 
-# Production release of the shared package, ONLY on the manual button.
-# Bumps the version, builds, publishes to GitHub Packages, and pushes the
-# version-bump commit + tag back to main. Replaces the tag-triggered flow.
+# Production release, ONLY on the manual button. Bumps the version, builds,
+# publishes to GitHub Packages, and pushes the version-bump commit + tag back
+# to main. Pipeline body in _build.yml.
+
 on:
   workflow_dispatch:
     inputs:
@@ -18,38 +19,8 @@ concurrency:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-      packages: write
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-          cache: 'npm'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@tracht-digital-solutions'
-      - name: Install
-        run: npm ci
-      - name: Type check
-        run: npm run type-check
-      - name: Test
-        run: npm run test:run
-      - name: Build
-        run: npm run build
-      - name: Bump version + tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          npm version ${{ inputs.bump }} -m "release: %s"
-      - name: Publish (@latest)
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Push version bump + tag
-        run: git push --follow-tags origin HEAD:main
+    uses: ./.github/workflows/_build.yml
+    with:
+      publish_tag: latest
+      bump: ${{ inputs.bump }}
+    secrets: inherit

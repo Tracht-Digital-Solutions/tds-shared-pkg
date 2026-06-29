@@ -1,37 +1,17 @@
 name: CI
 
+# PR-only gate; push-to-main publishes a prerelease via dev.yml.
+# Pipeline body in _build.yml.
+
 on:
-  # PR-only gate; push-to-main publishes a prerelease via dev.yml.
   pull_request:
     branches: [main]
 
-# Cancel in-flight runs on the same ref when a newer commit arrives.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   check:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Set up Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install
-        run: npm ci
-
-      - name: Type check
-        run: npm run type-check
-
-      - name: Test
-        run: npm run test:run
-
-      - name: Build
-        run: npm run build
+    uses: ./.github/workflows/_build.yml
+    secrets: inherit
