@@ -73,8 +73,8 @@ jobs:
       - name: Prune old release tags (keep newest 5)
         # Retain only the 5 most recent version tags; delete the rest on the
         # remote so the tag list never grows unbounded. Version-aware sort, so
-        # the just-pushed tag is always kept. Published package versions in
-        # GitHub Packages are unaffected - this only trims git tags.
+        # the just-pushed tag is always kept. This only trims git tags - the
+        # published GitHub Packages versions are pruned by the steps below.
         if: ${{ inputs.publish_tag == 'latest' }}
         run: |
           git fetch --tags --force --quiet
@@ -88,3 +88,35 @@ jobs:
           for t in $old; do
             git push origin ":refs/tags/$t"
           done
+
+      # --- GitHub Packages version retention -----------------------------------
+      # Keeps the registry bounded. Prereleases (...-dev.<run>) accumulate on
+      # every push to main, so they are pruned on both dev and release runs;
+      # stable versions only change on a release, so they are pruned there.
+      # Requires PACKAGE_TOKEN to carry `delete:packages` (classic PAT) in
+      # addition to write:packages, and to be SSO-authorized for the org.
+
+      - name: Prune old prerelease package versions (keep newest 5)
+        # delete-only-pre-release-versions filters to versions whose name has a
+        # hyphen (our `<ver>-dev.<run>`), then keeps the newest 5 of those.
+        if: ${{ inputs.publish_tag != 'none' }}
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: tds-shared
+          package-type: npm
+          min-versions-to-keep: 5
+          delete-only-pre-release-versions: 'true'
+          token: ${{ secrets.PACKAGE_TOKEN }}
+
+      - name: Prune old stable package versions (keep newest 10)
+        # ignore-versions removes every prerelease (any name containing a
+        # hyphen) from consideration first, so the keep-count applies purely to
+        # real releases - the newest 10 stable versions are retained.
+        if: ${{ inputs.publish_tag == 'latest' }}
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: tds-shared
+          package-type: npm
+          min-versions-to-keep: 10
+          ignore-versions: '^.*-.*$'
+          token: ${{ secrets.PACKAGE_TOKEN }}
