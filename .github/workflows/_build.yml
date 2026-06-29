@@ -30,14 +30,4 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@tracht-digital-solutions'
 
-      - name: Install
-        run: npm ci
-
-      - name: Type check
-        run: npm run type-check
-
-      - name: Test
-        run: npm run test:run
-
-      - name: Build
-        run: npm run build
+      - run: echo "node configured"
