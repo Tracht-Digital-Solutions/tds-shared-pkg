@@ -69,3 +69,22 @@ jobs:
           git push --follow-tags origin HEAD:main
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prune old release tags (keep newest 5)
+        # Retain only the 5 most recent version tags; delete the rest on the
+        # remote so the tag list never grows unbounded. Version-aware sort, so
+        # the just-pushed tag is always kept. Published package versions in
+        # GitHub Packages are unaffected - this only trims git tags.
+        if: ${{ inputs.publish_tag == 'latest' }}
+        run: |
+          git fetch --tags --force --quiet
+          old=$(git tag --sort=-v:refname | tail -n +6)
+          if [ -z "$old" ]; then
+            echo "5 or fewer tags - nothing to prune."
+            exit 0
+          fi
+          echo "Pruning $(echo "$old" | wc -l | tr -d ' ') old tag(s):"
+          echo "$old"
+          for t in $old; do
+            git push origin ":refs/tags/$t"
+          done
