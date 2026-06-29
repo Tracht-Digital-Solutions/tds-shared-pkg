@@ -20,14 +20,4 @@ jobs:
       contents: write
       packages: write
     steps:
-      - uses: actions/checkout@v5
-
-      - name: Set up Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-          cache: 'npm'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@tracht-digital-solutions'
-
-      - run: echo "node configured"
+      - run: echo "publish_tag=${{ inputs.publish_tag }} bump=${{ inputs.bump }}"
