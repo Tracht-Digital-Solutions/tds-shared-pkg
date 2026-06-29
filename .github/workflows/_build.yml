@@ -1,19 +1,13 @@
 name: Build (reusable)
 
-# Single source of truth for tds-shared. Called by ci.yml (PR gate, no
-# publish), dev.yml (prerelease → @dev dist-tag) and release.yml (version
-# bump → @latest + push tag). Behaviour selected via the inputs below.
-
 on:
   workflow_call:
     inputs:
       publish_tag:
-        description: "none = build only (CI); 'dev' = prerelease @dev; 'latest' = real release."
         required: false
         type: string
         default: none
       bump:
-        description: Version bump for a 'latest' release (patch | minor | major).
         required: false
         type: string
         default: patch
@@ -21,51 +15,5 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-      packages: write
     steps:
-      - uses: actions/checkout@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-          cache: 'npm'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@tracht-digital-solutions'
-
-      - name: Install
-        run: npm ci
-
-      - name: Type check
-        run: npm run type-check
-
-      - name: Test
-        run: npm run test:run
-
-      - name: Build
-        run: npm run build
-
-      - name: Publish prerelease (@dev)
-        if: ${{ inputs.publish_tag == 'dev' }}
-        run: |
-          base=$(node -p "require('./package.json').version")
-          npm version "${base}-dev.${{ github.run_number }}" --no-git-tag-version
-          npm publish --tag dev
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Release (@latest) + push tag
-        if: ${{ inputs.publish_tag == 'latest' }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          npm version ${{ inputs.bump }} -m "release: %s"
-          npm publish
-          git push --follow-tags origin HEAD:main
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: echo "publish_tag=${{ inputs.publish_tag }} bump=${{ inputs.bump }}"
