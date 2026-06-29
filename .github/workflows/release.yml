@@ -17,6 +17,10 @@ concurrency:
   group: release-publish
   cancel-in-progress: false
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   release:
     uses: ./.github/workflows/_build.yml

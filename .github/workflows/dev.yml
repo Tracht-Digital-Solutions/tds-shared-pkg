@@ -14,6 +14,10 @@ concurrency:
   group: dev-publish
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   prerelease:
     uses: ./.github/workflows/_build.yml
