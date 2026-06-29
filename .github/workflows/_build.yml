@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PACKAGE_TOKEN }}
 
       - name: Set up Node
         uses: actions/setup-node@v5
@@ -57,7 +57,7 @@ jobs:
           npm version "${base}-dev.${{ github.run_number }}" --no-git-tag-version
           npm publish --tag dev
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_TOKEN }}
 
       - name: Release (@latest) + push tag
         if: ${{ inputs.publish_tag == 'latest' }}
@@ -68,7 +68,7 @@ jobs:
           npm publish
           git push --follow-tags origin HEAD:main
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_TOKEN }}
 
       - name: Prune old release tags (keep newest 5)
         # Retain only the 5 most recent version tags; delete the rest on the
