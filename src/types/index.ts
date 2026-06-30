@@ -6,7 +6,43 @@
  * JS/TS side.
  */
 
+import type { PortalPermission } from "../permissions";
+
 export type Lang = "de" | "en";
+
+export type UserStatus = "active" | "disabled";
+
+/**
+ * A login identity (auth-api `app_user`). Spans both panels: `isAdmin` grants
+ * admin-panel access; a non-null `customerId` ties the account to a company
+ * (tenant) in the customer portal, scoped by `permissions`. Multiple users may
+ * share the same `customerId` (several accounts per company).
+ */
+export interface AppUser {
+  id: number;
+  email: string;
+  name: string | null;
+  isAdmin: boolean;
+  customerId: number | null;
+  permissions: PortalPermission[];
+  status: UserStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * The current authenticated principal — returned by auth-api `GET /me` and
+ * used by both panels to drive UI gating (the JWT itself lives in an httpOnly
+ * cookie and is not readable from JS).
+ */
+export interface Me {
+  userId: number;
+  email: string;
+  name: string | null;
+  isAdmin: boolean;
+  customerId: number | null;
+  permissions: PortalPermission[];
+}
 
 export interface BlogPost {
   id: number;

@@ -3,6 +3,8 @@ import {
   BlogPostCreateSchema,
   ContactSchema,
   LoginSchema,
+  UserCreateSchema,
+  UserUpdateSchema,
 } from "../schemas";
 
 describe("ContactSchema", () => {
@@ -159,5 +161,66 @@ describe("LoginSchema", () => {
   it("rejects an invalid email shape", () => {
     const res = LoginSchema.safeParse({ email: "bad", password: "x" });
     expect(res.success).toBe(false);
+  });
+});
+
+describe("UserCreateSchema", () => {
+  it("accepts a minimal payload and defaults isAdmin/permissions/status", () => {
+    const res = UserCreateSchema.safeParse({ email: "staff@example.de" });
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data.isAdmin).toBe(false);
+      expect(res.data.permissions).toEqual([]);
+      expect(res.data.status).toBe("active");
+    }
+  });
+
+  it("accepts a full company account payload", () => {
+    const res = UserCreateSchema.safeParse({
+      email: "owner@acme.de",
+      name: "Acme Owner",
+      customerId: 12,
+      isAdmin: false,
+      permissions: ["invoices:read", "invoices:pay"],
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("rejects an unknown permission key", () => {
+    const res = UserCreateSchema.safeParse({
+      email: "x@example.de",
+      permissions: ["invoices:delete"],
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects a too-short password", () => {
+    const res = UserCreateSchema.safeParse({
+      email: "x@example.de",
+      password: "short",
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects a non-positive customerId", () => {
+    const res = UserCreateSchema.safeParse({
+      email: "x@example.de",
+      customerId: 0,
+    });
+    expect(res.success).toBe(false);
+  });
+});
+
+describe("UserUpdateSchema", () => {
+  it("accepts an empty patch", () => {
+    expect(UserUpdateSchema.safeParse({}).success).toBe(true);
+  });
+
+  it("accepts toggling isAdmin alone", () => {
+    expect(UserUpdateSchema.safeParse({ isAdmin: true }).success).toBe(true);
+  });
+
+  it("rejects an invalid status", () => {
+    expect(UserUpdateSchema.safeParse({ status: "banned" }).success).toBe(false);
   });
 });
