@@ -15,7 +15,6 @@ export const PORTAL_PERMISSIONS = [
   "invoices:pay",
   "documents:read",
   "documents:write",
-  "documents:sign",
   "messages:read",
   "messages:write",
 ] as const;
@@ -34,9 +33,8 @@ export const PORTAL_PERMISSION_LABELS: Record<PortalPermission, string> = {
   "projects:read": "Projekte ansehen",
   "invoices:read": "Rechnungen ansehen",
   "invoices:pay": "Rechnungen bezahlen",
-  "documents:read": "Dokumente ansehen",
+  "documents:read": "Dokumente ansehen & herunterladen",
   "documents:write": "Dokumente hochladen / umbenennen",
-  "documents:sign": "Dokumente signieren",
   "messages:read": "Nachrichten ansehen",
   "messages:write": "Nachrichten senden",
 };
