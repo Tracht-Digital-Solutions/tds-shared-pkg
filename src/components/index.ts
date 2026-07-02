@@ -5,3 +5,6 @@
 
 export { default as ThemeToggle } from "./ThemeToggle";
 export type { ThemeToggleProps } from "./ThemeToggle";
+
+export { default as FormAlert } from "./FormAlert";
+export type { FormAlertProps } from "./FormAlert";
