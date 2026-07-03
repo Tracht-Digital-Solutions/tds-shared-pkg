@@ -10,8 +10,7 @@
  * Import it once per app, after Tailwind and the font faces:
  *
  *   @import "tailwindcss";
- *   @import "@fontsource/instrument-serif/400.css";
- *   @import "@fontsource/instrument-serif/400-italic.css";
+ *   @import "@fontsource-variable/hanken-grotesk/index.css";
  *   @import "@fontsource-variable/geist/index.css";
  *   @import "@tracht-digital-solutions/tds-shared/styles/base.css";
  *
@@ -81,7 +80,7 @@
   --color-cat-rose: #a4153f;
   --color-cat-cyan: #1f6f8b;
 
-  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-display: "Hanken Grotesk Variable", "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Geist Variable", "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
 }
@@ -248,13 +247,13 @@ body {
 
 .display {
   font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   line-height: 0.96;
 }
 .display-tight {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: -0.025em;
   line-height: 1.02;
 }

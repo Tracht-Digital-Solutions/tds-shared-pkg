@@ -39,12 +39,12 @@ hex:
 | `--color-muted` | secondary text |
 | `--color-ink` / `--color-black` | body / strong text |
 | `--color-surface-navy` / `--color-surface-accent` / `--color-surface-ink` | **fixed** dark surfaces that stay dark in BOTH themes (use for fixed dark panels/buttons; never use a flipping token as a fixed dark backdrop) |
-| `--font-display` | Instrument Serif (headings, editorial) |
+| `--font-display` | Hanken Grotesk (headings + wordmark) |
 | `--font-body` | Geist (UI/body) |
 
 **2. Editorial chrome classes** (plain CSS in `styles.css`) — ready-made brand
 primitives; prefer them over re-deriving from tokens:
-`.display` / `.display-tight` (Instrument Serif headings), `.accent-italic`,
+`.display` / `.display-tight` (Hanken Grotesk headings), `.accent-italic`,
 `.eyebrow` (uppercase tracked label), `.lead`, `.section-spacing`,
 `.section-num`, plus app chrome: `.btn` with `.btn-primary` / `.btn-accent` /
 `.btn-ghost`, `.field` / `.field-boxed`, `.chip` (`.chip-active` /

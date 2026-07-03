@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.4] — 2026-07-03
+
+### Changed
+- **Display font is now Hanken Grotesk, not Instrument Serif.** `--font-display`
+  moves to the modern grotesk already used by the blog/admin/customer apps, so
+  the whole brand (display headings + `.brand-wordmark`) reads in one flat,
+  contemporary sans. `.display`/`.display-tight` gain real weight (700/600) to
+  suit the grotesk, and the wordmark accent word renders upright (no serif
+  italic). Consumers import `@fontsource-variable/hanken-grotesk` instead of
+  `@fontsource/instrument-serif`. Instrument Serif is retired brand-wide.
+
 ## [0.5.2] — 2026-06-24
 
 ### Added

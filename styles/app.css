@@ -583,8 +583,13 @@
 }
 .brand-wordmark {
   font-family: var(--font-display);
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+/* The display face is a grotesk, so the accent word reads as an upright
+   accent-coloured word rather than a serif italic. */
+.brand-wordmark .accent-italic {
+  font-style: normal;
 }
 
 /* === Subtle interactions ========================================== */

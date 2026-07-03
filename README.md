@@ -140,8 +140,7 @@ and the font faces — there is no Tailwind preset or `tailwind.config`.
 /* src/styles/global.css */
 @import "tailwindcss";
 
-@import "@fontsource/instrument-serif/400.css";
-@import "@fontsource/instrument-serif/400-italic.css";
+@import "@fontsource-variable/hanken-grotesk/index.css";
 @import "@fontsource-variable/geist/index.css";
 
 /* Tokens, dark theme, base resets, scrollbar, focus, theme-switch,
@@ -154,8 +153,8 @@ and the font faces — there is no Tailwind preset or `tailwind.config`.
 @import "@tracht-digital-solutions/tds-shared/styles/app.css";
 ```
 
-Instrument Serif is the single canonical display font; Geist is the body
-font. Add app-specific CSS below the imports.
+Hanken Grotesk is the single canonical display font (headings + brand
+wordmark); Geist is the body font. Add app-specific CSS below the imports.
 
 `base.css` declares three colour-token families — brand
 (`--color-primary`/`-accent`/surfaces/neutrals), semantic status
