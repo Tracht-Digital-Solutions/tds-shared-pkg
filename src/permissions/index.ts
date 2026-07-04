@@ -17,6 +17,8 @@ export const PORTAL_PERMISSIONS = [
   "documents:write",
   "messages:read",
   "messages:write",
+  "tickets:read",
+  "tickets:write",
 ] as const;
 
 export type PortalPermission = (typeof PORTAL_PERMISSIONS)[number];
@@ -37,6 +39,8 @@ export const PORTAL_PERMISSION_LABELS: Record<PortalPermission, string> = {
   "documents:write": "Dokumente hochladen / umbenennen",
   "messages:read": "Nachrichten ansehen",
   "messages:write": "Nachrichten senden",
+  "tickets:read": "Tickets ansehen",
+  "tickets:write": "Tickets erstellen & beantworten",
 };
 
 export type PortalRolePreset = "full" | "accounting" | "project_team" | "read_only";
@@ -66,6 +70,8 @@ export const PORTAL_ROLE_PRESETS: Record<
       "documents:write",
       "messages:read",
       "messages:write",
+      "tickets:read",
+      "tickets:write",
     ],
   },
   read_only: {

@@ -78,6 +78,7 @@ export const UserCreateSchema = z.object({
   name: z.string().min(1).max(200).optional().nullable(),
   password: z.string().min(12).optional(),
   isAdmin: z.boolean().default(false),
+  isSupportAgent: z.boolean().default(false),
   customerId: z.number().int().positive().optional().nullable(),
   permissions: z.array(PermissionSchema).default([]),
   status: z.enum(["active", "disabled"]).default("active"),
@@ -93,9 +94,49 @@ export const UserUpdateSchema = z.object({
   email: z.string().email().optional(),
   name: z.string().min(1).max(200).optional().nullable(),
   isAdmin: z.boolean().optional(),
+  isSupportAgent: z.boolean().optional(),
   customerId: z.number().int().positive().optional().nullable(),
   permissions: z.array(PermissionSchema).optional(),
   status: z.enum(["active", "disabled"]).optional(),
 });
 
 export type UserUpdateInput = z.infer<typeof UserUpdateSchema>;
+
+/**
+ * Ticket priority + type enums — mirror the ENUM columns on the `ticket` table
+ * in tds-customer-api. The PHP side hand-duplicates these value lists; keep them
+ * in sync. Status is intentionally NOT an enum here — it is admin-configurable
+ * at runtime via the `ticket_status` registry, so it travels as a numeric id.
+ */
+export const TICKET_PRIORITIES = ["low", "normal", "high", "urgent"] as const;
+export const TICKET_TYPES = ["question", "bug", "feature", "other"] as const;
+
+export const TicketPrioritySchema = z.enum(TICKET_PRIORITIES);
+export const TicketTypeSchema = z.enum(TICKET_TYPES);
+
+/**
+ * Payload accepted by `POST /tickets` (tds-customer-api) — a customer opening a
+ * support request. `projectId` optionally links the ticket to one of the
+ * customer's projects. The PHP side hand-duplicates this validation.
+ */
+export const TicketCreateSchema = z.object({
+  subject: z.string().min(3).max(200),
+  description: z.string().min(10).max(10000),
+  priority: TicketPrioritySchema.default("normal"),
+  type: TicketTypeSchema.default("question"),
+  projectId: z.number().int().positive().optional().nullable(),
+});
+
+export type TicketCreateInput = z.infer<typeof TicketCreateSchema>;
+
+/**
+ * Payload accepted by `POST /tickets/{id}/comments` and
+ * `POST /admin/tickets/{id}/comments`. `isInternal` is honoured only for admin
+ * authors — an internal note is never shown to the customer.
+ */
+export const TicketCommentSchema = z.object({
+  body: z.string().min(1).max(10000),
+  isInternal: z.boolean().default(false),
+});
+
+export type TicketCommentInput = z.infer<typeof TicketCommentSchema>;

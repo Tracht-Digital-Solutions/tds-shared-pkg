@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Ticket/support system shared contracts.** `PORTAL_PERMISSIONS` gains
+  `tickets:read` / `tickets:write` (with German labels and inclusion in the
+  `full` / `project_team` / `read_only` presets), for the new customer-portal
+  support tickets. New Zod schemas `TicketCreateSchema` / `TicketCommentSchema`
+  plus the `TICKET_PRIORITIES` / `TICKET_TYPES` value lists and matching
+  `TicketPriority` / `TicketType` enums. New TS types `Ticket`, `TicketComment`,
+  `TicketStatus`, `TicketAttachment`. Ticket *status* is intentionally not an
+  enum — it is admin-configurable at runtime (a `ticket_status` registry in
+  tds-customer-api) and travels as a numeric id.
+- **`isSupportAgent` on the identity model.** `AppUser` and `Me` gain
+  `isSupportAgent: boolean` (the subset of admins tickets can be assigned to),
+  and `UserCreateSchema` / `UserUpdateSchema` accept it. Mirrors the new
+  `is_support_agent` column in tds-auth-api.
+
 ## [0.8.4] — 2026-07-03
 
 ### Changed

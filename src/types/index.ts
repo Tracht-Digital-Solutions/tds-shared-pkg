@@ -23,6 +23,12 @@ export interface AppUser {
   email: string;
   name: string | null;
   isAdmin: boolean;
+  /**
+   * Marks an admin account as a support agent — the subset of admins that
+   * tickets can be assigned to (the "Bearbeiter"). Independent of `isAdmin`;
+   * only meaningful for admin accounts.
+   */
+  isSupportAgent: boolean;
   customerId: number | null;
   permissions: PortalPermission[];
   status: UserStatus;
@@ -40,6 +46,7 @@ export interface Me {
   email: string;
   name: string | null;
   isAdmin: boolean;
+  isSupportAgent: boolean;
   customerId: number | null;
   permissions: PortalPermission[];
 }
@@ -135,4 +142,69 @@ export interface Session {
   admin: boolean;
   expiresAt: string;
   revokedAt: string | null;
+}
+
+export type TicketPriority = "low" | "normal" | "high" | "urgent";
+
+export type TicketType = "question" | "bug" | "feature" | "other";
+
+export type TicketAuthor = "customer" | "owner";
+
+/**
+ * An admin-configurable ticket status (the `ticket_status` registry in
+ * tds-customer-api). `visibleToCustomer` decides whether the customer sees this
+ * status' real label or a neutral fallback; `isTerminal` marks a closing status
+ * (sets the ticket's `closedAt`). `isDefault` is the status new tickets start in.
+ */
+export interface TicketStatus {
+  id: number;
+  name: string;
+  color: string;
+  sortOrder: number;
+  visibleToCustomer: boolean;
+  isTerminal: boolean;
+  isDefault: boolean;
+}
+
+export interface Ticket {
+  id: number;
+  customerId: number;
+  projectId: number | null;
+  subject: string;
+  description: string;
+  statusId: number;
+  priority: TicketPriority;
+  type: TicketType;
+  /** auth-api `app_user.id` of the assigned support agent, or null. */
+  assigneeUserId: number | null;
+  createdByType: TicketAuthor;
+  createdByUserId: number | null;
+  customerActionRequired: boolean;
+  customerActionNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  closedAt: string | null;
+}
+
+export interface TicketComment {
+  id: number;
+  ticketId: number;
+  authorType: TicketAuthor;
+  authorUserId: number | null;
+  body: string;
+  /** Admin-only note — never returned to a customer principal. */
+  isInternal: boolean;
+  createdAt: string;
+  editedAt: string | null;
+}
+
+export interface TicketAttachment {
+  id: number;
+  ticketId: number;
+  commentId: number | null;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedByType: TicketAuthor;
+  createdAt: string;
 }

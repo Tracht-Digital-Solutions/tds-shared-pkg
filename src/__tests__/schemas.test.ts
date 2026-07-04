@@ -3,6 +3,8 @@ import {
   BlogPostCreateSchema,
   ContactSchema,
   LoginSchema,
+  TicketCommentSchema,
+  TicketCreateSchema,
   UserCreateSchema,
   UserUpdateSchema,
 } from "../schemas";
@@ -165,11 +167,12 @@ describe("LoginSchema", () => {
 });
 
 describe("UserCreateSchema", () => {
-  it("accepts a minimal payload and defaults isAdmin/permissions/status", () => {
+  it("accepts a minimal payload and defaults isAdmin/isSupportAgent/permissions/status", () => {
     const res = UserCreateSchema.safeParse({ email: "staff@example.de" });
     expect(res.success).toBe(true);
     if (res.success) {
       expect(res.data.isAdmin).toBe(false);
+      expect(res.data.isSupportAgent).toBe(false);
       expect(res.data.permissions).toEqual([]);
       expect(res.data.status).toBe("active");
     }
@@ -222,5 +225,70 @@ describe("UserUpdateSchema", () => {
 
   it("rejects an invalid status", () => {
     expect(UserUpdateSchema.safeParse({ status: "banned" }).success).toBe(false);
+  });
+
+  it("accepts toggling isSupportAgent alone", () => {
+    expect(UserUpdateSchema.safeParse({ isSupportAgent: true }).success).toBe(true);
+  });
+});
+
+describe("TicketCreateSchema", () => {
+  const valid = {
+    subject: "Login funktioniert nicht",
+    description: "Ich kann mich seit heute nicht mehr anmelden.",
+  };
+
+  it("accepts a minimal payload and defaults priority/type", () => {
+    const res = TicketCreateSchema.safeParse(valid);
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data.priority).toBe("normal");
+      expect(res.data.type).toBe("question");
+    }
+  });
+
+  it("rejects a too-short subject", () => {
+    expect(TicketCreateSchema.safeParse({ ...valid, subject: "hi" }).success).toBe(
+      false,
+    );
+  });
+
+  it("rejects a too-short description", () => {
+    expect(
+      TicketCreateSchema.safeParse({ ...valid, description: "kurz" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects an unknown priority", () => {
+    expect(
+      TicketCreateSchema.safeParse({ ...valid, priority: "blocker" }).success,
+    ).toBe(false);
+  });
+
+  it("accepts an optional projectId", () => {
+    expect(
+      TicketCreateSchema.safeParse({ ...valid, projectId: 7 }).success,
+    ).toBe(true);
+  });
+});
+
+describe("TicketCommentSchema", () => {
+  it("accepts a body and defaults isInternal=false", () => {
+    const res = TicketCommentSchema.safeParse({ body: "Danke für die Rückmeldung." });
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data.isInternal).toBe(false);
+    }
+  });
+
+  it("rejects an empty body", () => {
+    expect(TicketCommentSchema.safeParse({ body: "" }).success).toBe(false);
+  });
+
+  it("accepts isInternal=true", () => {
+    expect(
+      TicketCommentSchema.safeParse({ body: "Interne Notiz", isInternal: true })
+        .success,
+    ).toBe(true);
   });
 });
