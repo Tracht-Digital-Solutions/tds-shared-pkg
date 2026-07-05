@@ -66,10 +66,24 @@ export type LoginInput = z.infer<typeof LoginSchema>;
 export const PermissionSchema = z.enum(PORTAL_PERMISSIONS);
 
 /**
+ * One company membership: the company id + the permissions the account holds
+ * within it. A login can carry several. The PHP side hand-duplicates this.
+ */
+export const MembershipSchema = z.object({
+  customerId: z.number().int().positive(),
+  permissions: z.array(PermissionSchema).default([]),
+});
+
+export type MembershipInput = z.infer<typeof MembershipSchema>;
+
+/**
  * Payload accepted by `POST /admin/users` (tds-auth-api). Creates a unified
  * login. `password` may be omitted — the server then generates a temporary one
- * and returns it once. `customerId` ties the account to a company; multiple
- * accounts may share one company. `permissions` only matter for portal access.
+ * and returns it once. `memberships` tie the account to one or more companies,
+ * each with its own permissions.
+ *
+ * The legacy `customerId` + `permissions` pair is still accepted (a single
+ * membership) for backward compatibility; `memberships` wins when both appear.
  *
  * The PHP side hand-duplicates this validation — keep them in sync.
  */
@@ -79,7 +93,10 @@ export const UserCreateSchema = z.object({
   password: z.string().min(12).optional(),
   isAdmin: z.boolean().default(false),
   isSupportAgent: z.boolean().default(false),
+  memberships: z.array(MembershipSchema).optional(),
+  /** @deprecated use `memberships` — kept as a single-company fallback. */
   customerId: z.number().int().positive().optional().nullable(),
+  /** @deprecated use `memberships`. */
   permissions: z.array(PermissionSchema).default([]),
   status: z.enum(["active", "disabled"]).default("active"),
 });
@@ -88,14 +105,18 @@ export type UserCreateInput = z.infer<typeof UserCreateSchema>;
 
 /**
  * Payload accepted by `PATCH /admin/users/{id}` (tds-auth-api). Every field is
- * optional — only the provided ones are updated.
+ * optional — only the provided ones are updated. Passing `memberships` replaces
+ * the account's full membership set.
  */
 export const UserUpdateSchema = z.object({
   email: z.string().email().optional(),
   name: z.string().min(1).max(200).optional().nullable(),
   isAdmin: z.boolean().optional(),
   isSupportAgent: z.boolean().optional(),
+  memberships: z.array(MembershipSchema).optional(),
+  /** @deprecated use `memberships`. */
   customerId: z.number().int().positive().optional().nullable(),
+  /** @deprecated use `memberships`. */
   permissions: z.array(PermissionSchema).optional(),
   status: z.enum(["active", "disabled"]).optional(),
 });

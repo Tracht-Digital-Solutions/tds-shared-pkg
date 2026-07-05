@@ -230,6 +230,28 @@ describe("UserUpdateSchema", () => {
   it("accepts toggling isSupportAgent alone", () => {
     expect(UserUpdateSchema.safeParse({ isSupportAgent: true }).success).toBe(true);
   });
+
+  it("accepts a memberships array", () => {
+    const res = UserUpdateSchema.safeParse({
+      memberships: [
+        { customerId: 1, permissions: ["tickets:read", "tickets:write"] },
+        { customerId: 2, permissions: ["invoices:read"] },
+      ],
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("rejects a membership with a non-positive customerId", () => {
+    expect(
+      UserUpdateSchema.safeParse({ memberships: [{ customerId: 0, permissions: [] }] }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a membership with an unknown permission", () => {
+    expect(
+      UserUpdateSchema.safeParse({ memberships: [{ customerId: 1, permissions: ["invoices:delete"] }] }).success,
+    ).toBe(false);
+  });
 });
 
 describe("TicketCreateSchema", () => {

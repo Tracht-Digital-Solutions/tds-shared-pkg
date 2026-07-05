@@ -13,10 +13,25 @@ export type Lang = "de" | "en";
 export type UserStatus = "active" | "disabled";
 
 /**
+ * One company membership of a login: the company (tenant) the account can access
+ * plus the permissions it holds **within that company**. A login can hold
+ * several memberships (belong to several companies), each with its own
+ * permission set — the portal shows one active company at a time.
+ */
+export interface PortalMembership {
+  customerId: number;
+  permissions: PortalPermission[];
+}
+
+/**
  * A login identity (auth-api `app_user`). Spans both panels: `isAdmin` grants
- * admin-panel access; a non-null `customerId` ties the account to a company
- * (tenant) in the customer portal, scoped by `permissions`. Multiple users may
- * share the same `customerId` (several accounts per company).
+ * admin-panel access; `memberships` tie the account to one or more companies
+ * (tenants), each scoped by its own permissions. Multiple users may share a
+ * company.
+ *
+ * `customerId` / `permissions` are the **legacy single-company** fields — kept
+ * for backward compatibility and populated with the primary (first) membership.
+ * New code should read `memberships`.
  */
 export interface AppUser {
   id: number;
@@ -29,7 +44,10 @@ export interface AppUser {
    * only meaningful for admin accounts.
    */
   isSupportAgent: boolean;
+  memberships: PortalMembership[];
+  /** @deprecated primary membership's company — read `memberships` instead. */
   customerId: number | null;
+  /** @deprecated primary membership's permissions — read `memberships`. */
   permissions: PortalPermission[];
   status: UserStatus;
   createdAt: string;
@@ -40,6 +58,11 @@ export interface AppUser {
  * The current authenticated principal — returned by auth-api `GET /me` and
  * used by both panels to drive UI gating (the JWT itself lives in an httpOnly
  * cookie and is not readable from JS).
+ *
+ * `companies` lists every company the login can access with its per-company
+ * permissions (names are resolved separately via customer-api `/me/companies`,
+ * which auth-api doesn't know). `customerId` / `permissions` describe the
+ * default/active company and stay for backward compatibility.
  */
 export interface Me {
   userId: number;
@@ -47,7 +70,10 @@ export interface Me {
   name: string | null;
   isAdmin: boolean;
   isSupportAgent: boolean;
+  companies: PortalMembership[];
+  /** @deprecated default company id — prefer the active company from `companies`. */
   customerId: number | null;
+  /** @deprecated default company's permissions — prefer active-company perms. */
   permissions: PortalPermission[];
 }
 

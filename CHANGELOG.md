@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Multi-company logins (`memberships`).** A login can now belong to several
+  companies, each with its own permission set. New `PortalMembership` type +
+  `MembershipSchema`; `AppUser` gains `memberships` and `Me` gains `companies`
+  (both keep the legacy single-company `customerId`/`permissions` as the
+  primary/default for backward compatibility). `UserCreateSchema` /
+  `UserUpdateSchema` accept `memberships` (the legacy `customerId`+`permissions`
+  pair still works as a single-membership fallback). Mirrors the new
+  `app_user_customer` table in tds-auth-api and per-company RBAC in
+  tds-customer-api.
+
 - **Ticket/support system shared contracts.** `PORTAL_PERMISSIONS` gains
   `tickets:read` / `tickets:write` (with German labels and inclusion in the
   `full` / `project_team` / `read_only` presets), for the new customer-portal
