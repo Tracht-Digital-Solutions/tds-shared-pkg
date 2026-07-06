@@ -382,6 +382,11 @@
   --color-soft: rgb(255 255 255 / 0.08);
   --color-card: var(--color-surface-navy);
   --nav-hue: #ffffff;
+  /* Re-declare `color` so the remap also reaches text that only *inherits*
+     its colour (the wordmark's "Tracht", `.link-underline { color: inherit }`
+     sign-out links). Without this the panel's children inherit the PAGE's
+     ink — near-black on navy in light mode. */
+  color: var(--color-ink);
 }
 /* Active nav item: takes the per-item wayfinding hue (`--nav-hue`, set
    inline per section in the admin/customer sidebars) so the sections read
