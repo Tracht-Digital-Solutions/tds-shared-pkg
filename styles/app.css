@@ -626,22 +626,18 @@
 
 /* === Version marker =============================================== */
 
-/* Superscript the app version wherever it's shown (sidebar footers, about
-   pages). Authored once here so every current + future version display is
-   "hochgestellt" by default — wrap the version in
-   `<sup class="app-version">v{APP_VERSION}</sup>`. `vertical-align: super`
-   raises it; the reset `line-height` keeps it from nudging the baseline of
-   the line it sits on.
+/* The app version wherever it's shown (sidebar footers, about pages).
+   Authored once here so every current + future version display is
+   consistent — wrap the version in `<span class="app-version">v{APP_VERSION}</span>`.
+   Sits on the baseline (NOT superscript — that was reverted) at a slightly
+   smaller size than the surrounding line.
 
-   NOTE: this is applied to a `<sup>`, which Tailwind's preflight already
-   resets to `position: relative; top: -0.5em`. That offset would STACK with
-   `vertical-align: super` and raise the version twice (too high, visibly
-   misaligned). `position: static` drops the preflight offset so only
-   `vertical-align: super` does the raising. */
+   `position/top` still neutralise Tailwind's preflight `<sup>` offset so a
+   leftover `<sup class="app-version">` renders on the baseline too. */
 .app-version {
   font-size: 0.8em;
-  vertical-align: super;
-  line-height: 0;
+  vertical-align: baseline;
+  line-height: inherit;
   position: static;
   top: auto;
 }

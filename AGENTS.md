@@ -38,6 +38,16 @@ validation they need, by design.
   `border-radius` override is **not** shared — landing/blog keep round pills,
   the dashboards round to 0.75rem in their own `global.css`. All tints are
   flat (the 45% border / 12% wash convention) — no gradients, no shadows.
+- **`:focus-visible` (base.css) must not set `border-radius` on the element.**
+  It used to force `border-radius: 2px`, which visibly squashed every rounded
+  control the moment it was focused (text inputs get `:focus-visible` on plain
+  click-focus — the admin API-wiki search field went square). The outline
+  follows the element's own radius in all supported browsers; only the
+  outline itself is authored here.
+- **`.app-version` (app.css) renders on the baseline, not superscript.** The
+  superscript treatment was reverted on user request; wrap versions in
+  `<span class="app-version">v{APP_VERSION}</span>` (a leftover `<sup>` still
+  renders baseline because the class neutralises the preflight offset).
 - **The lightningcss `cssTarget` lives in `src/astro` and nowhere else.**
   `styles/app.css` `.brand-header` authors `backdrop-filter` unprefixed;
   lightningcss only adds `-webkit-` when it sees a Safari build target,

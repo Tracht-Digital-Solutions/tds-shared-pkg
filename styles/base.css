@@ -209,10 +209,13 @@ body {
   overflow-x: hidden;
 }
 
+/* NOTE: no `border-radius` here — a radius on the *element* (not the
+   outline) squashed every rounded control the moment it received focus
+   (text inputs get :focus-visible on plain click-focus). Outlines follow
+   the element's own border-radius in all supported browsers. */
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 4px;
-  border-radius: 2px;
 }
 
 /* === Theme switch animation ======================================= */
