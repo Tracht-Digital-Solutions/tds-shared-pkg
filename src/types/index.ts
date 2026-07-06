@@ -90,6 +90,11 @@ export interface BlogPost {
   draft: boolean;
   createdAt: string;
   updatedAt: string;
+  /**
+   * Set by tds-content-api when this row was auto-created by the save-time
+   * DeepL sync (not authored). Optional — older API deployments omit it.
+   */
+  machineTranslated?: boolean;
 }
 
 export interface Customer {
