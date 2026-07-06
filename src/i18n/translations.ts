@@ -18,7 +18,7 @@ export const translations = {
       headlineAccent: "Bestand",
       headlineSuffix: "hat.",
       tagline: "Beratung · Konzept · Code — alles aus einer Hand.",
-      sub: "Fullstack-, App- und Digitalisierungsexpertise für den Mittelstand. Mit dem Anspruch, jedes Projekt individuell zu denken – statt Standardlösungen zu liefern.",
+      sub: "Digitalisierung für Unternehmen: Fullstack-, App- und Beratungsexpertise für den Mittelstand. Mit dem Anspruch, jedes Projekt individuell zu denken – statt Standardlösungen zu liefern.",
       cta1: "Gespräch vereinbaren",
       cta2: "Leistungen entdecken",
       scrollHint: "Scrollen",
@@ -28,7 +28,7 @@ export const translations = {
       headline: "Hi, ich bin",
       headlineAccent: "Julian.",
       lead: "Seit über fünf Jahren entwickle ich digitale Produkte für Unternehmen, die mehr wollen als Vorlagen aus dem Baukasten.",
-      p1: "Mein Schwerpunkt liegt auf Fullstack-Webentwicklung, App-Entwicklung und der ganzheitlichen Begleitung von Digitalisierungsprojekten – von der ersten Idee über die technische Konzeption bis zum Launch und darüber hinaus.",
+      p1: "Mein Schwerpunkt liegt auf Fullstack-Webentwicklung, App-Entwicklung und der ganzheitlichen Begleitung von Digitalisierungsprojekten – von der ersten Idee über die technische Konzeption bis zum Launch und darüber hinaus, für Unternehmen in ganz Deutschland, persönlich betreut aus Schwarzenbek bei Hamburg.",
       p2: "Was mich antreibt? Die Überzeugung, dass jedes Unternehmen einzigartige Anforderungen hat – und dass gute Software diese Einzigartigkeit widerspiegeln muss. Statt Lösungen von der Stange entwickle ich Software, die sich anfühlt, als wäre sie genau für Sie gemacht. Weil sie es ist.",
       portraitPlaceholder:
         "Hier könnte ein Schwarz-Weiß-Portrait von Julian stehen — schräg sitzend am Schreibtisch, leicht zur Kamera gewandt, naturnahes Licht.",
@@ -58,8 +58,8 @@ export const translations = {
         },
         {
           number: "03",
-          title: "Digitalisierung",
-          description: "Beratung und konkrete Umsetzung von Prozessdigitalisierung – damit Ihr Unternehmen weniger verwaltet und mehr arbeitet.",
+          title: "Digitalisierung für Unternehmen",
+          description: "Beratung und konkrete Umsetzung von Prozessdigitalisierung – aus Schwarzenbek bei Hamburg für Unternehmen in ganz Deutschland. Damit Ihr Unternehmen weniger verwaltet und mehr arbeitet.",
           tags: ["Python", "KNIME", "SQL", "Automation"],
         },
         {
@@ -359,7 +359,7 @@ export const translations = {
       headlineAccent: "to last.",
       headlineSuffix: "",
       tagline: "Consulting · concept · code — all from one source.",
-      sub: "Fullstack development, app engineering and digitalization expertise for mid-market companies. Built on the conviction that every project deserves to be approached on its own terms — not delivered off the shelf.",
+      sub: "Digitalization for businesses: fullstack, app and consulting expertise for the mid-market. Built on the conviction that every project deserves to be approached on its own terms — not delivered off the shelf.",
       cta1: "Book a call",
       cta2: "Explore services",
       scrollHint: "Scroll",
@@ -369,7 +369,7 @@ export const translations = {
       headline: "Hi, I'm",
       headlineAccent: "Julian.",
       lead: "For over five years I've been building digital products for companies that want more than templated, off-the-shelf software.",
-      p1: "My focus is fullstack web development, app engineering and end-to-end digitalization projects – from the first idea through technical architecture to launch and beyond.",
+      p1: "My focus is fullstack web development, app engineering and end-to-end digitalization projects – from the first idea through technical architecture to launch and beyond, for companies across Germany, personally supported from Schwarzenbek near Hamburg.",
       p2: "What drives me? The conviction that every business has unique requirements – and that good software must reflect that uniqueness. Instead of off-the-shelf solutions, I build software that feels like it was made specifically for you. Because it was.",
       portraitPlaceholder:
         "A black-and-white portrait of Julian — seated at an angle at his desk, slightly turned toward the camera, soft natural light.",
@@ -399,8 +399,8 @@ export const translations = {
         },
         {
           number: "03",
-          title: "Digitalization",
-          description: "Consulting and hands-on implementation of process digitalization – so your business spends less time on admin and more time on work that matters.",
+          title: "Digitalization for Businesses",
+          description: "Consulting and hands-on implementation of process digitalization – from Schwarzenbek near Hamburg for companies across Germany. So your business spends less time on admin and more time on work that matters.",
           tags: ["Python", "KNIME", "SQL", "Automation"],
         },
         {
