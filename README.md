@@ -126,7 +126,7 @@ import { ContactSchema, BlogPostCreateSchema } from "@tracht-digital-solutions/t
 import { translations, type Language } from "@tracht-digital-solutions/tds-shared/i18n";
 import { LanguageProvider, useLang } from "@tracht-digital-solutions/tds-shared/i18n/react";
 import { ease } from "@tracht-digital-solutions/tds-shared/motion";
-import { ThemeToggle } from "@tracht-digital-solutions/tds-shared/components";
+import { ThemeToggle, CookieNotice } from "@tracht-digital-solutions/tds-shared/components";
 import { tdsViteBuild, cssTarget } from "@tracht-digital-solutions/tds-shared/astro";
 ```
 

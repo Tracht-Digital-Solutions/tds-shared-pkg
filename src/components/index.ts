@@ -8,3 +8,6 @@ export type { ThemeToggleProps } from "./ThemeToggle";
 
 export { default as FormAlert } from "./FormAlert";
 export type { FormAlertProps } from "./FormAlert";
+
+export { default as CookieNotice } from "./CookieNotice";
+export type { CookieNoticeProps } from "./CookieNotice";

@@ -339,6 +339,15 @@ export const translations = {
       message: "Mindestens 20 Zeichen, bitte.",
       consent: "Zustimmung erforderlich.",
     },
+    cookieNotice: {
+      label: "Hinweis zu Cookies und Datenschutz",
+      siteText:
+        "Diese Website verwendet keine Tracking-Cookies. Es werden lediglich technisch notwendige Einstellungen (z. B. Ihr Farbschema) lokal in Ihrem Browser gespeichert.",
+      panelText:
+        "Dieser Bereich verwendet ausschließlich ein technisch notwendiges Cookie für die sichere Anmeldung (Session-Cookie). Es findet kein Tracking statt.",
+      privacy: "Mehr in der Datenschutzerklärung.",
+      accept: "Verstanden",
+    },
   },
   en: {
     nav: {
@@ -679,6 +688,15 @@ export const translations = {
       email: "Please enter a valid email address.",
       message: "At least 20 characters, please.",
       consent: "Consent required.",
+    },
+    cookieNotice: {
+      label: "Cookie and privacy notice",
+      siteText:
+        "This website does not use tracking cookies. Only technically necessary preferences (e.g. your colour scheme) are stored locally in your browser.",
+      panelText:
+        "This area only uses one technically necessary cookie for secure sign-in (session cookie). No tracking takes place.",
+      privacy: "More in the privacy policy.",
+      accept: "Got it",
     },
   },
 } as const;

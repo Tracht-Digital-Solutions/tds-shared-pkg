@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **`CookieNotice` shared island + cookie/privacy copy.** Dismissible
+  one-time cookie/Datenschutz notice used by all four frontends: variant
+  `"site"` (public landingpage/blog wording — no tracking cookies, only
+  local preferences) and `"panel"` (admin/customer wording — one technically
+  necessary session cookie). Dismissal persists per origin in localStorage
+  (`tds-cookie-notice`). Copy ships as the new `cookieNotice` i18n block
+  (DE/EN); styling as the `.cookie-notice` block in `styles/base.css`
+  (base, not app.css, because the landingpage imports only base). New
+  `CookieBannerBlock` type mirrors the language-agnostic `cookie_banner`
+  landing content block in tds-content-api that toggles the banner on the
+  public sites at build time.
 - **Multi-company logins (`memberships`).** A login can now belong to several
   companies, each with its own permission set. New `PortalMembership` type +
   `MembershipSchema`; `AppUser` gains `memberships` and `Me` gains `companies`

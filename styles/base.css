@@ -289,6 +289,62 @@ body {
   padding: clamp(3.25rem, 6.5vw, 6.5rem) 0;
 }
 
+/* === Cookie / privacy notice ====================================== */
+/* Dismissible one-time notice (components/CookieNotice). Lives in
+   base.css — not app.css — because the landingpage imports only the
+   base stylesheet. Flat card on the elevated surface; the button uses
+   the fixed navy surface token so it never inverts in dark mode. */
+
+.cookie-notice {
+  position: fixed;
+  inset-inline: 1rem;
+  bottom: 1rem;
+  z-index: 90;
+  margin-inline: auto;
+  max-width: 46rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  padding: 0.875rem 1.125rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  background: var(--color-card);
+  color: var(--color-ink);
+}
+.cookie-notice-text {
+  flex: 1 1 22rem;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--color-muted);
+}
+.cookie-notice-link {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.cookie-notice-link:hover {
+  color: var(--color-accent);
+}
+.cookie-notice-btn {
+  flex: none;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.5rem 1.125rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: var(--color-surface-navy);
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+.cookie-notice-btn:hover {
+  background: color-mix(in srgb, var(--color-surface-navy) 88%, #fff);
+}
+
 /* === Motion preferences =========================================== */
 
 @media (prefers-reduced-motion: reduce) {

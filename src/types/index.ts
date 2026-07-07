@@ -239,3 +239,13 @@ export interface TicketAttachment {
   uploadedByType: TicketAuthor;
   createdAt: string;
 }
+
+/**
+ * `cookie_banner` landing content block (tds-content-api `/landing`).
+ * Language-agnostic (stored under `lang=de` like `journal`): toggles the
+ * shared CookieNotice banner on the public landingpage + blog at build
+ * time. Absent block = banner off.
+ */
+export interface CookieBannerBlock {
+  enabled: boolean;
+}
