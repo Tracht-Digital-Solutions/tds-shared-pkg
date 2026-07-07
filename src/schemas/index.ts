@@ -42,9 +42,35 @@ export const BlogPostCreateSchema = z.object({
   coverHint: z.string().max(400).optional().nullable(),
   publishedAt: z.coerce.date().optional().nullable(),
   draft: z.boolean().default(false),
+  /**
+   * auth-api `app_user.id` of the author. Admins may set any eligible author;
+   * for a non-admin blog author the server forces it to themselves. Null /
+   * omitted leaves the post unassigned. The PHP validator mirrors this.
+   */
+  authorId: z.number().int().positive().optional().nullable(),
 });
 
 export type BlogPostCreateInput = z.infer<typeof BlogPostCreateSchema>;
+
+/**
+ * Payload accepted by `PUT /content/authors/{uid}` (tds-content-api) — tds-admin
+ * pushes a blog author's display snapshot (from an auth-api `app_user`) so the
+ * static blog can render it and it survives the user being deleted. The PHP
+ * side hand-duplicates this validation.
+ */
+export const BlogAuthorSyncSchema = z.object({
+  name: z.string().min(1).max(200),
+  slug: z
+    .string()
+    .min(1)
+    .max(120)
+    .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers and hyphens only."),
+  avatarUrl: z.string().max(500).optional().nullable(),
+  bio: z.string().max(500).optional().nullable(),
+  active: z.boolean().default(true),
+});
+
+export type BlogAuthorSyncInput = z.infer<typeof BlogAuthorSyncSchema>;
 
 /**
  * Payload accepted by `POST /auth/admin/login` and
@@ -93,6 +119,10 @@ export const UserCreateSchema = z.object({
   password: z.string().min(12).optional(),
   isAdmin: z.boolean().default(false),
   isSupportAgent: z.boolean().default(false),
+  /** Grants blog-authoring access (see `AppUser.isBlogAuthor`). */
+  isBlogAuthor: z.boolean().default(false),
+  /** Author bio shown on the public blog author page. */
+  bio: z.string().max(500).optional().nullable(),
   memberships: z.array(MembershipSchema).optional(),
   /** @deprecated use `memberships` — kept as a single-company fallback. */
   customerId: z.number().int().positive().optional().nullable(),
@@ -113,6 +143,10 @@ export const UserUpdateSchema = z.object({
   name: z.string().min(1).max(200).optional().nullable(),
   isAdmin: z.boolean().optional(),
   isSupportAgent: z.boolean().optional(),
+  /** Grants blog-authoring access (see `AppUser.isBlogAuthor`). */
+  isBlogAuthor: z.boolean().optional(),
+  /** Author bio shown on the public blog author page. */
+  bio: z.string().max(500).optional().nullable(),
   memberships: z.array(MembershipSchema).optional(),
   /** @deprecated use `memberships`. */
   customerId: z.number().int().positive().optional().nullable(),

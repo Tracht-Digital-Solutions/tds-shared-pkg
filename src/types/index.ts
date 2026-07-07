@@ -44,6 +44,16 @@ export interface AppUser {
    * only meaningful for admin accounts.
    */
   isSupportAgent: boolean;
+  /**
+   * Marks the account as a blog author — a (usually non-admin) login that may
+   * write blog posts in tds-admin and appears as an author on the public blog.
+   * Admins are implicitly authors too. Independent of `isAdmin`.
+   */
+  isBlogAuthor: boolean;
+  /** Public avatar URL (absolute, served by auth-api `/avatars`) or null. */
+  avatarUrl: string | null;
+  /** Short author bio shown on the blog author page; null when unset. */
+  bio: string | null;
   memberships: PortalMembership[];
   /** @deprecated primary membership's company — read `memberships` instead. */
   customerId: number | null;
@@ -70,11 +80,31 @@ export interface Me {
   name: string | null;
   isAdmin: boolean;
   isSupportAgent: boolean;
+  /** Whether the login may author blog posts (see `AppUser.isBlogAuthor`). */
+  isBlogAuthor: boolean;
+  /** Public avatar URL (absolute) or null. */
+  avatarUrl: string | null;
   companies: PortalMembership[];
   /** @deprecated default company id — prefer the active company from `companies`. */
   customerId: number | null;
   /** @deprecated default company's permissions — prefer active-company perms. */
   permissions: PortalPermission[];
+}
+
+/**
+ * The public author of a blog post, as tds-content-api stores it in its own
+ * `blog_author` snapshot (synced from an auth-api `app_user`). Kept content-side
+ * so the static blog can render the author at build time and so a post survives
+ * the underlying user being deleted. `avatarUrl` / `bio` are null when unset.
+ */
+export interface BlogAuthor {
+  /** auth-api `app_user.id` this author mirrors. */
+  id: number;
+  name: string;
+  /** URL slug for the author page (`/autor/<slug>` · `/en/author/<slug>`). */
+  slug: string;
+  avatarUrl: string | null;
+  bio: string | null;
 }
 
 export interface BlogPost {
@@ -95,6 +125,10 @@ export interface BlogPost {
    * DeepL sync (not authored). Optional — older API deployments omit it.
    */
   machineTranslated?: boolean;
+  /** auth-api `app_user.id` of the author, or null (unassigned / deleted user). */
+  authorId?: number | null;
+  /** Denormalised author snapshot for display; null when unassigned. */
+  author?: BlogAuthor | null;
 }
 
 export interface Customer {
