@@ -125,6 +125,9 @@ export interface BlogPost {
    * DeepL sync (not authored). Optional — older API deployments omit it.
    */
   machineTranslated?: boolean;
+  /** Accumulated public view count (popularity signal). Optional — older API
+   *  deployments omit it. Backs the author page's "views"/"trend" sort. */
+  viewCount?: number;
   /** auth-api `app_user.id` of the author, or null (unassigned / deleted user). */
   authorId?: number | null;
   /** Denormalised author snapshot for display; null when unassigned. */
