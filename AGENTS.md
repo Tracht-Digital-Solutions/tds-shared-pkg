@@ -19,7 +19,7 @@ validation they need, by design.
 - **The design system and i18n strings are the source of truth.** If you
   change a colour, font, shared component style, or copy string, do it
   here and bump the version — never duplicate into a frontend. Brand
-  tokens live as the `@theme` block in `styles/base.css`; Hanken Grotesk
+  tokens live as the `@theme` block in `styles/base.css`; Lato
   is the canonical display font (headings + wordmark), Geist the body font.
 - **Colour tokens come in three families, all in `base.css` (light) +
   `:root[data-theme="dark"]` (dark).** (1) Brand: `--color-primary`/`-accent`/

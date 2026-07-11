@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Display font is now Lato, not Hanken Grotesk.** `--font-display` moves to
+  **Lato** — the official Tracht Digital Solutions brand font — so the whole
+  brand (display headings + `.brand-wordmark`) reads in Lato. Body/mono fonts are
+  unchanged (Geist on the landingpage, Plus Jakarta Sans on the panels, JetBrains
+  Mono). Lato ships as the static `@fontsource/lato` package (weights 400/700/900),
+  so consumers import `@fontsource/lato/{400,700,900}.css` instead of the variable
+  `@fontsource-variable/hanken-grotesk`. Hanken Grotesk is retired as the display
+  face.
+
 ### Added
 - **`CookieNotice` shared island + cookie/privacy copy.** Dismissible
   one-time cookie/Datenschutz notice used by all four frontends: variant
