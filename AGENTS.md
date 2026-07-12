@@ -67,7 +67,11 @@ src/
 ├── types/                    # shared TS interfaces
 ├── schemas/                  # Zod schemas
 ├── i18n/
-│   ├── translations.ts       # DE/EN copy (no React)
+│   ├── translations.ts       # DE/EN copy (no React). `footer.slogan` is the
+│                             #   brand lead claim ("Digitale Lösungen, die
+│                             #   wirklich passen." / "Digital solutions that
+│                             #   truly fit.") — Hero renders it as its accent
+│                             #   title, so one edit drives Hero + Footer.
 │   ├── index.ts              # re-exports translations
 │   └── react.tsx             # React Context provider + hook
 ├── motion/                   # animation presets
