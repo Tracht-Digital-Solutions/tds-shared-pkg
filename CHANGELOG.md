@@ -17,6 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   face.
 
 ### Added
+- **`CookieNotice` consent mode + ad-consent helpers.** A new `consent` prop
+  turns the notice into a real advertising-consent gate (Akzeptieren / Ablehnen)
+  for the blog when AdSense is enabled, storing the choice under `tds-ad-consent`
+  and firing an `AD_CONSENT_EVENT` so ad loaders react without a reload. New
+  exports `getAdConsent` / `setAdConsent` / `AD_CONSENT_KEY` / `AD_CONSENT_EVENT`
+  / `AdConsent`. The informational one-time notice stays the default (unchanged
+  for the panels + the ad-free landingpage). New `cookieNotice.consentText`/
+  `consentAccept`/`consentDecline` i18n (DE/EN) + a `.cookie-notice-btn--ghost`
+  style in `base.css`.
+- **`BlogPost.adsMode` + `AdsMode` type + Zod.** Per-post ad rendering mode
+  (`default|off|auto|manual`) on `BlogPost` and `BlogPostCreateSchema` (mirrors
+  the content-api PHP validator).
 - **`Spinner`, `Skeleton`, `SkeletonText` shared loading indicators.** One
   consistent, brand-token loading system for all frontends. `Spinner` is a
   rotating ring (`sm`/`md`/`lg`, `currentColor` by default so it shows inside a

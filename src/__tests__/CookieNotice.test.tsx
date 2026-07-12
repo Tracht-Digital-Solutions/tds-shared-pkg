@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render } from "@testing-library/react";
-import CookieNotice from "../components/CookieNotice";
+import CookieNotice, { getAdConsent } from "../components/CookieNotice";
 
 /**
  * CookieNotice shows once per origin and remembers its dismissal in
@@ -59,5 +59,27 @@ describe("CookieNotice", () => {
     );
     expect(getByRole("button").textContent).toBe("Got it");
     expect(getByRole("link").getAttribute("href")).toBe("/legal/datenschutz");
+  });
+
+  describe("consent mode", () => {
+    it("shows Accept + Decline and grants consent on Accept", () => {
+      const { getByText, queryByRole } = render(<CookieNotice consent />);
+      fireEvent.click(getByText("Akzeptieren"));
+      expect(queryByRole("region")).toBeNull();
+      expect(localStorage.getItem("tds-ad-consent")).toBe("granted");
+      expect(getAdConsent()).toBe("granted");
+    });
+
+    it("denies consent on Decline", () => {
+      const { getByText } = render(<CookieNotice consent />);
+      fireEvent.click(getByText("Ablehnen"));
+      expect(localStorage.getItem("tds-ad-consent")).toBe("denied");
+    });
+
+    it("stays hidden once a consent choice was made", () => {
+      localStorage.setItem("tds-ad-consent", "denied");
+      const { queryByRole } = render(<CookieNotice consent />);
+      expect(queryByRole("region")).toBeNull();
+    });
   });
 });

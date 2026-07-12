@@ -4,6 +4,40 @@ import { translations, type Language } from "../i18n/translations";
 const DEFAULT_STORAGE_KEY = "tds-cookie-notice";
 const DEFAULT_PRIVACY_URL = "https://tracht-digital.de/legal/datenschutz";
 
+/** localStorage key holding the advertising-consent choice (consent mode). */
+export const AD_CONSENT_KEY = "tds-ad-consent";
+/** Window event fired when the ad-consent choice changes, so ad loaders can
+ *  react without a page reload. `detail` is the new value. */
+export const AD_CONSENT_EVENT = "tds-ad-consent";
+export type AdConsent = "granted" | "denied" | null;
+
+/** Read the stored advertising-consent choice (null = undecided). SSR-safe. */
+export function getAdConsent(): AdConsent {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.localStorage.getItem(AD_CONSENT_KEY);
+    return v === "granted" || v === "denied" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Persist the advertising-consent choice and notify listeners (the blog's ad
+ *  loader listens for {@link AD_CONSENT_EVENT}). */
+export function setAdConsent(value: "granted" | "denied"): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(AD_CONSENT_KEY, value);
+  } catch {
+    /* private mode — the choice won't persist across visits */
+  }
+  try {
+    window.dispatchEvent(new CustomEvent(AD_CONSENT_EVENT, { detail: value }));
+  } catch {
+    /* ignore */
+  }
+}
+
 export interface CookieNoticeProps {
   /** UI language for the notice copy. Defaults to German. */
   lang?: Language;
@@ -15,33 +49,41 @@ export interface CookieNoticeProps {
    *   cookie is set on login (admin panel, customer portal).
    */
   variant?: "site" | "panel";
+  /**
+   * When true, the notice becomes an advertising-consent **gate** (Akzeptieren /
+   * Ablehnen) instead of the one-time informational notice — used on the blog
+   * when AdSense is enabled. The choice is stored under `tds-ad-consent` (see
+   * {@link getAdConsent}) and gates whether the ad loader runs. Default false.
+   */
+  consent?: boolean;
   /** Link target for the privacy-policy line. Absolute by default so the
    *  panels (other subdomains) resolve it correctly; the landingpage can
    *  pass its local `/legal/datenschutz` path. */
   privacyUrl?: string;
-  /** localStorage key that remembers the dismissal (per origin). */
+  /** localStorage key that remembers the informational dismissal (per origin). */
   storageKey?: string;
 }
 
 /**
- * Dismissible cookie / privacy notice shown once per browser (per origin).
+ * Cookie / privacy notice shown once per browser (per origin).
  *
- * The TDS properties set no consent-requiring cookies — the public sites
- * keep only local preferences (theme) in localStorage and the panels use
- * one technically necessary session cookie — so this banner is purely
- * informational: it states that fact, links the privacy policy and
- * disappears for good once acknowledged. Dismissal is persisted in
- * localStorage; when storage is unavailable (private mode) the dismissal
- * lasts for the page's lifetime and the banner returns on the next visit.
+ * Two modes:
+ * - **Informational** (default): the TDS properties set no consent-requiring
+ *   cookies, so this states that fact, links the privacy policy and disappears
+ *   for good once acknowledged (persisted under `storageKey`).
+ * - **Consent** (`consent`): a real opt-in gate for advertising cookies (blog
+ *   with AdSense on). Two buttons store `granted`/`denied` under
+ *   `tds-ad-consent`; the blog only loads `adsbygoogle.js` after `granted`.
  *
- * Nothing renders until the mount effect has read localStorage, so
- * returning visitors never see the banner flash. Styling ships as the
- * `.cookie-notice` block in `styles/base.css` (base, not app.css, because
- * the landingpage imports only the base stylesheet).
+ * Nothing renders until the mount effect has read localStorage, so returning
+ * visitors never see a flash. Styling ships as the `.cookie-notice` block in
+ * `styles/base.css` (base, not app.css, because the landingpage imports only
+ * the base stylesheet).
  */
 export default function CookieNotice({
   lang = "de",
   variant = "site",
+  consent = false,
   privacyUrl = DEFAULT_PRIVACY_URL,
   storageKey = DEFAULT_STORAGE_KEY,
 }: CookieNoticeProps = {}) {
@@ -49,12 +91,16 @@ export default function CookieNotice({
 
   useEffect(() => {
     try {
-      if (localStorage.getItem(storageKey) === "1") return;
+      if (consent) {
+        if (getAdConsent() !== null) return; // already decided
+      } else if (localStorage.getItem(storageKey) === "1") {
+        return;
+      }
     } catch {
-      // Storage disabled — show the notice; dismissal won't persist.
+      // Storage disabled — show the notice; the choice won't persist.
     }
     setVisible(true);
-  }, [storageKey]);
+  }, [consent, storageKey]);
 
   if (!visible) return null;
 
@@ -69,17 +115,41 @@ export default function CookieNotice({
     }
   };
 
+  const decide = (value: "granted" | "denied") => {
+    setVisible(false);
+    setAdConsent(value);
+  };
+
   return (
     <aside className="cookie-notice" role="region" aria-label={t.label}>
       <p className="cookie-notice-text">
-        {variant === "panel" ? t.panelText : t.siteText}{" "}
+        {consent ? t.consentText : variant === "panel" ? t.panelText : t.siteText}{" "}
         <a className="cookie-notice-link" href={privacyUrl}>
           {t.privacy}
         </a>
       </p>
-      <button type="button" className="cookie-notice-btn" onClick={dismiss}>
-        {t.accept}
-      </button>
+      {consent ? (
+        <div className="cookie-notice-actions">
+          <button
+            type="button"
+            className="cookie-notice-btn cookie-notice-btn--ghost"
+            onClick={() => decide("denied")}
+          >
+            {t.consentDecline}
+          </button>
+          <button
+            type="button"
+            className="cookie-notice-btn"
+            onClick={() => decide("granted")}
+          >
+            {t.consentAccept}
+          </button>
+        </div>
+      ) : (
+        <button type="button" className="cookie-notice-btn" onClick={dismiss}>
+          {t.accept}
+        </button>
+      )}
     </aside>
   );
 }

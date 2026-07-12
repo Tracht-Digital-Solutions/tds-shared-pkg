@@ -344,6 +344,21 @@ body {
 .cookie-notice-btn:hover {
   background: color-mix(in srgb, var(--color-surface-navy) 88%, #fff);
 }
+/* Consent mode: an Accept + a secondary (ghost) Decline button side by side. */
+.cookie-notice-actions {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.cookie-notice-btn--ghost {
+  background: transparent;
+  color: var(--color-ink);
+  border-color: var(--color-line);
+}
+.cookie-notice-btn--ghost:hover {
+  background: color-mix(in srgb, var(--color-ink) 8%, transparent);
+}
 
 /* === Loading indicators =========================================== */
 /* Shared spinner + skeleton (components/Spinner, Skeleton, SkeletonText).

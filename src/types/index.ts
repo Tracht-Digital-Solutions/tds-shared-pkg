@@ -107,6 +107,12 @@ export interface BlogAuthor {
   bio: string | null;
 }
 
+/**
+ * Per-post ad rendering mode (blog only). `default` inherits the global `ads`
+ * content block's `defaultMode`; `off`/`auto`/`manual` override it for one post.
+ */
+export type AdsMode = "default" | "off" | "auto" | "manual";
+
 export interface BlogPost {
   id: number;
   slug: string;
@@ -132,6 +138,8 @@ export interface BlogPost {
   authorId?: number | null;
   /** Denormalised author snapshot for display; null when unassigned. */
   author?: BlogAuthor | null;
+  /** Per-post ad rendering mode. Optional — older API deployments omit it. */
+  adsMode?: AdsMode;
 }
 
 export interface Customer {

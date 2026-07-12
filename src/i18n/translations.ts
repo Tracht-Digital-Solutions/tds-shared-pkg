@@ -347,6 +347,10 @@ export const translations = {
         "Dieser Bereich verwendet ausschließlich ein technisch notwendiges Cookie für die sichere Anmeldung (Session-Cookie). Es findet kein Tracking statt.",
       privacy: "Mehr in der Datenschutzerklärung.",
       accept: "Verstanden",
+      consentText:
+        "Wir zeigen auf diesem Blog Werbung von Google AdSense. Dafür werden – nur mit Ihrer Einwilligung – Cookies und ähnliche Technologien zu Werbezwecken gesetzt. Ihre Wahl ist freiwillig und jederzeit änderbar.",
+      consentAccept: "Akzeptieren",
+      consentDecline: "Ablehnen",
     },
   },
   en: {
@@ -697,6 +701,10 @@ export const translations = {
         "This area only uses one technically necessary cookie for secure sign-in (session cookie). No tracking takes place.",
       privacy: "More in the privacy policy.",
       accept: "Got it",
+      consentText:
+        "This blog shows advertising from Google AdSense. With your consent — and only then — cookies and similar technologies are set for advertising. Your choice is free and can be changed at any time.",
+      consentAccept: "Accept",
+      consentDecline: "Decline",
     },
   },
 } as const;

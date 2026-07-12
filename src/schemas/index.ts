@@ -42,6 +42,8 @@ export const BlogPostCreateSchema = z.object({
   coverHint: z.string().max(400).optional().nullable(),
   publishedAt: z.coerce.date().optional().nullable(),
   draft: z.boolean().default(false),
+  /** Per-post ad rendering mode (blog only). Mirrors the PHP validator. */
+  adsMode: z.enum(["default", "off", "auto", "manual"]).default("default"),
   /**
    * auth-api `app_user.id` of the author. Admins may set any eligible author;
    * for a non-admin blog author the server forces it to themselves. Null /

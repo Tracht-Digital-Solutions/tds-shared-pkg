@@ -11,6 +11,13 @@ export type { FormAlertProps } from "./FormAlert";
 
 export { default as CookieNotice } from "./CookieNotice";
 export type { CookieNoticeProps } from "./CookieNotice";
+export {
+  getAdConsent,
+  setAdConsent,
+  AD_CONSENT_KEY,
+  AD_CONSENT_EVENT,
+  type AdConsent,
+} from "./CookieNotice";
 
 export { default as Spinner } from "./Spinner";
 export type { SpinnerProps } from "./Spinner";
