@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   face.
 
 ### Added
+- **`Spinner`, `Skeleton`, `SkeletonText` shared loading indicators.** One
+  consistent, brand-token loading system for all frontends. `Spinner` is a
+  rotating ring (`sm`/`md`/`lg`, `currentColor` by default so it shows inside a
+  primary button, or `tone="primary"`); `Skeleton` is a pulsing placeholder
+  block (width/height/radius/`circle`); `SkeletonText` stacks placeholder lines.
+  Styling ships as `.tds-spinner` / `.tds-skeleton` (+ `tds-spin`,
+  `tds-skeleton-pulse` keyframes) in `styles/base.css` (base, not app.css, so
+  the landingpage gets it too). The global reduced-motion clamp freezes both to
+  a static ring/block. Replaces the ad-hoc `Wird geladen …` text lines and
+  button label swaps across the panels.
 - **`CookieNotice` shared island + cookie/privacy copy.** Dismissible
   one-time cookie/Datenschutz notice used by all four frontends: variant
   `"site"` (public landingpage/blog wording — no tracking cookies, only

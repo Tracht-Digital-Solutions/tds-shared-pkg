@@ -345,6 +345,66 @@ body {
   background: color-mix(in srgb, var(--color-surface-navy) 88%, #fff);
 }
 
+/* === Loading indicators =========================================== */
+/* Shared spinner + skeleton (components/Spinner, Skeleton, SkeletonText).
+   Live in base.css — not app.css — so all four frontends (incl. the
+   landingpage, which imports only base) get one consistent loading look.
+   The reduced-motion clamp below freezes both to a static ring/block. */
+
+.tds-spinner {
+  display: inline-block;
+  vertical-align: -0.125em;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-top-color: currentColor;
+  animation: tds-spin 0.7s cubic-bezier(0.5, 0.15, 0.5, 0.85) infinite;
+}
+.tds-spinner--sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 2px;
+}
+.tds-spinner--lg {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-width: 3px;
+}
+.tds-spinner--primary {
+  border-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  border-top-color: var(--color-primary);
+}
+@keyframes tds-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tds-skeleton {
+  display: block;
+  border-radius: 0.375rem;
+  background: color-mix(in srgb, var(--color-muted) 22%, transparent);
+  animation: tds-skeleton-pulse 1.4s ease-in-out infinite;
+}
+.tds-skeleton--circle {
+  border-radius: 9999px;
+}
+.tds-skeleton-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+@keyframes tds-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 /* === Motion preferences =========================================== */
 
 @media (prefers-reduced-motion: reduce) {

@@ -72,8 +72,9 @@ src/
 │   └── react.tsx             # React Context provider + hook
 ├── motion/                   # animation presets
 ├── components/               # shared React islands (ThemeToggle, FormAlert,
-│                             #   CookieNotice — its CSS lives in base.css
-│                             #   because the landingpage imports only base)
+│                             #   CookieNotice, Spinner, Skeleton, SkeletonText —
+│                             #   their CSS lives in base.css, not app.css, so
+│                             #   the landingpage (base-only) gets it too)
 └── astro/                    # build presets (cssTarget / tdsViteBuild)
 ```
 
