@@ -17,6 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   face.
 
 ### Added
+- **Block-based blog document model + slash-menu catalog.** New
+  `schemas/blogBlocks` module: `BlogBlockSchema` (a discriminated union of
+  `heading`/`paragraph`/`list`/`quote`/`code`/`image`/`divider`/`callout`/
+  `button`/`video`/`adsense`/`custom`), `BlogDocumentSchema`
+  (`{ version: 1, blocks: [...] }`), `emptyBlogDocument()`, and the `BLOG_BLOCKS`
+  slash-menu catalog (`BlockCatalogItem`, with an `integration` gate for AdSense).
+  Text fields carry inline markdown. Types (`BlogBlock`, `BlogBlockType`,
+  `BlogDocument`, `BlockCatalogItem`, `BlogBodyFormat`) are re-exported type-only
+  from the default barrel. `BlogPost` gains an optional `bodyFormat`
+  (`"markdown" | "blocks"`) and `BlogPostCreateSchema` a `bodyFormat` field
+  (default `"markdown"`) — a post's `body` is either a markdown string or a JSON
+  `BlogDocument` string. Backs the tds-admin block editor + tds-blog renderer.
 - **`CookieNotice` consent mode + ad-consent helpers.** A new `consent` prop
   turns the notice into a real advertising-consent gate (Akzeptieren / Ablehnen)
   for the blog when AdSense is enabled, storing the choice under `tds-ad-consent`

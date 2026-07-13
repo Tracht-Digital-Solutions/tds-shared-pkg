@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  BLOG_BLOCKS,
+  BlogDocumentSchema,
   BlogPostCreateSchema,
   ContactSchema,
+  emptyBlogDocument,
   LoginSchema,
   TicketCommentSchema,
   TicketCreateSchema,
@@ -141,6 +144,68 @@ describe("BlogPostCreateSchema", () => {
       ...valid,
       publishedAt: null,
       coverHint: null,
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("defaults bodyFormat to markdown", () => {
+    const res = BlogPostCreateSchema.safeParse(valid);
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data.bodyFormat).toBe("markdown");
+    }
+  });
+
+  it("accepts bodyFormat=blocks", () => {
+    const res = BlogPostCreateSchema.safeParse({ ...valid, bodyFormat: "blocks" });
+    expect(res.success).toBe(true);
+  });
+});
+
+describe("BlogDocumentSchema", () => {
+  it("accepts the empty starter document", () => {
+    expect(BlogDocumentSchema.safeParse(emptyBlogDocument()).success).toBe(true);
+  });
+
+  it("accepts a document with every catalog block", () => {
+    const blocks = BLOG_BLOCKS.map((b) => b.block);
+    const res = BlogDocumentSchema.safeParse({ version: 1, blocks });
+    expect(res.success).toBe(true);
+  });
+
+  it("rejects an unknown block type", () => {
+    const res = BlogDocumentSchema.safeParse({
+      version: 1,
+      blocks: [{ type: "table", rows: [] }],
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects a heading with an out-of-range level", () => {
+    const res = BlogDocumentSchema.safeParse({
+      version: 1,
+      blocks: [{ type: "heading", level: 4, text: "x" }],
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects an empty blocks array", () => {
+    const res = BlogDocumentSchema.safeParse({ version: 1, blocks: [] });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejects a wrong version literal", () => {
+    const res = BlogDocumentSchema.safeParse({
+      version: 2,
+      blocks: [{ type: "paragraph", text: "hi" }],
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("accepts a custom-block reference", () => {
+    const res = BlogDocumentSchema.safeParse({
+      version: 1,
+      blocks: [{ type: "custom", snippetId: 3 }],
     });
     expect(res.success).toBe(true);
   });

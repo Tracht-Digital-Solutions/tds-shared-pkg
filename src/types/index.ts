@@ -8,7 +8,23 @@
 
 import type { PortalPermission } from "../permissions";
 
+/**
+ * Block-based blog document model. Defined (with its Zod schema) in
+ * `../schemas/blogBlocks`; re-exported here as types-only so consumers that
+ * only need the shape (e.g. the static blog renderer) can pull it from the lean
+ * default barrel without importing Zod at runtime.
+ */
+export type {
+  BlogBlock,
+  BlogBlockType,
+  BlogDocument,
+  BlockCatalogItem,
+} from "../schemas/blogBlocks";
+
 export type Lang = "de" | "en";
+
+/** Storage format of a blog post's `body` (see `BlogPost.bodyFormat`). */
+export type BlogBodyFormat = "markdown" | "blocks";
 
 export type UserStatus = "active" | "disabled";
 
@@ -120,7 +136,13 @@ export interface BlogPost {
   category: string;
   title: string;
   excerpt: string;
+  /** Markdown string, or a JSON `BlogDocument` string when `bodyFormat="blocks"`. */
   body: string;
+  /**
+   * How to interpret `body`. Optional — older API deployments omit it and are
+   * treated as `"markdown"`. New/edited posts from the block editor set `"blocks"`.
+   */
+  bodyFormat?: BlogBodyFormat;
   coverHint: string | null;
   publishedAt: string | null;
   draft: boolean;

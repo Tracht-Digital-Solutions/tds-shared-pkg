@@ -2,6 +2,8 @@ import { z } from "zod";
 
 import { PORTAL_PERMISSIONS } from "../permissions";
 
+export * from "./blogBlocks";
+
 /**
  * Contact form payload — used by the landing page contact section
  * and validated server-side by `tds-contact-api`.
@@ -25,8 +27,10 @@ export type ContactFormData = z.infer<typeof ContactSchema>;
  *
  * `slug` is lowercased and validated to match `[a-z0-9-]+` so it lands
  * cleanly in the URL. `lang` defaults to `de` since the site primarily
- * ships in German. `body` is markdown — kept as a single string field
- * so the admin editor stays simple.
+ * ships in German. `body` is EITHER a markdown string (`bodyFormat="markdown"`,
+ * legacy default) OR a JSON `BlogDocument` string (`bodyFormat="blocks"`). The
+ * 20-char floor is a cheap non-empty guard; the block variant is validated
+ * structurally server-side (and by the editor via `BlogDocumentSchema`).
  */
 export const BlogPostCreateSchema = z.object({
   slug: z
@@ -39,6 +43,8 @@ export const BlogPostCreateSchema = z.object({
   title: z.string().min(4).max(200),
   excerpt: z.string().min(10).max(400),
   body: z.string().min(20),
+  /** Storage format of `body`. `markdown` keeps the legacy single-string path. */
+  bodyFormat: z.enum(["markdown", "blocks"]).default("markdown"),
   coverHint: z.string().max(400).optional().nullable(),
   publishedAt: z.coerce.date().optional().nullable(),
   draft: z.boolean().default(false),

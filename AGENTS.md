@@ -48,6 +48,17 @@ validation they need, by design.
   superscript treatment was reverted on user request; wrap versions in
   `<span class="app-version">v{APP_VERSION}</span>` (a leftover `<sup>` still
   renders baseline because the class neutralises the preflight offset).
+- **The block-based blog model (`schemas/blogBlocks`) is the source of truth for
+  the block editor + renderer.** A blog post's `body` is either a markdown string
+  (`bodyFormat="markdown"`, legacy) or a JSON `BlogDocument` string
+  (`bodyFormat="blocks"`). `BlogBlockSchema` is a discriminated union; text fields
+  hold **inline markdown**. `BLOG_BLOCKS` drives the tds-admin slash menu (`/`
+  palette) — its `integration: "ads"` gate hides/disables AdSense until the ads
+  integration is configured, and admin-defined custom blocks (`type: "custom"`,
+  referencing a content-api `content_snippet`) are appended at runtime, not listed
+  here. The tds-content-api `Validator` hand-mirrors this (like the other schemas);
+  keep them in sync. Don't move the catalog into a frontend — both the admin editor
+  and the blog renderer consume it.
 - **The lightningcss `cssTarget` lives in `src/astro` and nowhere else.**
   `styles/app.css` `.brand-header` authors `backdrop-filter` unprefixed;
   lightningcss only adds `-webkit-` when it sees a Safari build target,
@@ -66,6 +77,8 @@ src/
 ├── index.ts                  # barrel — re-exports types
 ├── types/                    # shared TS interfaces
 ├── schemas/                  # Zod schemas
+│   └── blogBlocks.ts         # block-based blog doc model + BLOG_BLOCKS
+│                             #   slash-menu catalog (see note below)
 ├── i18n/
 │   ├── translations.ts       # DE/EN copy (no React). `footer.slogan` is the
 │                             #   brand lead claim ("Digitale Lösungen, die
