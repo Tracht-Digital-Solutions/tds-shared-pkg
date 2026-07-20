@@ -1,9 +1,14 @@
 # Agent notes
 
-This is the shared library consumed by the four TDS frontends
-(`tds-landingpage`, `tds-blog`, `tds-admin`, `tds-customer`). The PHP
-backends do **not** import this — they duplicate the small bit of
-validation they need, by design.
+This is the shared library consumed by **all** TDS frontends: the public sites
+(`tds-landingpage`, `tds-blog`), the legacy customer portal (`tds-customer`), and
+the **panel platform** — the core host (`tds-core-panel-frontend`) and both
+products (`tds-admin-panel`, `tds-customer-panel`). The PHP backends do **not**
+import this — they duplicate the small bit of validation they need, by design.
+
+> Status: **required by both architectures, not superseded.** The old internal
+> admin (`tds-admin`) that used to consume this was archived + deleted; the panel
+> host + products consume it now instead. See the root `MIGRATION-STATUS.md`.
 
 ## Rules of thumb
 
