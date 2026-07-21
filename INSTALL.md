@@ -1,4 +1,4 @@
-# Installation — tds-shared
+# Installation — tds-shared-pkg
 
 > Part of the Tracht Digital Solutions multi-repo project.
 > This is the **shared library** — the design system (CSS foundation +
@@ -21,8 +21,8 @@
 ## 1. Clone + install
 
 ```bash
-git clone https://github.com/Tracht-Digital-Solutions/tds-shared.git
-cd tds-shared
+git clone https://github.com/Tracht-Digital-Solutions/tds-shared-pkg.git
+cd tds-shared-pkg
 npm install
 ```
 
@@ -36,8 +36,8 @@ npm run lint        # eslint
 
 ## 3. Develop locally against a consumer
 
-While iterating on `tds-shared` itself, you usually want a consumer
-(e.g. `tds-landingpage`) to see your in-flight changes without
+While iterating on `tds-shared-pkg` itself, you usually want a consumer
+(e.g. `tds-landingpage-frontend`) to see your in-flight changes without
 publishing:
 
 ```bash
@@ -45,7 +45,7 @@ publishing:
 npm run build
 npm link
 
-# in the consumer (e.g. tds-landingpage/)
+# in the consumer (e.g. tds-landingpage-frontend/)
 npm link @tracht-digital-solutions/tds-shared
 ```
 
@@ -84,12 +84,12 @@ You'll need a classic PAT with `write:packages` scope in
 
 ## 5. Give consumer workflows an install token
 
-Consumer repos (tds-admin, tds-blog, tds-customer, tds-landingpage)
+Consumer repos (tds-admin, tds-blog-frontend, tds-customer-legacy-frontend, tds-landingpage-frontend)
 need a `read:packages` token to install this package in CI. The
 auto-provided `secrets.GITHUB_TOKEN` does **not** work cross-repo
 — it only authorizes the workflow against packages owned by the
 running repo, so a `tds-admin` workflow asking GitHub Packages for
-`@tracht-digital-solutions/tds-shared` (owned by `tds-shared`) gets
+`@tracht-digital-solutions/tds-shared` (owned by `tds-shared-pkg`) gets
 `403 read_package` even with `packages: read` set.
 
 The convention we settled on:
@@ -98,8 +98,8 @@ The convention we settled on:
    `Tracht-Digital-Solutions` org. SSO-authorize it for the org if
    your account requires it.
 2. Add it as a repo secret named **`NPM_TOKEN`** in each consumer
-   repo (`tds-admin`, `tds-blog`, `tds-customer`,
-   `tds-landingpage`). Same value in each.
+   repo (`tds-admin`, `tds-blog-frontend`, `tds-customer-legacy-frontend`,
+   `tds-landingpage-frontend`). Same value in each.
 3. Consumer workflows reference it: `NPM_TOKEN: ${{ secrets.NPM_TOKEN }}`.
 
 > The GitHub UI's "Package settings → Manage Actions access → Add
@@ -127,10 +127,10 @@ node -e "console.log(Object.keys(require('@tracht-digital-solutions/tds-shared')
 
 This package is consumed by:
 
-- [tds-landingpage](https://github.com/Tracht-Digital-Solutions/tds-landingpage) — design system (base.css), components, i18n strings, motion
-- [tds-blog](https://github.com/Tracht-Digital-Solutions/tds-blog) — design system (base + app.css), components, i18n strings, `BlogPost` type
+- [tds-landingpage-frontend](https://github.com/Tracht-Digital-Solutions/tds-landingpage-frontend) — design system (base.css), components, i18n strings, motion
+- [tds-blog-frontend](https://github.com/Tracht-Digital-Solutions/tds-blog-frontend) — design system (base + app.css), components, i18n strings, `BlogPost` type
 - [tds-admin](https://github.com/Tracht-Digital-Solutions/tds-admin) — design system (base + app.css), components, types, zod schemas
-- [tds-customer](https://github.com/Tracht-Digital-Solutions/tds-customer) — design system (base + app.css), components, types, zod schemas
+- [tds-customer-legacy-frontend](https://github.com/Tracht-Digital-Solutions/tds-customer-legacy-frontend) — design system (base + app.css), components, types, zod schemas
 
 ## Troubleshooting
 

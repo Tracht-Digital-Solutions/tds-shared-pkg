@@ -1,9 +1,9 @@
 # Agent notes
 
 This is the shared library consumed by **all** TDS frontends: the public sites
-(`tds-landingpage`, `tds-blog`), the legacy customer portal (`tds-customer`), and
-the **panel platform** — the core host (`tds-core-panel-frontend`) and both
-products (`tds-admin-panel`, `tds-customer-panel`). The PHP backends do **not**
+(`tds-landingpage-frontend`, `tds-blog-frontend`), the legacy customer portal (`tds-customer-legacy-frontend`), and
+the **panel platform** — the core host (`tds-core-frontend-pkg`) and both
+products (`tds-admin-frontend`, `tds-customer-frontend`). The PHP backends do **not**
 import this — they duplicate the small bit of validation they need, by design.
 
 > Status: **required by both architectures, not superseded.** The old internal
@@ -35,7 +35,7 @@ import this — they duplicate the small bit of validation they need, by design.
   **both** a light and a dark value (the dark ground is navy-tinted, so the
   dark value is usually brighter), or it breaks under `data-theme="dark"`.
   The status + categorical tokens used to be duplicated in tds-admin and
-  tds-customer — they live here now, so don't re-inline them into a frontend.
+  tds-customer-legacy-frontend — they live here now, so don't re-inline them into a frontend.
 - **The dashboard colour classes live in `app.css`, the geometry stays
   app-local.** `.chip--*` (status + `cat-*`), `.status-pill*`, `.stat-tile*`
   (tinted KPI tiles, 3px hue top-rule), `.section-accent` (hue-coloured

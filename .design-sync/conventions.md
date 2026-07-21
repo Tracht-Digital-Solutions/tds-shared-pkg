@@ -1,4 +1,4 @@
-# Tracht Digital Solutions — shared design system (`tds-shared`)
+# Tracht Digital Solutions — shared design system (`tds-shared-pkg`)
 
 This is the brand foundation shared across the four TDS frontends: **design
 tokens + editorial chrome (CSS)**, the **`ThemeToggle`** React component, plus

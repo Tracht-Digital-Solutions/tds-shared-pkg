@@ -79,7 +79,7 @@ install token, use a **classic PAT stored as `secrets.NPM_TOKEN`** —
 the auto-provided `secrets.GITHUB_TOKEN` only authorizes packages
 owned by the same repo as the running workflow, so it 403s when a
 consumer repo (e.g. `tds-admin`) tries to read this package from
-`tds-shared`'s namespace.
+`tds-shared-pkg`'s namespace.
 
 ```yaml
 - uses: actions/setup-node@v4

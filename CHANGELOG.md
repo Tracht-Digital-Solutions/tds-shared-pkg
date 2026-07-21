@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from the default barrel. `BlogPost` gains an optional `bodyFormat`
   (`"markdown" | "blocks"`) and `BlogPostCreateSchema` a `bodyFormat` field
   (default `"markdown"`) — a post's `body` is either a markdown string or a JSON
-  `BlogDocument` string. Backs the tds-admin block editor + tds-blog renderer.
+  `BlogDocument` string. Backs the tds-admin block editor + tds-blog-frontend renderer.
 - **`CookieNotice` consent mode + ad-consent helpers.** A new `consent` prop
   turns the notice into a real advertising-consent gate (Akzeptieren / Ablehnen)
   for the blog when AdSense is enabled, storing the choice under `tds-ad-consent`
@@ -123,7 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Semantic status colour tokens** in `styles/base.css` — `--color-success`,
   `--color-warning`, `--color-danger`, `--color-info`, each with a light value
   and a brighter dark value tuned for the navy ground. These were previously
-  **duplicated, byte-identically, in both `tds-admin` and `tds-customer`**
+  **duplicated, byte-identically, in both `tds-admin` and `tds-customer-legacy-frontend`**
   `global.css`; they now live here as the single source of truth.
 - **Categorical / wayfinding hues** — `--color-cat-violet`, `--color-cat-teal`,
   `--color-cat-amber`, `--color-cat-rose`, `--color-cat-cyan` (light + dark).
@@ -180,7 +180,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lightningcss ships `backdrop-filter` unprefixed-only and the frosted
   `.brand-header` blur silently dies in Safari ≤17 — no error, no test.
   Replaces the hand-copied `cssTarget` array each frontend carried. See
-  tds-shared#10.
+  tds-shared-pkg#10.
 
 ## [0.3.1] — 2026-06-03
 
@@ -325,7 +325,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `translations.services.items[4]` — a fifth offering, **Schnelles
   Prototyping** / **Rapid Prototyping**, with Figma + React +
-  TypeScript + Claude as the tag set. tds-landingpage had been
+  TypeScript + Claude as the tag set. tds-landingpage-frontend had been
   carrying this as an inlined extra item; it now ships from the
   shared bundle.
 
@@ -392,21 +392,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tsup` dual ESM/CJS build with per-entry `exports` map.
 - Publish workflow on `v*.*.*` tags to GitHub Packages.
 
-[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.5.2...HEAD
-[0.5.2]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.5.1...v0.5.2
-[0.5.1]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.4.2...v0.5.1
-[0.4.0]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.3.1...v0.4.0
-[0.3.1]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.3.0...v0.3.1
-[0.3.0]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.9...v0.3.0
-[0.2.9]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.8...v0.2.9
-[0.2.8]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.7...v0.2.8
-[0.2.7]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.6...v0.2.7
-[0.2.6]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.5...v0.2.6
-[0.2.5]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.4...v0.2.5
-[0.2.4]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.3...v0.2.4
-[0.2.3]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.2...v0.2.3
-[0.2.2]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.1...v0.2.2
-[0.2.1]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.1.1...v0.2.0
-[0.1.1]: https://github.com/Tracht-Digital-Solutions/tds-shared/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/Tracht-Digital-Solutions/tds-shared/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.5.1...v0.5.2
+[0.5.1]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.4.2...v0.5.1
+[0.4.0]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.3.1...v0.4.0
+[0.3.1]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.2.9...v0.3.0
+[0.2.9]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.2.8...v0.2.9
+[0.2.8]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.2.7...v0.2.8
+[0.2.7]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.2.6...v0.2.7
+[0.2.6]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.2.5...v0.2.6
+[0.2.5]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.2.4...v0.2.5
+[0.2.4]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.2.3...v0.2.4
+[0.2.3]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.2.2...v0.2.3
+[0.2.2]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/releases/tag/v0.1.0

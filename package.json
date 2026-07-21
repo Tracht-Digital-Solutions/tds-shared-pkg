@@ -100,6 +100,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Tracht-Digital-Solutions/tds-shared.git"
+    "url": "git+https://github.com/Tracht-Digital-Solutions/tds-shared-pkg.git"
   }
 }

@@ -1,7 +1,7 @@
-# design-sync notes — tds-shared
+# design-sync notes — tds-shared-pkg
 
 Repo-specific gotchas for syncing this design system to claude.ai/design.
-Shape: **package** (no Storybook). Project: `tds-shared — Design System`
+Shape: **package** (no Storybook). Project: `tds-shared-pkg — Design System`
 (`2138b4ee-6c75-46d4-9eef-8155e02bf3ca`).
 
 ## Gotchas learned
@@ -11,7 +11,7 @@ Shape: **package** (no Storybook). Project: `tds-shared — Design System`
   PascalCase-`.d.ts` heuristic emitted `[ZERO_MATCH]`. Pinned via
   `componentSrcMap: {"ThemeToggle": "src/components/ThemeToggle.tsx"}`. Keep that
   pin.
-- **CSS must be Tailwind-compiled — this is the load-bearing step.** `tds-shared`
+- **CSS must be Tailwind-compiled — this is the load-bearing step.** `tds-shared-pkg`
   ships *raw source* CSS (`styles/base.css` has `@theme inline {…}` + relies on
   the consuming app running `@import "tailwindcss"`; `ThemeToggle` styles itself
   with Tailwind utilities like `inline-flex w-9 h-9 rounded-full
@@ -22,7 +22,7 @@ Shape: **package** (no Storybook). Project: `tds-shared — Design System`
   **Regenerate it (before `package-build`/`resync`) whenever `styles/base.css`,
   `styles/app.css`, or `ThemeToggle.tsx` change:**
   ```sh
-  cd tds-shared
+  cd tds-shared-pkg
   { echo '@import "tailwindcss" source(none);';
     echo '@source "../src/components/ThemeToggle.tsx";';
     echo '@source "_design_previews/ThemeToggle.tsx";';
@@ -40,7 +40,7 @@ Shape: **package** (no Storybook). Project: `tds-shared — Design System`
   processed natively by Tailwind v4 so tokens emit correctly. Doc-comment
   `@import` example lines are stripped via `sed` so validate doesn't treat them
   as real imports.)
-- **Fonts are bundled deliberately.** `tds-shared` never ships fonts at runtime
+- **Fonts are bundled deliberately.** `tds-shared-pkg` never ships fonts at runtime
   (host apps add them via `@fontsource`). For design fidelity we copied the OFL
   woff2s into `.design-sync/fonts-vendor/` with a hand-written `fonts.css`, wired
   via `cfg.extraFonts`. **Geist Mono is NOT bundled** (rarely used) — suppressed
@@ -64,7 +64,7 @@ Shape: **package** (no Storybook). Project: `tds-shared — Design System`
   recompile above, the bundle ships old tokens/utilities silently. Always
   regenerate first.
 - **Vendored fonts can drift** from the apps' `@fontsource` versions — they were
-  copied from `tds-landingpage/node_modules/@fontsource{,-variable}` at sync
+  copied from `tds-landingpage-frontend/node_modules/@fontsource{,-variable}` at sync
   time. Re-copy if the brand fonts change.
 - **New components** beyond `ThemeToggle` would each need a pin in
   `componentSrcMap` (same discovery miss) and a `@source` line added to the
