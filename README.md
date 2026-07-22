@@ -165,7 +165,7 @@ wordmark); Geist is the body font. Add app-specific CSS below the imports.
 carries the dashboard surface classes that consume them: `.chip--*`,
 `.status-pill*`, `.stat-tile*`, `.section-accent` and `.nav-item*`. Use these
 rather than re-declaring status colours in a frontend (the admin + customer
-panels did, until 0.5.x).
+frontends did, until 0.5.x).
 
 ## Astro build preset (`./astro`)
 

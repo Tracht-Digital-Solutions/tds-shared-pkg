@@ -2,12 +2,12 @@
 
 This is the shared library consumed by **all** TDS frontends: the public sites
 (`tds-landingpage-frontend`, `tds-blog-frontend`), the legacy customer portal (`tds-customer-legacy-frontend`), and
-the **panel platform** — the core host (`tds-core-frontend-pkg`) and both
+the **frontend platform** — the core host (`tds-core-frontend-pkg`) and both
 products (`tds-admin-frontend`, `tds-customer-frontend`). The PHP backends do **not**
 import this — they duplicate the small bit of validation they need, by design.
 
 > Status: **required by both architectures, not superseded.** The old internal
-> admin (`tds-admin`) that used to consume this was archived + deleted; the panel
+> admin (`tds-admin`) that used to consume this was archived + deleted; the frontend
 > host + products consume it now instead. See the root `MIGRATION-STATUS.md`.
 
 ## Rules of thumb

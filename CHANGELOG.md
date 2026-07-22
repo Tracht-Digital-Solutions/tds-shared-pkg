@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Display font is now Lato, not Hanken Grotesk.** `--font-display` moves to
   **Lato** — the official Tracht Digital Solutions brand font — so the whole
   brand (display headings + `.brand-wordmark`) reads in Lato. Body/mono fonts are
-  unchanged (Geist on the landingpage, Plus Jakarta Sans on the panels, JetBrains
+  unchanged (Geist on the landingpage, Plus Jakarta Sans on the frontends, JetBrains
   Mono). Lato ships as the static `@fontsource/lato` package (weights 400/700/900),
   so consumers import `@fontsource/lato/{400,700,900}.css` instead of the variable
   `@fontsource-variable/hanken-grotesk`. Hanken Grotesk is retired as the display
@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and firing an `AD_CONSENT_EVENT` so ad loaders react without a reload. New
   exports `getAdConsent` / `setAdConsent` / `AD_CONSENT_KEY` / `AD_CONSENT_EVENT`
   / `AdConsent`. The informational one-time notice stays the default (unchanged
-  for the panels + the ad-free landingpage). New `cookieNotice.consentText`/
+  for the frontends + the ad-free landingpage). New `cookieNotice.consentText`/
   `consentAccept`/`consentDecline` i18n (DE/EN) + a `.cookie-notice-btn--ghost`
   style in `base.css`.
 - **`BlogPost.adsMode` + `AdsMode` type + Zod.** Per-post ad rendering mode
@@ -50,11 +50,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `tds-skeleton-pulse` keyframes) in `styles/base.css` (base, not app.css, so
   the landingpage gets it too). The global reduced-motion clamp freezes both to
   a static ring/block. Replaces the ad-hoc `Wird geladen …` text lines and
-  button label swaps across the panels.
+  button label swaps across the frontends.
 - **`CookieNotice` shared island + cookie/privacy copy.** Dismissible
   one-time cookie/Datenschutz notice used by all four frontends: variant
   `"site"` (public landingpage/blog wording — no tracking cookies, only
-  local preferences) and `"panel"` (admin/customer wording — one technically
+  local preferences) and `"frontend"` (admin/customer wording — one technically
   necessary session cookie). Dismissal persists per origin in localStorage
   (`tds-cookie-notice`). Copy ships as the new `cookieNotice` i18n block
   (DE/EN); styling as the `.cookie-notice` block in `styles/base.css`
@@ -101,10 +101,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Bold navy sidebar surface.** `.portal-sidebar` is now a fixed deep-navy
-  panel (`--color-surface-navy`) in both light and dark mode, with light
+  frontend (`--color-surface-navy`) in both light and dark mode, with light
   text/icons. Built by re-mapping the structural tokens (`--color-ink`,
   `--color-muted`, `--color-line`, `--color-soft`, `--color-card`, `--nav-hue`)
-  to light/translucent-white *within the panel*, so every existing child reads
+  to light/translucent-white *within the frontend*, so every existing child reads
   light without per-element edits. The active nav item gets a translucent-white
   fill + white indicator; the wordmark italic + admin quick-action use
   `--color-accent-pink` on navy; the floating expand button and `.nav-tip`
@@ -130,7 +130,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A non-semantic set for category coding and nav wayfinding (blog categories,
   project types, per-section header accents).
 - **Dashboard surface classes** in `styles/app.css` so the admin + customer
-  panels share one definition: `.chip--{neutral,success,warning,danger,info}`
+  frontends share one definition: `.chip--{neutral,success,warning,danger,info}`
   and `.chip--cat-*`; the `.status-pill` family (moved out of tds-admin); and
   the "lively dashboard" surfaces `.stat-tile` / `.stat-tile--toned` /
   `.stat-tile--hi` / `.stat-tile__icon` (tinted KPI tiles with a 3px hue

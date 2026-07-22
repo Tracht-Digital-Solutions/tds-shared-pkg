@@ -38,7 +38,7 @@ hex:
 | `--color-line` | hairline borders/dividers |
 | `--color-muted` | secondary text |
 | `--color-ink` / `--color-black` | body / strong text |
-| `--color-surface-navy` / `--color-surface-accent` / `--color-surface-ink` | **fixed** dark surfaces that stay dark in BOTH themes (use for fixed dark panels/buttons; never use a flipping token as a fixed dark backdrop) |
+| `--color-surface-navy` / `--color-surface-accent` / `--color-surface-ink` | **fixed** dark surfaces that stay dark in BOTH themes (use for fixed dark frontends/buttons; never use a flipping token as a fixed dark backdrop) |
 | `--font-display` | Lato (headings + wordmark) |
 | `--font-body` | Geist (UI/body) |
 
