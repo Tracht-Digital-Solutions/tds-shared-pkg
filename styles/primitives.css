@@ -749,22 +749,6 @@
   font-style: normal;
 }
 
-/* Brand logomark rendered as a CSS mask, so it takes the brand token
-   rather than needing a `filter: brightness(0) invert(1)` hack to survive
-   dark mode. Promoted from the blog, which already did it correctly.
-   Set the size on the element; the intrinsic ratio is 0.885.
-   `--tds-brand-logo-src` must be a `url()` pointing at the mark in the
-   consuming app's /public. */
-.tds-brand-logo {
-  display: inline-block;
-  aspect-ratio: 0.885;
-  background-color: var(--color-primary);
-  mask: var(--tds-brand-logo-src) center / contain no-repeat;
-}
-.tds-brand-logo--inverse {
-  background-color: #fff;
-}
-
 /* === Subtle interactions ========================================== */
 
 .link-underline {
@@ -797,75 +781,22 @@
   background: var(--color-soft);
 }
 
-/* === Scroll reveal ================================================ */
-
-/* Opt-in scroll-reveal primitive, promoted from the blog (the landingpage
-   solves the same thing with framer-motion islands). Gated on `html.js`
-   so a no-JS visitor is never left with permanently hidden content — the
-   consuming Layout must add that class in its inline head script, and an
-   IntersectionObserver adds `.is-in` as each element enters.
-   Stagger with `style="--tds-reveal-delay: 120ms"`. */
-html.js [data-reveal] {
-  opacity: 0;
-  transform: translateY(1.25rem);
-  transition:
-    opacity 640ms var(--tds-ease-out),
-    transform 640ms var(--tds-ease-out);
-  transition-delay: var(--tds-reveal-delay, 0ms);
-}
-html.js [data-reveal].is-in {
-  opacity: 1;
-  transform: none;
-}
-
-/* === Reading progress ============================================= */
-
-/* Top-edge reading progress bar. One definition; the blog drove a 3px
-   solid accent bar from a plain script and the landingpage a 2px gradient
-   from a motion island. Drive the fill with `--tds-progress` (0 → 1). */
-.tds-reading-progress {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  z-index: 40;
-  transform: scaleX(var(--tds-progress, 0));
-  transform-origin: left;
-  background: var(--color-accent);
-  pointer-events: none;
-}
-
-/* === Hamburger ==================================================== */
-
-/* Three-bar menu button that morphs to an ×. The landingpage authored
-   `.menu-bar*` and the blog `.jnl-menu-bar*` as a verbatim copy of it
-   (its own comment said "mirrors the landingpage header"), so this is one
-   definition replacing two. Toggle with `aria-expanded` on the button. */
-.tds-menu-bars {
-  display: inline-flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4.25px;
-  width: 18px;
-  height: 18px;
-}
-.tds-menu-bar {
-  display: block;
-  width: 18px;
-  height: 1.75px;
-  background: currentColor;
-  transition: transform 220ms var(--tds-ease-in-out), opacity 220ms var(--tds-ease-in-out);
-}
-[aria-expanded="true"] .tds-menu-bar:nth-child(1) {
-  transform: translateY(6px) rotate(45deg);
-}
-[aria-expanded="true"] .tds-menu-bar:nth-child(2) {
-  opacity: 0;
-}
-[aria-expanded="true"] .tds-menu-bar:nth-child(3) {
-  transform: translateY(-6px) rotate(-45deg);
-}
+/* NOT PROMOTED YET — deliberate, see AGENTS.md ("don't promote until at
+   least two consumers actually need it"). Each of these is a real
+   duplicate and a genuine follow-up, but wiring them means surgery on
+   large visual components (Header.astro 453 lines, JournalHeader.astro
+   541 lines), which does not belong in the same change as the token
+   unification:
+     - the hamburger bars: the blog's `.jnl-menu-bar*` is a verbatim copy
+       of the landingpage's `.menu-bar*` and says so in its own comment;
+     - the reading-progress bar: two implementations, `h-[2px]` gradient
+       (landingpage motion island) vs `h-[3px]` solid accent (blog script);
+     - the `[data-reveal]` scroll-reveal primitive (blog CSS/IO vs
+       landingpage framer-motion);
+     - the `.brand-logo` CSS-mask logomark, which is strictly better than
+       the landingpage's `filter: brightness(0) invert(1)` raster hack, but
+       needs a single-colour silhouette asset the landingpage does not
+       currently ship. */
 
 /* === Version marker =============================================== */
 

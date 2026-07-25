@@ -88,12 +88,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `support_tickets_status` table: Tailwind cannot statically extract an
   interpolated class name, and an admin could type a value matching no
   variant. Unknown input falls back to `neutral`.
-- **Promoted duplicates** — the `[data-reveal]` scroll-reveal primitive (blog +
-  landingpage), `.tds-brand-logo` CSS-mask logomark (replaces the
-  landingpage's `filter: brightness(0) invert(1)` hack), `.tds-menu-bars` /
-  `.tds-menu-bar` (the blog's `.jnl-menu-bar*` was a verbatim copy of the
-  landingpage's `.menu-bar*` and said so in a comment), `.tds-reading-progress`
-  (two implementations at different heights), and `.nav-group-label`.
+- **`.nav-group-label`** — promoted from the panel host's `global.css`, which
+  was the only component class it owned.
+
+### Not done (deliberate, tracked)
+- Four known duplicates are **not** promoted, because AGENTS.md requires two
+  real consumers and wiring them means surgery on large visual components
+  (`Header.astro` 453 lines, `JournalHeader.astro` 541 lines) that does not
+  belong in the same change as the token unification: the hamburger bars (the
+  blog's `.jnl-menu-bar*` is a verbatim copy of the landingpage's
+  `.menu-bar*`), the reading-progress bar (2px gradient island vs 3px solid
+  script), the `[data-reveal]` scroll-reveal primitive, and the `.brand-logo`
+  CSS-mask logomark (better than the landingpage's
+  `filter: brightness(0) invert(1)` raster hack, but needs a single-colour
+  silhouette asset the landingpage does not ship). See the note at the bottom
+  of `styles/primitives.css`.
 - **`src/__tests__/design.test.ts`** — 43 tests guarding the contracts that
   fail silently: surface tokens present, geometry kept out of `@theme inline`,
   surface layers attribute-scoped and token-only, no `999px` literal left in
