@@ -11,6 +11,9 @@ export type { FormAlertProps } from "./FormAlert";
 
 export { default as CookieNotice } from "./CookieNotice";
 export type { CookieNoticeProps } from "./CookieNotice";
+
+export { default as LiveChatCta } from "./LiveChatCta";
+export type { LiveChatCtaProps } from "./LiveChatCta";
 export {
   getAdConsent,
   setAdConsent,
