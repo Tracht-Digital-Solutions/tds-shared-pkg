@@ -7,6 +7,100 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **One design library, three surfaces.** The design was maintained as three
+  divergent variations — landingpage (round/pills), panel (8px), blog
+  (`kantig`/flat, radius 0) — because the repo convention was *"colour lives in
+  shared CSS; geometry stays app-local"*. That convention is **reversed**:
+  geometry, elevation, motion and display type are now surface-layer tokens.
+  Each app sets `data-surface="marketing|blog|panel"` on `<html>` and imports
+  one `styles/surfaces/*.css`; it no longer hand-authors radii or re-declares
+  shared classes. New layer stack: `base.css` → `primitives.css` →
+  (`prose.css` / `app.css`) → `surfaces/<surface>.css`.
+  **The surface defaults are today's literals**, so a surface that has not yet
+  opted into a layer renders byte-identically to before.
+- **`app.css` is split.** Its cross-surface half moved to the new
+  `primitives.css`; `app.css` now `@import`s that (so it stays drop-in for
+  existing consumers) and keeps only dashboard chrome — `.portal-sidebar`,
+  `.nav-drawer*`, `.nav-item*`, `.stat-tile*`, `.section-accent`,
+  `.editorial-grid`, `.dashboard-grid`. This is what finally gives the
+  landingpage `.section-num` and `.brand-wordmark`: it skipped `app.css`
+  wholesale, so both classes shipped **unstyled** on tracht-digital.de.
+- **Body and mono fonts unified to Plus Jakarta Sans + JetBrains Mono.**
+  Previously three states: blog and panel shipped this pair, the landingpage
+  and central login were on Geist, and `--font-mono` resolved to nothing on
+  the landingpage because `@fontsource-variable/geist` is sans-only and Geist
+  Mono was never installed. Consumers must JS-import
+  `@fontsource-variable/plus-jakarta-sans` + `@fontsource-variable/jetbrains-mono`
+  in `Layout.astro`. `--font-display` (Lato) also picks up the better
+  `"Helvetica Neue", Arial` fallback chain that all three apps had been
+  re-declaring locally.
+- **`.display` / `.display-tight` / `.eyebrow` read their weight, tracking and
+  leading from surface tokens**, so the landingpage's 700 and the blog's 800
+  display voice no longer require forking the class.
+- **`.dashboard-grid` is an actual grid.** It carried no `display` property at
+  all, so the panel dashboard's "grid" was a plain block stack. Widgets size
+  via `data-size="md|lg"`.
+- **Callout radius follows the surface**, so on the blog a callout is finally
+  square — it had a hard-coded `0.4rem` that the blog's own AGENTS.md flagged
+  as breaking the flat kit.
+
+### Fixed
+- **`--color-border` now resolves.** It was referenced at 27 call sites across
+  8 repos (all four `tds-tool-*` packs, ext-website-cms, ext-tools, the panel
+  host) and **defined nowhere**, so every one of those borders silently fell
+  back to `currentColor`. Added as a documented alias of `--color-line`; being
+  a `var()` reference it re-resolves in dark mode automatically.
+- **Panel chips render with colour again.** `.chip--violet` / `--teal` /
+  `--amber` / `--rose` matched no rule (the real names are `--cat-`prefixed),
+  leaving the Admin / Support-Agent / Blog-Autor / Gesperrt / Panel-Nutzer
+  badges completely unstyled. Call sites corrected.
+
+### Added
+- **`styles/primitives.css`** — the cross-surface component layer, with all
+  geometry expressed through tokens. Beyond the classes moved out of
+  `app.css`, it adds the primitives the panel and extensions referenced but
+  never defined (~96 orphan BEM names): `.tds-card`, `.tds-page` (+`__head`,
+  `__title`, `__lede`), `.tds-widget` (+`__title`, `__metric`),
+  `.tds-settings-section`, `.tds-list` (+`__row`), `.tds-table`, `.tds-empty`,
+  `.tds-alert`, `.tds-modal` (+`__backdrop`, `__panel`, `__title`,
+  `__actions`), `.tds-toolbar`, `.tds-field-row`, `.tds-search-field`,
+  `.tds-toggle-row`, `.tds-thread` (+`__item--own`/`--other`, `__author`) and
+  `.btn-danger`. Note `.tds-page__title` exists because Tailwind preflight
+  strips heading sizes, so every extension page title rendered at body size.
+- **`styles/prose.css`** — `.tds-prose`, promoted from the blog's
+  `.prose-article` (the only long-form typography in the project). Also serves
+  the blog-CMS markdown preview, which asked for `@tailwindcss/typography`'s
+  `prose` class — a plugin installed in no product, so that preview had always
+  rendered unstyled. Includes `.tds-callout*`, `.tds-block-button`,
+  `.tds-video-embed`, `.tds-block-embed`.
+- **`styles/surfaces/{marketing,blog,panel}.css`** — token-only layers,
+  scoped to the bare `[data-surface="…"]` attribute (not `:root`) so a blog
+  surface can nest inside a panel surface for the CMS preview.
+- **Surface token scale in `base.css`** (plain `:root`, deliberately not
+  `@theme inline` — that would inline the literals into Tailwind's utilities
+  and make them unoverridable): `--tds-radius-*` (scale + per-component
+  `-btn`/`-chip`/`-badge`/`-input`/`-card`/`-alert`), `--tds-shadow-*` +
+  `--tds-elevation-*`, `--tds-ease-*` + `--tds-dur-*`, and the display-type
+  tokens.
+- **`/design` subpath** — `resolveChipVariant()` (+ `isKnownChipColor`,
+  `CHIP_VARIANTS`, `SURFACES` and types). Required for the support-ticket
+  board, which interpolated a status colour straight out of the
+  `support_tickets_status` table: Tailwind cannot statically extract an
+  interpolated class name, and an admin could type a value matching no
+  variant. Unknown input falls back to `neutral`.
+- **Promoted duplicates** — the `[data-reveal]` scroll-reveal primitive (blog +
+  landingpage), `.tds-brand-logo` CSS-mask logomark (replaces the
+  landingpage's `filter: brightness(0) invert(1)` hack), `.tds-menu-bars` /
+  `.tds-menu-bar` (the blog's `.jnl-menu-bar*` was a verbatim copy of the
+  landingpage's `.menu-bar*` and said so in a comment), `.tds-reading-progress`
+  (two implementations at different heights), and `.nav-group-label`.
+- **`src/__tests__/design.test.ts`** — 43 tests guarding the contracts that
+  fail silently: surface tokens present, geometry kept out of `@theme inline`,
+  surface layers attribute-scoped and token-only, no `999px` literal left in
+  primitives, `.btn` vs `.btn-*` split intact, `backdrop-filter` unprefixed,
+  no `border-radius` under `:focus-visible`, and the chip catalog matching the
+  `.chip--*` rules that actually exist.
+
 - **Display font is now Lato, not Hanken Grotesk.** `--font-display` moves to
   **Lato** — the official Tracht Digital Solutions brand font — so the whole
   brand (display headings + `.brand-wordmark`) reads in Lato. Body/mono fonts are

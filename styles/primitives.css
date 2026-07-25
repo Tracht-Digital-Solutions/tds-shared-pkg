@@ -1,0 +1,906 @@
+/**
+ * TDS shared primitives — the cross-surface component layer.
+ *
+ * Every surface imports this (marketing, blog, panel). It carries the
+ * components that all three genuinely share, with all geometry expressed
+ * through the surface token scale in base.css — never as a literal. That
+ * is the whole point: a surface changes its look by setting a token, not
+ * by re-declaring a class in its own global.css.
+ *
+ *   @import "@tracht-digital-solutions/tds-shared/styles/base.css";
+ *   @import "@tracht-digital-solutions/tds-shared/styles/primitives.css";
+ *   @import "@tracht-digital-solutions/tds-shared/styles/surfaces/<surface>.css";
+ *
+ * Split history: everything from `.section-num` down to `.app-version` was
+ * moved here out of app.css, unchanged except that hard-coded radii became
+ * surface tokens. app.css now `@import`s this file and keeps only the
+ * panel/dashboard chrome (sidebar, nav items, stat tiles, drawer), so the
+ * marketing surface can consume the shared primitives WITHOUT also
+ * shipping panel chrome it never renders. That split is also what finally
+ * gives the landingpage `.section-num` and `.brand-wordmark` — it used to
+ * skip app.css entirely and both classes shipped unstyled.
+ *
+ * NAMING: pre-existing, repo-spanning class names (`.btn`, `.chip`,
+ * `.field`, `.status-pill`, `.brand-header`) keep their names — renaming
+ * them would churn every consumer for no gain. Genuinely NEW primitives
+ * are `tds-`-prefixed, matching `.tds-spinner` / `.tds-skeleton`, because
+ * bare names like `.card` / `.page` / `.widget` are too generic to put in
+ * a library that the marketing site also loads.
+ *
+ * NOT promoted here on purpose: tabs, and a masked "secret field". Both
+ * were on the shortlist but have ZERO call sites today, and AGENTS.md is
+ * explicit — "don't promote a component until at least two consumers
+ * actually need it. Duplication is cheaper than the wrong abstraction."
+ */
+
+/* === Editorial typography ========================================= */
+
+.section-num {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.section-num::before {
+  content: "";
+  display: inline-block;
+  width: 1.5rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+/* Drop-cap for the first paragraph of editorial pages */
+.drop-cap::first-letter {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 4.5rem;
+  line-height: 0.85;
+  float: left;
+  padding: 0.25rem 0.5rem 0 0;
+  color: var(--color-primary);
+}
+
+/* Marginalia: a side note pinned next to the main column. On narrow
+   screens it just stacks below as a muted block. */
+.marginalia {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--color-muted);
+}
+.marginalia strong {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+/* === Rules / hairlines ============================================ */
+
+.hairline {
+  border: 1px solid var(--color-line);
+}
+.hairline-t {
+  border-top: 1px solid var(--color-line);
+}
+.hairline-b {
+  border-bottom: 1px solid var(--color-line);
+}
+.rule {
+  height: 1px;
+  background: var(--color-line);
+  border: 0;
+  margin: 2.5rem 0;
+}
+
+/* === Chips ======================================================== */
+
+/* Category / status label. Geometry is the surface's call:
+   marketing keeps the full pill, the panel rounds to 0.75rem, the blog
+   squares it off completely. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--tds-radius-chip);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  background: transparent;
+}
+.chip-active {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.chip-solid {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* Coloured chip variants — text + 45% border + 12% wash (the shared tint
+   convention from base.css). NB the categorical variants are `--cat-`
+   prefixed. The panel used to write `.chip--violet` / `--teal` / `--amber`
+   / `--rose` without the prefix, which matched nothing and rendered five
+   badges with no colour coding at all; those call sites are fixed. If you
+   need to map an untrusted/dynamic value (e.g. a status colour coming out
+   of the database) use `resolveChipVariant()` from
+   `@tracht-digital-solutions/tds-shared` — Tailwind cannot statically
+   extract an interpolated class name, and an unknown value must fall back
+   to `neutral` rather than render an unstyled pill. */
+.chip--neutral {
+  color: var(--color-muted);
+  border-color: var(--color-line);
+  background: transparent;
+}
+.chip--success {
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+}
+.chip--warning {
+  color: var(--color-warning);
+  border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+}
+.chip--danger {
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 45%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+}
+.chip--info {
+  color: var(--color-info);
+  border-color: color-mix(in srgb, var(--color-info) 45%, transparent);
+  background: color-mix(in srgb, var(--color-info) 12%, transparent);
+}
+/* Categorical chips (non-semantic) — for category/type coding. */
+.chip--cat-violet {
+  color: var(--color-cat-violet);
+  border-color: color-mix(in srgb, var(--color-cat-violet) 45%, transparent);
+  background: color-mix(in srgb, var(--color-cat-violet) 12%, transparent);
+}
+.chip--cat-teal {
+  color: var(--color-cat-teal);
+  border-color: color-mix(in srgb, var(--color-cat-teal) 45%, transparent);
+  background: color-mix(in srgb, var(--color-cat-teal) 12%, transparent);
+}
+.chip--cat-amber {
+  color: var(--color-cat-amber);
+  border-color: color-mix(in srgb, var(--color-cat-amber) 45%, transparent);
+  background: color-mix(in srgb, var(--color-cat-amber) 12%, transparent);
+}
+.chip--cat-rose {
+  color: var(--color-cat-rose);
+  border-color: color-mix(in srgb, var(--color-cat-rose) 45%, transparent);
+  background: color-mix(in srgb, var(--color-cat-rose) 12%, transparent);
+}
+.chip--cat-cyan {
+  color: var(--color-cat-cyan);
+  border-color: color-mix(in srgb, var(--color-cat-cyan) 45%, transparent);
+  background: color-mix(in srgb, var(--color-cat-cyan) 12%, transparent);
+}
+
+/* === Status pills ================================================= */
+
+/* Small uppercase INLINE state badge. This is a label, not a banner:
+   for a block-level "something failed / something happened" message use
+   `.form-alert` (or the shared <FormAlert> component). The panel used a
+   `.status-pill--info` <p> as a block alert in 11 places; those are
+   migrated. */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--tds-radius-badge);
+  border: 1px solid var(--color-line);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.status-pill--ok {
+  color: var(--color-muted);
+  border-color: var(--color-line);
+}
+.status-pill--accent {
+  color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+.status-pill--muted {
+  color: var(--color-muted);
+  border-color: var(--color-line);
+  font-style: italic;
+}
+.status-pill--success {
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+}
+.status-pill--warning {
+  color: var(--color-warning);
+  border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+}
+.status-pill--danger {
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 45%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+}
+.status-pill--info {
+  color: var(--color-info);
+  border-color: color-mix(in srgb, var(--color-info) 45%, transparent);
+  background: color-mix(in srgb, var(--color-info) 12%, transparent);
+}
+
+/* === Alerts ======================================================= */
+
+/* Block callout for form failures (login, validation). Shares the
+   semantic --color-danger tint used by .chip--danger, but sized as a
+   block with a leading icon so a failure reads unmistakably as a failure
+   in both themes. Rendered by the shared <FormAlert> React component. */
+.form-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 45%, transparent);
+  border-radius: var(--tds-radius-alert);
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  color: var(--color-danger);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+.form-alert__icon {
+  margin-top: 0.125rem;
+  height: 1rem;
+  width: 1rem;
+  flex-shrink: 0;
+}
+
+/* Generic hue-driven block notice, for the non-failure cases the panel
+   was expressing with a stretched `.status-pill`. Set the hue inline:
+   `<p class="tds-alert" style="--tds-alert-hue: var(--color-info)">`.
+   Follows the same 45%/12% tint convention as every other tinted
+   surface. */
+.tds-alert {
+  --tds-alert-hue: var(--color-info);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid color-mix(in srgb, var(--tds-alert-hue) 45%, transparent);
+  border-radius: var(--tds-radius-alert);
+  background: color-mix(in srgb, var(--tds-alert-hue) 12%, transparent);
+  color: var(--tds-alert-hue);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+/* === Buttons ====================================================== */
+
+/* Geometry lives on `.btn`; colour lives on the `.btn-*` variant. BOTH
+   are required — `class="btn btn-primary"`.
+   A variant on its own is a navy rectangle with no padding, no radius and
+   no `:disabled` treatment, and it also misses the 44px touch floor from
+   the coarse-pointer block at the bottom of this file. That mistake was
+   shipped on the central login for a while, so it is worth stating twice:
+   never write `class="btn-primary"` alone. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: var(--tds-radius-btn);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    opacity var(--tds-dur-base) ease,
+    transform var(--tds-dur-base) ease,
+    background-color var(--tds-dur-base) ease,
+    color var(--tds-dur-base) ease;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+.btn-accent {
+  background: var(--color-accent);
+  color: white;
+}
+.btn-accent:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--color-ink);
+  border-color: var(--color-line);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-soft);
+}
+/* Destructive action. Stays in the `.btn-*` family rather than becoming
+   `.tds-btn--danger`, so the required `.btn` + variant pairing above holds
+   for every variant without exception. Replaces the bare `.danger` class
+   the panel referenced in 5 places and never defined. */
+.btn-danger {
+  background: transparent;
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 45%, transparent);
+}
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+}
+
+/* === Form fields ================================================== */
+
+/* Editorial input: bare line, focus draws an accent underline.
+   NOTE this class is the INPUT ELEMENT. It is not a wrapper. The
+   landingpage's contact form has a wrapper div with its own baseline rule
+   and animated underline; that family is `.contact-field-row` /
+   `-line` / `-label` precisely so it does not collide with this. */
+.field {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--color-line);
+  padding: 0.625rem 0;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  color: var(--color-ink);
+  transition: border-color var(--tds-dur-base) ease;
+}
+.field:focus {
+  outline: none;
+  border-bottom-color: var(--color-accent);
+}
+.field::placeholder {
+  color: var(--color-muted);
+}
+
+.field-boxed {
+  width: 100%;
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--tds-radius-input);
+  padding: 0.625rem 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--color-ink);
+  transition: border-color var(--tds-dur-base) ease;
+}
+.field-boxed:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+/* Label + control stacked as one row. Replaces the ad-hoc
+   `flex flex-col gap-1` + bespoke `*-form__field` shells that every
+   panel island hand-rolled. */
+.tds-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.tds-field-row > label,
+.tds-field-row > .tds-field-row__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+/* Search input with room for a leading icon. */
+.tds-search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.tds-search-field > svg {
+  position: absolute;
+  left: 0.75rem;
+  pointer-events: none;
+  color: var(--color-muted);
+}
+.tds-search-field > input {
+  padding-left: 2.125rem;
+}
+
+/* A label + switch/checkbox row, e.g. the per-event notification toggles. */
+.tds-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-line);
+}
+.tds-toggle-row:last-child {
+  border-bottom: 0;
+}
+
+/* === Surfaces: card / page / widget / settings ===================== */
+
+/* The base elevated surface. Radius AND elevation come from the surface
+   layer, so the same class is a shadowed rounded card on marketing and a
+   hard-edged colour block on the blog. */
+.tds-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--tds-radius-card);
+  box-shadow: var(--tds-elevation-card);
+  transition:
+    border-color var(--tds-dur-base) ease,
+    background-color var(--tds-dur-base) ease,
+    box-shadow var(--tds-dur-base) ease;
+}
+
+/* Page shell + header. Every extension page renders
+   `<section class="tds-page">` with an `<h1 class="tds-page__title">`.
+   Tailwind's preflight strips heading sizes, so without an explicit title
+   rule every extension page title rendered at body size. */
+.tds-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.tds-page__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.tds-page__title {
+  font-family: var(--font-display);
+  font-weight: var(--tds-weight-display-tight);
+  letter-spacing: var(--tds-tracking-display-tight);
+  font-size: 1.5rem;
+  line-height: 1.2;
+  color: var(--color-black);
+}
+.tds-page__lede {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+  text-wrap: pretty;
+}
+
+/* Dashboard widget card. */
+.tds-widget {
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--tds-radius-card);
+  box-shadow: var(--tds-elevation-card);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.tds-widget__title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+/* The headline number. Tabular figures so a live-updating metric does not
+   jitter its own width. */
+.tds-widget__metric {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-black);
+  font-variant-numeric: tabular-nums;
+}
+
+/* One block in the /einstellungen list, contributed by an extension. */
+.tds-settings-section {
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--tds-radius-card);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.tds-settings-section__title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-black);
+}
+
+/* === Lists / tables / empty states ================================= */
+
+/* Row list — the panel's universal "list of records" shape (tickets,
+   posts, authors, users). Bordered rows, no radius of their own beyond
+   the container's. */
+.tds-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tds-list__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-line);
+  transition: background-color var(--tds-dur-base) ease;
+}
+.tds-list__row:last-child {
+  border-bottom: 0;
+}
+.tds-list__row:hover {
+  background: var(--color-soft);
+}
+
+.tds-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.tds-table th {
+  text-align: left;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--color-line);
+}
+.tds-table td {
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-ink);
+}
+.tds-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.tds-table tbody tr:hover td {
+  background: var(--color-soft);
+}
+
+/* "Nothing here yet" state. Replaces one bespoke unstyled <p> per
+   screen. */
+.tds-empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  border: 1px dashed var(--color-line);
+  border-radius: var(--tds-radius-card);
+}
+
+/* === Toolbar ====================================================== */
+
+.tds-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.tds-toolbar__spacer {
+  margin-left: auto;
+}
+
+/* === Message thread =============================================== */
+
+/* Side-aligned message bubbles. The support-ticket thread and the live
+   chat widget are the same design problem; the widget's private
+   `.live-chat-cta__msg--visitor/--agent` came first, this is the shared
+   version. `--own` is the current user's side (right), `--other` the
+   counterpart's (left). */
+.tds-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.tds-thread__item {
+  max-width: min(90%, 40rem);
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--tds-radius-card);
+  border: 1px solid var(--color-line);
+  background: var(--color-card);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.tds-thread__item--own {
+  align-self: flex-end;
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-card));
+  border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-line));
+}
+.tds-thread__item--other {
+  align-self: flex-start;
+}
+.tds-thread__author {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-bottom: 0.25rem;
+}
+
+/* === Modal / confirm ============================================== */
+
+/* Replaces `window.confirm()` for destructive actions. Toggled with
+   `data-open` on the root, mirroring `.nav-drawer`'s convention. */
+.tds-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  visibility: hidden;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+.tds-modal[data-open="true"] {
+  visibility: visible;
+  pointer-events: auto;
+}
+.tds-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(4 8 20 / 0.55);
+  opacity: 0;
+  transition: opacity var(--tds-dur-slow) ease;
+}
+.tds-modal[data-open="true"] .tds-modal__backdrop {
+  opacity: 1;
+}
+.tds-modal__panel {
+  position: relative;
+  width: min(100%, 28rem);
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--tds-radius-card);
+  box-shadow: var(--tds-elevation-raised);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transform: translateY(0.5rem) scale(0.98);
+  opacity: 0;
+  transition:
+    transform var(--tds-dur-slow) var(--tds-ease-out),
+    opacity var(--tds-dur-slow) ease;
+}
+.tds-modal[data-open="true"] .tds-modal__panel {
+  transform: none;
+  opacity: 1;
+}
+.tds-modal__title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-black);
+}
+.tds-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tds-modal__backdrop,
+  .tds-modal__panel {
+    transition-duration: 0.01ms;
+  }
+}
+
+/* === Header shell ================================================= */
+
+.brand-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in oklab, var(--color-paper) 85%, transparent);
+  /* CONTRACT: author `backdrop-filter` UNPREFIXED only — do not add
+     `-webkit-backdrop-filter` here. Consuming frontends minify with
+     lightningcss, which collapses a hand-authored pair down to the
+     `-webkit-` form alone, dropping the standard property and breaking
+     the blur in Firefox. Authoring just the standard property lets
+     lightningcss add the `-webkit-` prefix at build time — but only if
+     each consumer pins a Safari target via `vite.build.cssTarget` in its
+     astro.config (the minify step ignores `css.lightningcss.targets`).
+     Without that pin the prefix is never added and the blur breaks in
+     Safari <=17. See tds-landingpage commit e328ead and tds-shared#10. */
+  backdrop-filter: blur(14px);
+  /* A hue-tinted bottom rule gives the sticky top bar a touch of brand
+     colour without a fill. */
+  border-bottom: 2px solid color-mix(in srgb, var(--color-primary) 30%, var(--color-line));
+}
+.brand-wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+/* The display face is a grotesk, so the accent word reads as an upright
+   accent-coloured word rather than a serif italic. */
+.brand-wordmark .accent-italic {
+  font-style: normal;
+}
+
+/* Brand logomark rendered as a CSS mask, so it takes the brand token
+   rather than needing a `filter: brightness(0) invert(1)` hack to survive
+   dark mode. Promoted from the blog, which already did it correctly.
+   Set the size on the element; the intrinsic ratio is 0.885.
+   `--tds-brand-logo-src` must be a `url()` pointing at the mark in the
+   consuming app's /public. */
+.tds-brand-logo {
+  display: inline-block;
+  aspect-ratio: 0.885;
+  background-color: var(--color-primary);
+  mask: var(--tds-brand-logo-src) center / contain no-repeat;
+}
+.tds-brand-logo--inverse {
+  background-color: #fff;
+}
+
+/* === Subtle interactions ========================================== */
+
+.link-underline {
+  position: relative;
+  color: inherit;
+  text-decoration: none;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 280ms var(--tds-ease-out);
+}
+.link-underline:hover::after,
+.link-underline:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.entry-row {
+  position: relative;
+  transition: background-color var(--tds-dur-base) ease;
+}
+.entry-row:hover {
+  background: var(--color-soft);
+}
+
+/* === Scroll reveal ================================================ */
+
+/* Opt-in scroll-reveal primitive, promoted from the blog (the landingpage
+   solves the same thing with framer-motion islands). Gated on `html.js`
+   so a no-JS visitor is never left with permanently hidden content — the
+   consuming Layout must add that class in its inline head script, and an
+   IntersectionObserver adds `.is-in` as each element enters.
+   Stagger with `style="--tds-reveal-delay: 120ms"`. */
+html.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(1.25rem);
+  transition:
+    opacity 640ms var(--tds-ease-out),
+    transform 640ms var(--tds-ease-out);
+  transition-delay: var(--tds-reveal-delay, 0ms);
+}
+html.js [data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* === Reading progress ============================================= */
+
+/* Top-edge reading progress bar. One definition; the blog drove a 3px
+   solid accent bar from a plain script and the landingpage a 2px gradient
+   from a motion island. Drive the fill with `--tds-progress` (0 → 1). */
+.tds-reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 40;
+  transform: scaleX(var(--tds-progress, 0));
+  transform-origin: left;
+  background: var(--color-accent);
+  pointer-events: none;
+}
+
+/* === Hamburger ==================================================== */
+
+/* Three-bar menu button that morphs to an ×. The landingpage authored
+   `.menu-bar*` and the blog `.jnl-menu-bar*` as a verbatim copy of it
+   (its own comment said "mirrors the landingpage header"), so this is one
+   definition replacing two. Toggle with `aria-expanded` on the button. */
+.tds-menu-bars {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4.25px;
+  width: 18px;
+  height: 18px;
+}
+.tds-menu-bar {
+  display: block;
+  width: 18px;
+  height: 1.75px;
+  background: currentColor;
+  transition: transform 220ms var(--tds-ease-in-out), opacity 220ms var(--tds-ease-in-out);
+}
+[aria-expanded="true"] .tds-menu-bar:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+[aria-expanded="true"] .tds-menu-bar:nth-child(2) {
+  opacity: 0;
+}
+[aria-expanded="true"] .tds-menu-bar:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+/* === Version marker =============================================== */
+
+/* The app version wherever it's shown (sidebar footers, about pages).
+   Authored once here so every current + future version display is
+   consistent — wrap the version in `<span class="app-version">v{APP_VERSION}</span>`.
+   Sits on the baseline (NOT superscript — that was reverted) at a slightly
+   smaller size than the surrounding line.
+
+   `position/top` still neutralise Tailwind's preflight `<sup>` offset so a
+   leftover `<sup class="app-version">` renders on the baseline too. */
+.app-version {
+  font-size: 0.8em;
+  vertical-align: baseline;
+  line-height: inherit;
+  position: static;
+  top: auto;
+}
+
+/* === Touch / small-screen ergonomics ============================== */
+
+/* On touch devices give the interactive chrome a comfortable hit area
+   (~44px, the platform minimum) and bump text inputs to 16px so iOS
+   Safari doesn't auto-zoom the page when a field is focused. Scoped to
+   `pointer: coarse` so the tighter desktop sizing is unchanged, and to
+   the interactive primitives only (badges like .chip / .status-pill stay
+   compact — they're labels, not tap targets). The `.nav-item` rule lives
+   in app.css alongside the rest of the sidebar chrome. */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+  }
+  .field,
+  .field-boxed {
+    font-size: 16px;
+    min-height: 44px;
+  }
+}

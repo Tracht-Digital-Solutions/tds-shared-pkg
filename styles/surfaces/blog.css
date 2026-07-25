@@ -1,0 +1,62 @@
+/**
+ * SURFACE: blog (Variation 3) — "kantig / flat"
+ *
+ * blog.tracht-digital.de (`tds-blog-frontend`).
+ *
+ * Character, quoting the design-system handoff verbatim:
+ *   "KANTIG: keine Rundungen, kaum Borders — Abgrenzung über Farbflächen."
+ * No radii anywhere, no elevation; separation comes from colour blocks
+ * (`--color-soft`, `--tds-flat-tint`) and 2px accent bars instead of
+ * hairline-bordered rounded cards. Display voice is the heavier 800.
+ *
+ * Usage — `data-surface="blog"` on <html>, plus:
+ *
+ *   @import "@tracht-digital-solutions/tds-shared/styles/base.css";
+ *   @import "@tracht-digital-solutions/tds-shared/styles/primitives.css";
+ *   @import "@tracht-digital-solutions/tds-shared/styles/prose.css";
+ *   @import "@tracht-digital-solutions/tds-shared/styles/surfaces/blog.css";
+ *
+ * WHY THE SELECTOR IS AN ATTRIBUTE, NOT `:root[data-surface]`:
+ * the blog-CMS editor in the admin panel renders a live markdown preview
+ * that must look like the published article, i.e. a blog surface nested
+ * inside a panel surface. Scoping to `[data-surface="blog"]` lets that
+ * preview container just carry the attribute:
+ *
+ *   <div class="tds-prose" data-surface="blog"> … </div>
+ *
+ * A `:root`-scoped layer could not express that. Do not change it.
+ *
+ * Superseded, do NOT reintroduce: this repo's global.css used to carry
+ * `.chip { border-radius: 0 }`, its own `.display` (800) / `.display-tight`
+ * (700) / `.eyebrow` forks, and local `--flat-tint` / `--flat-hover`. The
+ * old repo convention "geometry is app-local — don't fix this in
+ * tds-shared-pkg" is exactly what this layer replaces.
+ */
+
+[data-surface="blog"] {
+  /* Flat kit: every radius collapses. */
+  --tds-radius-btn: var(--tds-radius-none);
+  --tds-radius-chip: var(--tds-radius-none);
+  --tds-radius-badge: var(--tds-radius-none);
+  --tds-radius-input: var(--tds-radius-none);
+  --tds-radius-card: var(--tds-radius-none);
+  --tds-radius-alert: var(--tds-radius-none);
+
+  /* Never any lift — the flat kit separates with colour, not shadow. */
+  --tds-elevation-card: none;
+  --tds-elevation-raised: none;
+
+  /* Heavier display voice + the display-face eyebrow. */
+  --tds-weight-display: 800;
+  --tds-tracking-display: -0.03em;
+  --tds-weight-display-tight: 700;
+  --tds-tracking-display-tight: -0.02em;
+  --tds-eyebrow-family: var(--font-display);
+  --tds-eyebrow-weight: 600;
+
+  /* Flat surface tints, promoted from the blog's global.css. Kept as
+     `--tds-`-prefixed tokens; the bare `--flat-tint` / `--flat-hover`
+     names were repo-local. */
+  --tds-flat-tint: color-mix(in srgb, var(--color-primary) 9%, var(--color-paper));
+  --tds-flat-hover: color-mix(in srgb, var(--color-soft) 70%, var(--color-line));
+}

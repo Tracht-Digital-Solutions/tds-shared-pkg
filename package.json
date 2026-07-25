@@ -54,8 +54,18 @@
       "import": "./dist/astro/index.js",
       "require": "./dist/astro/index.cjs"
     },
+    "./design": {
+      "types": "./dist/design/index.d.ts",
+      "import": "./dist/design/index.js",
+      "require": "./dist/design/index.cjs"
+    },
     "./styles/base.css": "./styles/base.css",
-    "./styles/app.css": "./styles/app.css"
+    "./styles/primitives.css": "./styles/primitives.css",
+    "./styles/prose.css": "./styles/prose.css",
+    "./styles/app.css": "./styles/app.css",
+    "./styles/surfaces/marketing.css": "./styles/surfaces/marketing.css",
+    "./styles/surfaces/blog.css": "./styles/surfaces/blog.css",
+    "./styles/surfaces/panel.css": "./styles/surfaces/panel.css"
   },
   "scripts": {
     "build": "tsup",

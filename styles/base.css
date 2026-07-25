@@ -2,21 +2,33 @@
  * TDS shared design foundation — the single source of truth for the
  * brand design system used by every TDS frontend.
  *
- * Contains: colour + font tokens (`@theme`), the dark theme, base
- * element resets, the brand scrollbar, the focus ring, the animated
- * theme-switch (View Transitions), the editorial type primitives and
- * the reduced-motion preferences.
+ * Contains: colour + font tokens (`@theme inline`), the dark theme, the
+ * SURFACE TOKEN SCALE (geometry / elevation / motion / type — plain
+ * `:root`, see below), base element resets, the brand scrollbar, the
+ * focus ring, the animated theme-switch (View Transitions), the
+ * editorial type primitives and the reduced-motion preferences.
  *
- * Import it once per app, after Tailwind and the font faces:
+ * Fonts are JS imports in each app's Layout.astro frontmatter, NEVER CSS
+ * `@import`s here — `@tailwindcss/postcss` inlines a CSS `@import`
+ * without rebasing the package's relative `url(./files/*.woff2)`, so Vite
+ * emits zero woff2 and every face silently falls back to a system font.
  *
  *   @import "tailwindcss";
- *   @import "@fontsource-variable/hanken-grotesk/index.css";
- *   @import "@fontsource-variable/geist/index.css";
  *   @import "@tracht-digital-solutions/tds-shared/styles/base.css";
+ *   @import "@tracht-digital-solutions/tds-shared/styles/primitives.css";
+ *   @import "@tracht-digital-solutions/tds-shared/styles/surfaces/<surface>.css";
  *
- * Shared application chrome (buttons, fields, chips, the sticky header
- * shell) lives in the companion ./app.css. Marketing- or article-
- * specific styles stay local to each app's own stylesheet.
+ * THE LAYER STACK (one design library, three surfaces):
+ *   base.css        tokens + resets + type primitives   — every app
+ *   primitives.css  cross-surface components            — every app
+ *   prose.css       long-form / article typography      — blog + blog-cms
+ *   surfaces/*.css  per-surface geometry overrides      — exactly one
+ *   app.css         panel/dashboard chrome              — panel + blog
+ *
+ * Each app sets `data-surface="marketing|blog|panel"` on <html> and
+ * imports the matching surfaces/*.css. Geometry belongs to the surface
+ * layer — an app must NOT hand-author radii (that convention is what
+ * made the three variations diverge in the first place).
  */
 
 @theme inline {
@@ -80,9 +92,27 @@
   --color-cat-rose: #a4153f;
   --color-cat-cyan: #1f6f8b;
 
-  --font-display: "Lato", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "Geist Variable", "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+  /* === Type families ==============================================
+     Canonical as of the design-library unification: Lato display,
+     Plus Jakarta Sans body, JetBrains Mono mono. This is what the blog
+     and the panel already shipped (2 of 3 surfaces); the landingpage was
+     the outlier on Geist, and its `--font-mono` resolved to nothing at
+     all because `@fontsource-variable/geist` is sans-only and Geist Mono
+     was never installed.
+     Every consuming app must install + JS-import the matching Fontsource
+     packages in its Layout.astro:
+       @fontsource/lato/{400,700,900}.css
+       @fontsource-variable/plus-jakarta-sans
+       @fontsource-variable/jetbrains-mono
+     Do NOT re-declare these in an app's global.css — that is exactly the
+     duplication this library exists to remove. */
+  --font-display: "Lato", "Helvetica Neue", Arial, sans-serif;
+  --font-body:
+    "Plus Jakarta Sans Variable", "Plus Jakarta Sans", "Helvetica Neue", Arial,
+    sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SF Mono", Menlo,
+    monospace;
 }
 
 /* Dark theme. Activated when html carries `data-theme="dark"` (set by
@@ -133,6 +163,98 @@
   --color-cat-amber: #f3bd6e;
   --color-cat-rose: #ff8fab;
   --color-cat-cyan: #6fcfe8;
+}
+
+/* =====================================================================
+   SURFACE TOKEN SCALE — geometry, elevation, motion, display type.
+
+   WHY A PLAIN `:root` AND NOT `@theme inline`:
+   the colour/font block above is `@theme inline`, which makes Tailwind
+   substitute each token's *literal value* into the generated utilities.
+   That is what we want for colours (`text-primary` etc.), but it means an
+   `@theme inline` token can never be overridden further down the cascade
+   — a `[data-surface]` override would simply never be seen. The geometry
+   scale is consumed by this library's own CSS through `var()`, so it lives
+   in an ordinary `:root` block where the surface layers CAN override it.
+   Do not move these into the `@theme inline` block.
+
+   THE DEFAULTS BELOW ARE TODAY'S LITERALS, on purpose. A surface that has
+   not yet opted into a surfaces/*.css layer renders byte-identically to
+   before this refactor. All three variations' character lives exclusively
+   in surfaces/{marketing,blog,panel}.css. Adding a token here therefore
+   never changes an existing surface; forgetting to override it in a
+   surface layer just means "inherit the neutral default".
+   ===================================================================== */
+:root {
+  /* --- Radius scale ------------------------------------------------- */
+  --tds-radius-none: 0;
+  --tds-radius-xs: 2px;
+  --tds-radius-sm: 4px;
+  --tds-radius-md: 8px;
+  --tds-radius-lg: 12px;
+  --tds-radius-xl: 16px;
+  --tds-radius-2xl: 24px;
+  --tds-radius-pill: 999px;
+
+  /* --- Component geometry — what the surface layers actually flip ---
+     Each maps to a literal that app.css hard-coded before the split, so
+     the unmigrated default is a no-op. */
+  --tds-radius-btn: var(--tds-radius-pill); /* .btn            was 999px   */
+  --tds-radius-chip: var(--tds-radius-pill); /* .chip           was 999px   */
+  --tds-radius-badge: 0.75rem; /* .status-pill    was 0.75rem */
+  --tds-radius-input: var(--tds-radius-xs); /* .field-boxed    was 2px     */
+  --tds-radius-card: 0.75rem; /* .stat-tile      was 0.75rem */
+  --tds-radius-alert: 0.5rem; /* .form-alert     was 0.5rem  */
+
+  /* --- Elevation ---------------------------------------------------
+     Brand-tinted (navy) and layered, per the design-system handoff. The
+     dashboard tint convention is deliberately FLAT, so the default card
+     elevation is `none`; only the marketing surface opts into a shadow. */
+  --tds-shadow-sm:
+    0 1px 2px rgb(5 15 104 / 0.06), 0 2px 4px rgb(5 15 104 / 0.05);
+  --tds-shadow-md:
+    0 2px 4px rgb(5 15 104 / 0.05), 0 6px 12px rgb(5 15 104 / 0.08);
+  --tds-shadow-lg:
+    0 4px 8px rgb(5 15 104 / 0.06), 0 16px 32px rgb(5 15 104 / 0.12);
+  --tds-elevation-card: none;
+  --tds-elevation-raised: var(--tds-shadow-md);
+
+  /* --- Motion -------------------------------------------------------
+     `--tds-ease-out` is the same curve exported as `ease` from
+     `@tracht-digital-solutions/tds-shared/motion`. Keep the two in sync:
+     CSS transitions and framer-motion springs must not drift apart. */
+  --tds-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --tds-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --tds-dur-fast: 160ms;
+  --tds-dur-base: 200ms;
+  --tds-dur-slow: 320ms;
+
+  /* --- Display type -------------------------------------------------
+     The landingpage renders `.display` at 700 and the blog at 800; both
+     used to fork the class locally. It is a surface token now. */
+  --tds-weight-display: 700;
+  --tds-tracking-display: -0.03em;
+  --tds-leading-display: 0.96;
+  --tds-weight-display-tight: 600;
+  --tds-tracking-display-tight: -0.025em;
+  --tds-leading-display-tight: 1.02;
+  /* The blog sets the eyebrow in the display face at 600; everyone else
+     uses the body face at 500. */
+  --tds-eyebrow-family: var(--font-body);
+  --tds-eyebrow-weight: 500;
+  --tds-eyebrow-tracking: 0.14em;
+
+  /* --- Accepted alias ------------------------------------------------
+     `--color-border` is NOT a second border token: it is an alias of
+     `--color-line`, kept because 27 call sites across 8 repos (all four
+     `tds-tool-*` packs, ext-website-cms, ext-tools, the panel host) write
+     `border-[color:var(--color-border)]`. Before this alias existed the
+     token resolved to nothing and every one of those borders silently fell
+     back to `currentColor`. Because it is declared as a `var()` reference
+     it re-resolves under `:root[data-theme="dark"]` automatically, so it
+     needs no dark value of its own. Prefer `--color-line` in new code;
+     do not "clean up" this alias without fixing all 27 sites first. */
+  --color-border: var(--color-line);
 }
 
 html {
@@ -248,29 +370,32 @@ body {
 
 /* === Editorial type primitives ==================================== */
 
+/* Weight/tracking/leading come from the surface scale so a surface can
+   set its own display voice (landingpage 700, blog 800) without forking
+   the class. Do NOT re-declare `.display` in an app's global.css. */
 .display {
   font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 0.96;
+  font-weight: var(--tds-weight-display);
+  letter-spacing: var(--tds-tracking-display);
+  line-height: var(--tds-leading-display);
 }
 .display-tight {
   font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.025em;
-  line-height: 1.02;
+  font-weight: var(--tds-weight-display-tight);
+  letter-spacing: var(--tds-tracking-display-tight);
+  line-height: var(--tds-leading-display-tight);
 }
 .accent-italic {
   font-style: italic;
   color: var(--color-accent);
 }
 .eyebrow {
-  font-family: var(--font-body);
+  font-family: var(--tds-eyebrow-family);
   font-size: 0.6875rem;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--tds-eyebrow-tracking);
   color: var(--color-muted);
-  font-weight: 500;
+  font-weight: var(--tds-eyebrow-weight);
 }
 .lead {
   font-size: clamp(1.0625rem, 1.5vw, 1.1875rem);
