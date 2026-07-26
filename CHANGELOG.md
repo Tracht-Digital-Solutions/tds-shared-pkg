@@ -100,6 +100,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   just to change the tone. Setting `--tds-alert-hue` inline still works for a
   one-off hue such as a categorical colour.
 
+### Added — generic layout primitives
+- **`.tds-stack`** (+ `--tight` / `--loose`) and **`.tds-row`** (+ `--between`,
+  plus a `button.tds-row` reset so an expandable card header reads as a header)
+  and **`.tds-compose`** (+ `__actions`). Deliberately unopinionated — spacing
+  only, no surface, no border — so they compose inside `.tds-card` /
+  `.tds-widget` / `.tds-page`.
+  These three absorb **46** of the per-extension orphan class names, because the
+  "bespoke" internals turned out to be the same handful of shapes over and over:
+  a form body / detail region (stack), a header row / filter bar / tab strip
+  (row), and a reply box (compose). Two more groups needed no new primitive at
+  all — `*__actions` / `*__toolbar` map onto the existing `.tds-toolbar`, and
+  `*__meta` / `*__hint` onto the existing `.marginalia`.
+
 ### Removed (never released — shipped no consumers)
 - **`.tds-modal*`** and **`.tds-search-field`** and **`.tds-toolbar__spacer`**.
   Same rule as the four unpromoted duplicates below: don't ship a primitive

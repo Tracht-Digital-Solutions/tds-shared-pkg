@@ -620,6 +620,75 @@ label.tds-field-row > :is(input, select, textarea) {
   border-radius: var(--tds-radius-card);
 }
 
+/* === Generic layout ===============================================
+   Two shapes that recur constantly in the panel's component internals: form
+   bodies / detail regions (a vertical stack) and header rows / filter bars /
+   tab strips (a wrapping horizontal row). Before these, every extension
+   invented its own name for them — `kb__form`, `contact-detail__body`,
+   `project-card__head`, `chats__filters` — and none of those names had a rule
+   anywhere, so the regions collapsed to browser defaults.
+   Deliberately unopinionated: spacing only, no surface and no border, so they
+   compose inside `.tds-card` / `.tds-widget` / `.tds-page`. */
+
+/* Vertical stack — the workhorse: form bodies, detail panels, reply lists. */
+.tds-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.tds-stack--tight {
+  gap: 0.35rem;
+}
+.tds-stack--loose {
+  gap: 1.25rem;
+}
+
+/* Wrapping horizontal row: header rows (title + chips + actions), filter bars,
+   tab strips. `--between` pushes the trailing group to the far edge. */
+.tds-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.tds-row--between {
+  justify-content: space-between;
+}
+/* An expandable card header is a full-width <button> that must still read as a
+   header rather than a control. */
+button.tds-row {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+/* === Composer ===================================================== */
+
+/* A reply box: field above, actions below. Used by the contact-message reply
+   and the live-chat composer. */
+.tds-compose {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.tds-compose > :is(textarea, input) {
+  width: 100%;
+  resize: vertical;
+}
+.tds-compose__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 /* === Toolbar ====================================================== */
 
 .tds-toolbar {
