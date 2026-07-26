@@ -113,6 +113,19 @@ import this — they duplicate the small bit of validation they need, by design.
   `.form-alert` / `<FormAlert>` (danger) or `.tds-alert` with
   `--tds-alert-hue`. The panel stretched a `.status-pill--info` `<p>` into an
   alert in 11 places.
+- **Reach for the generic layout primitives before inventing a name.**
+  `.tds-stack` (+`--tight`/`--loose`) for a vertical stack, `.tds-row`
+  (+`--between`) for a wrapping horizontal row, `.tds-compose` (+`__actions`) for
+  a reply box, `.tds-toolbar` for an action row, `.marginalia` for metadata/hint
+  text. Extensions had invented ~46 separate names for exactly those five shapes
+  (`kb__form`, `contact-detail__body`, `project-card__head`, `chats__filters`,
+  `*__actions`, `*__meta`, …), none of which had a rule. ~31 genuinely singular
+  internals (`cms-editor__blocks`, `live-chat-settings__matrix`,
+  `blog-editor__preview`, …) legitimately stay bespoke and knowingly unstyled.
+- **Audit new classes for BOTH shapes.** A BEM-shaped audit (`__`/`--`) misses
+  single-word orphans, which is how `.btn-secondary` (7 sites, no such variant —
+  it is primary/accent/ghost/danger), `.error` and `.muted` all sat unstyled for
+  a long time. Check plain words too.
 - **New primitives are `tds-`-prefixed** (matching `.tds-spinner` /
   `.tds-skeleton`), because bare names like `.card` / `.page` / `.widget` are
   far too generic for a library the marketing site also loads. Pre-existing
