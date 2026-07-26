@@ -100,6 +100,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   just to change the tone. Setting `--tds-alert-hue` inline still works for a
   one-off hue such as a categorical colour.
 
+### Removed (never released — shipped no consumers)
+- **`.tds-modal*`** and **`.tds-search-field`** and **`.tds-toolbar__spacer`**.
+  Same rule as the four unpromoted duplicates below: don't ship a primitive
+  nothing uses. `.tds-search-field` is a wrapper for an icon + input, and the
+  only search input in the platform (the API-wiki filter) is a bare input with
+  no icon — it uses `.field-boxed` instead. `.tds-modal*` needs a real
+  `<ConfirmDialog>` component (state, focus trap, a11y) to be usable at the
+  three `window.confirm()` sites; it comes back with that component, not
+  before. `.tds-toolbar__spacer` was `margin-left: auto`, which Tailwind's
+  `ml-auto` already provides.
+  `.tds-alert--success` / `--warning` are deliberately kept despite having no
+  consumer yet: a three-line modifier completing an obvious axis on a
+  29-consumer primitive is discoverability, not a speculative abstraction.
+
 ### Not done (deliberate, tracked)
 - Four known duplicates are **not** promoted, because AGENTS.md requires two
   real consumers and wiring them means surgery on large visual components

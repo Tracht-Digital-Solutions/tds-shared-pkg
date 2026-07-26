@@ -408,7 +408,13 @@
 
 /* Label + control stacked as one row. Replaces the ad-hoc
    `flex flex-col gap-1` + bespoke `*-form__field` shells that every
-   panel island hand-rolled. */
+   panel island hand-rolled.
+   Two shapes are supported, because both occur in the codebase:
+     <div class="tds-field-row"><label>…</label><input></div>
+     <label class="tds-field-row">Titel<input></label>
+   In the second the label IS the row and its caption is a bare text node,
+   which cannot be selected — so the caption styling goes on the element and
+   the nested control resets it. */
 .tds-field-row {
   display: flex;
   flex-direction: column;
@@ -420,21 +426,15 @@
   font-weight: 600;
   color: var(--color-muted);
 }
-
-/* Search input with room for a leading icon. */
-.tds-search-field {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.tds-search-field > svg {
-  position: absolute;
-  left: 0.75rem;
-  pointer-events: none;
+label.tds-field-row {
+  font-size: 0.8125rem;
+  font-weight: 600;
   color: var(--color-muted);
 }
-.tds-search-field > input {
-  padding-left: 2.125rem;
+label.tds-field-row > :is(input, select, textarea) {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: var(--color-ink);
 }
 
 /* A label + switch/checkbox row, e.g. the per-event notification toggles. */
@@ -628,9 +628,6 @@
   align-items: center;
   gap: 0.5rem;
 }
-.tds-toolbar__spacer {
-  margin-left: auto;
-}
 
 /* === Message thread =============================================== */
 
@@ -669,73 +666,6 @@
   text-transform: uppercase;
   color: var(--color-muted);
   margin-bottom: 0.25rem;
-}
-
-/* === Modal / confirm ============================================== */
-
-/* Replaces `window.confirm()` for destructive actions. Toggled with
-   `data-open` on the root, mirroring `.nav-drawer`'s convention. */
-.tds-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  visibility: hidden;
-  pointer-events: none;
-  display: grid;
-  place-items: center;
-  padding: 1.5rem;
-}
-.tds-modal[data-open="true"] {
-  visibility: visible;
-  pointer-events: auto;
-}
-.tds-modal__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgb(4 8 20 / 0.55);
-  opacity: 0;
-  transition: opacity var(--tds-dur-slow) ease;
-}
-.tds-modal[data-open="true"] .tds-modal__backdrop {
-  opacity: 1;
-}
-.tds-modal__panel {
-  position: relative;
-  width: min(100%, 28rem);
-  background: var(--color-card);
-  border: 1px solid var(--color-line);
-  border-radius: var(--tds-radius-card);
-  box-shadow: var(--tds-elevation-raised);
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  transform: translateY(0.5rem) scale(0.98);
-  opacity: 0;
-  transition:
-    transform var(--tds-dur-slow) var(--tds-ease-out),
-    opacity var(--tds-dur-slow) ease;
-}
-.tds-modal[data-open="true"] .tds-modal__panel {
-  transform: none;
-  opacity: 1;
-}
-.tds-modal__title {
-  font-family: var(--font-display);
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-black);
-}
-.tds-modal__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-@media (prefers-reduced-motion: reduce) {
-  .tds-modal__backdrop,
-  .tds-modal__panel {
-    transition-duration: 0.01ms;
-  }
 }
 
 /* === Header shell ================================================= */
