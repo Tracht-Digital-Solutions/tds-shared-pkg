@@ -284,6 +284,18 @@
   font-size: 0.875rem;
   line-height: 1.4;
 }
+/* Hue modifiers, so a consumer doesn't need an inline style (and, in TSX, a
+   CSSProperties cast) just to change the tone. `--tds-alert-hue` inline still
+   works for a one-off hue such as a categorical colour. */
+.tds-alert--success {
+  --tds-alert-hue: var(--color-success);
+}
+.tds-alert--warning {
+  --tds-alert-hue: var(--color-warning);
+}
+.tds-alert--danger {
+  --tds-alert-hue: var(--color-danger);
+}
 
 /* === Buttons ====================================================== */
 
@@ -530,6 +542,16 @@
   font-size: 1rem;
   font-weight: 600;
   color: var(--color-black);
+}
+/* The CONTENT wrapper an extension renders for its own settings slot.
+   Deliberately not `.tds-settings-section`: the Einstellungen host already
+   wraps every contributed panel in one, so an extension using the outer class
+   too would nest a card inside a card (double border, double padding,
+   double background). This is just the inner stack. */
+.tds-settings-section__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 /* === Lists / tables / empty states ================================= */

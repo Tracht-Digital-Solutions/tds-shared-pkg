@@ -90,6 +90,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   variant. Unknown input falls back to `neutral`.
 - **`.nav-group-label`** — promoted from the panel host's `global.css`, which
   was the only component class it owned.
+- **`.tds-settings-section__body`** — the content wrapper an extension renders
+  for its own settings slot. Deliberately *not* `.tds-settings-section`: the
+  Einstellungen host already wraps every contributed panel in one, so an
+  extension using the outer class too would nest a card inside a card (double
+  border, padding and background). 10 extensions use it.
+- **`.tds-alert--success` / `--warning` / `--danger`** — hue modifiers, so a
+  consumer doesn't need an inline style (and, in TSX, a `CSSProperties` cast)
+  just to change the tone. Setting `--tds-alert-hue` inline still works for a
+  one-off hue such as a categorical colour.
 
 ### Not done (deliberate, tracked)
 - Four known duplicates are **not** promoted, because AGENTS.md requires two
