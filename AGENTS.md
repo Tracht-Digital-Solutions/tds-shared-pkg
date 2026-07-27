@@ -126,6 +126,19 @@ import this — they duplicate the small bit of validation they need, by design.
   single-word orphans, which is how `.btn-secondary` (7 sites, no such variant —
   it is primary/accent/ghost/danger), `.error` and `.muted` all sat unstyled for
   a long time. Check plain words too.
+- **Never `window.confirm()` — use `<ConfirmDialog>`.** It wraps a native
+  `<dialog>` opened with `showModal()`, so the browser supplies the focus trap,
+  Escape, `inert` background, focus restore and top-layer stacking. Two
+  non-obvious rules live inside it and must not be "simplified" away:
+  - `.tds-modal` carries **no `z-index` and no `position: fixed`** — a top-layer
+    dialog needs neither, and their reappearance means someone reverted to a
+    `div` overlay. Guarded by `design.test.ts`.
+  - Focus is set **imperatively after** `showModal()`, never via React's
+    `autoFocus` prop: React does not render that attribute, so the dialog's own
+    focusing steps run later and override it. And `showModal` is
+    **feature-detected** with an `open`-attribute fallback, because a `<dialog>`
+    without `open` is `display: none` — a missing method would make the gated
+    destructive action *unreachable*, not just unstyled.
 - **New primitives are `tds-`-prefixed** (matching `.tds-spinner` /
   `.tds-skeleton`), because bare names like `.card` / `.page` / `.widget` are
   far too generic for a library the marketing site also loads. Pre-existing
@@ -187,7 +200,7 @@ src/
 │   └── react.tsx             # React Context provider + hook
 ├── motion/                   # animation presets
 ├── components/               # shared React islands (ThemeToggle, FormAlert,
-│                             #   CookieNotice, LiveChatCta, Spinner, Skeleton,
+│                             #   ConfirmDialog, CookieNotice, LiveChatCta, Spinner, Skeleton,
 │                             #   SkeletonText — their CSS lives in base.css, not
 │                             #   app.css, so the landingpage (base-only) gets it too)
 └── astro/                    # build presets (cssTarget / tdsViteBuild)

@@ -347,3 +347,42 @@ describe("prose.css", () => {
     expect(prose).toContain("background: var(--color-surface-ink)");
   });
 });
+
+describe("modal / confirm", () => {
+  // The `.tds-modal` block styles a native <dialog> opened with showModal().
+  // An earlier revision was a div overlay that re-implemented the focus trap,
+  // Escape handling and stacking by hand. These guard the regression.
+  const modalRule = primitives.match(/\.tds-modal \{([^}]*)\}/)?.[1] ?? "";
+
+  it("styles .tds-modal and its ::backdrop", () => {
+    expect(primitives).toContain(".tds-modal {");
+    expect(primitives).toContain(".tds-modal::backdrop {");
+  });
+
+  it("does not re-add the hand-rolled overlay's position/z-index", () => {
+    // A top-layer <dialog> needs neither, and a z-index here would be a sign
+    // someone reverted to the div overlay.
+    expect(modalRule).not.toMatch(/z-index/);
+    expect(modalRule).not.toMatch(/position:\s*fixed/);
+  });
+
+  it("has no data-open toggle — `open` is the platform's own attribute", () => {
+    expect(primitives).not.toContain(".tds-modal[data-open");
+    expect(primitives).toContain(".tds-modal[open]");
+  });
+
+  it("centres itself with auto margins rather than a grid parent", () => {
+    expect(modalRule).toMatch(/margin:\s*auto/);
+  });
+
+  it("takes the card radius from the surface token, not a literal", () => {
+    const panel = primitives.match(/\.tds-modal__panel \{([^}]*)\}/)?.[1] ?? "";
+    expect(panel).toContain("border-radius: var(--tds-radius-card)");
+  });
+
+  it("respects reduced motion by gating the entry animation", () => {
+    expect(primitives).toMatch(
+      /@media \(prefers-reduced-motion: no-preference\) \{\s*\.tds-modal\[open\]/,
+    );
+  });
+});

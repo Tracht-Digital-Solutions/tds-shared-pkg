@@ -698,6 +698,79 @@ button.tds-row {
   gap: 0.5rem;
 }
 
+/* === Modal / confirm ============================================== */
+
+/* Styles the <ConfirmDialog> component, which replaces `window.confirm()`
+   for destructive actions.
+
+   This targets a native `<dialog>` opened with `showModal()`, which is why
+   there is no `position`, `inset`, `z-index`, or `visibility` here: the
+   browser puts the element in the **top layer** (above every stacking
+   context, so no z-index race) and handles the focus trap, Escape, `inert`
+   background and focus restore. An earlier revision of this block was a
+   `div` overlay with `data-open` and a hand-rolled backdrop element; it had
+   to re-implement all of that and got the focus trap wrong. Don't go back. */
+.tds-modal {
+  width: min(100%, 28rem);
+  max-height: calc(100dvh - 3rem);
+  overflow-y: auto;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  /* A <dialog> in the top layer is centred by its own margin, not by a
+     grid parent. `auto` on all sides is what centres it vertically too. */
+  margin: auto;
+}
+.tds-modal::backdrop {
+  background: rgb(4 8 20 / 0.55);
+  /* `backdrop-filter` here is unprefixed on purpose — see the note on
+     `.brand-header`; lightningcss adds the -webkit- twin from cssTarget. */
+  backdrop-filter: blur(2px);
+}
+.tds-modal__panel {
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--tds-radius-card);
+  box-shadow: var(--tds-elevation-raised);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.tds-modal__title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-black);
+}
+.tds-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+/* Entry animation. `allow-discrete` is what lets a top-layer element
+   animate in from `display: none` at all; without it the panel would pop. */
+@media (prefers-reduced-motion: no-preference) {
+  .tds-modal[open] {
+    animation: tds-modal-in var(--tds-dur-base) var(--tds-ease-out);
+  }
+  .tds-modal[open]::backdrop {
+    animation: tds-modal-backdrop-in var(--tds-dur-base) ease;
+  }
+}
+@keyframes tds-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.98);
+  }
+}
+@keyframes tds-modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
 /* === Message thread =============================================== */
 
 /* Side-aligned message bubbles. The support-ticket thread and the live

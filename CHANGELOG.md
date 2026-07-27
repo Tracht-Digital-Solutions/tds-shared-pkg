@@ -77,9 +77,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   never defined (~96 orphan BEM names): `.tds-card`, `.tds-page` (+`__head`,
   `__title`, `__lede`), `.tds-widget` (+`__title`, `__metric`),
   `.tds-settings-section`, `.tds-list` (+`__row`), `.tds-table`, `.tds-empty`,
-  `.tds-alert`, `.tds-modal` (+`__backdrop`, `__panel`, `__title`,
-  `__actions`), `.tds-toolbar`, `.tds-field-row`, `.tds-search-field`,
-  `.tds-toggle-row`, `.tds-thread` (+`__item--own`/`--other`, `__author`) and
+  `.tds-alert`, `.tds-modal` (+`__panel`, `__title`, `__actions`),
+  `.tds-toolbar`, `.tds-field-row`, `.tds-toggle-row`,
+  `.tds-thread` (+`__item--own`/`--other`, `__author`) and
   `.btn-danger`. Note `.tds-page__title` exists because Tailwind preflight
   strips heading sizes, so every extension page title rendered at body size.
 - **`styles/prose.css`** — `.tds-prose`, promoted from the blog's
@@ -128,16 +128,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   all — `*__actions` / `*__toolbar` map onto the existing `.tds-toolbar`, and
   `*__meta` / `*__hint` onto the existing `.marginalia`.
 
+### Added — `<ConfirmDialog>`, replacing `window.confirm()`
+- **`ConfirmDialog`** in `tds-shared/components`, plus the `.tds-modal*` CSS it
+  needs. Built on the native **`<dialog>` + `showModal()`**, which is what makes
+  it an accessibility improvement rather than a reskin: the browser provides the
+  focus trap, `Escape`-to-dismiss, `inert` background, focus restoration to the
+  trigger, and top-layer stacking (no `z-index` can bury it). An earlier draft of
+  the CSS was a `div` overlay with `data-open` and a hand-rolled backdrop
+  element; it had to re-implement all of that. `design.test.ts` now guards
+  against that revert (no `z-index`/`position: fixed`, no `[data-open]`).
+- Auditing every `method: "DELETE"` against its gate found **only 3 of 10
+  destructive actions confirmed at all**. The three `window.confirm()` calls were
+  the visible half of the problem; the invisible half was seven deletes with no
+  prompt whatsoever. Now gated: users (host), blog authors, **blog posts**,
+  **invoices**, **customers**, **FAQ entries**, **docs**, **projects**,
+  **milestones** — nine in total.
+  - **Deliberate exception:** the time-tracker's per-entry delete stays ungated.
+    It is a single self-owned row in a high-frequency list, where a prompt on
+    every correction is friction rather than protection. The line drawn is *gate
+    what cascades or what another party depends on* — not every `DELETE`.
+  - The milestone delete is gated even though its trigger is a bare „×", because
+    a tiny control beside a title is exactly what a misclick hits.
+- Two behaviours the native dialog does *not* give you, so the component does:
+  - **Focus is set imperatively after `showModal()`,** not via React's
+    `autoFocus` prop. React never renders `autoFocus` as an HTML attribute (it
+    focuses on mount instead), so `showModal()`'s own focusing steps run
+    afterwards, find no `[autofocus]`, and settle on the first focusable
+    element. The prop was silently doing nothing. For a destructive prompt
+    focus starts on **Cancel**, and Cancel is also first in DOM order so a
+    platform ignoring the explicit call still lands somewhere safe.
+  - **`showModal` is feature-detected** with an `open`-attribute fallback. Not a
+    test concession: a bare `<dialog>` without `open` is `display: none`, so on
+    any platform lacking the method the dialog would silently never appear —
+    and since it gates destructive actions, the action would become
+    *unreachable*, not merely unstyled. (jsdom ≤25 implements none of the
+    `<dialog>` methods, which is how this surfaced.)
+  - `busy` disables both buttons and ignores backdrop clicks while the action is
+    in flight — double-submit protection that blocking `window.confirm()` gave
+    away for free.
+
 ### Removed (never released — shipped no consumers)
-- **`.tds-modal*`** and **`.tds-search-field`** and **`.tds-toolbar__spacer`**.
-  Same rule as the four unpromoted duplicates below: don't ship a primitive
+- **`.tds-search-field`** and **`.tds-toolbar__spacer`**. Don't ship a primitive
   nothing uses. `.tds-search-field` is a wrapper for an icon + input, and the
   only search input in the platform (the API-wiki filter) is a bare input with
-  no icon — it uses `.field-boxed` instead. `.tds-modal*` needs a real
-  `<ConfirmDialog>` component (state, focus trap, a11y) to be usable at the
-  three `window.confirm()` sites; it comes back with that component, not
-  before. `.tds-toolbar__spacer` was `margin-left: auto`, which Tailwind's
-  `ml-auto` already provides.
+  no icon — it uses `.field-boxed` instead. `.tds-toolbar__spacer` was
+  `margin-left: auto`, which Tailwind's `ml-auto` already provides.
   `.tds-alert--success` / `--warning` are deliberately kept despite having no
   consumer yet: a three-line modifier completing an obvious axis on a
   29-consumer primitive is discoverability, not a speculative abstraction.
