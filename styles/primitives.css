@@ -875,22 +875,77 @@ button.tds-row {
   background: var(--color-soft);
 }
 
+/* === Hamburger toggle bars ======================================== */
+
+/* Animated hamburger ↔ × — three absolutely-positioned bars that
+   transform on the toggle's `aria-expanded`. The top and bottom rotate
+   into an × while the middle fades.
+
+   Shared by the landingpage header and the blog's journal header, which
+   carried near-identical copies. The blog's copy called itself a verbatim
+   duplicate; it was not, in two ways worth keeping straight:
+     - the landingpage set `border-radius: 2px` and the blog omitted it —
+       not drift but the flat surface, so it is `--tds-radius-bar` now
+       (2px by default, 0 under `[data-surface="blog"]`);
+     - only the blog had a reduced-motion rule. Promoting the block gives
+       the landingpage the one it was missing.
+
+   The open state keys on `[aria-expanded="true"]` on any ancestor rather
+   than a specific toggle class, so each header keeps its own button
+   naming (`.menu-toggle` / `.jnl-menu-toggle`) with no shared class to
+   coordinate. Scoped by the bar class, so it cannot leak to unrelated
+   expandable controls. */
+.tds-menu-bar {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 1.75px;
+  background-color: currentColor;
+  border-radius: var(--tds-radius-bar);
+  transform-origin: center;
+  transform: translate(-50%, -50%);
+  transition:
+    transform var(--tds-dur-base) cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 180ms ease;
+}
+.tds-menu-bar-top {
+  transform: translate(-50%, calc(-50% - 6px));
+}
+.tds-menu-bar-bot {
+  transform: translate(-50%, calc(-50% + 6px));
+}
+[aria-expanded="true"] .tds-menu-bar-top {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+[aria-expanded="true"] .tds-menu-bar-mid {
+  opacity: 0;
+  transform: translate(-50%, -50%) scaleX(0.6);
+}
+[aria-expanded="true"] .tds-menu-bar-bot {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tds-menu-bar {
+    transition-duration: 0.01ms;
+  }
+}
+
 /* NOT PROMOTED YET — deliberate, see AGENTS.md ("don't promote until at
-   least two consumers actually need it"). Each of these is a real
-   duplicate and a genuine follow-up, but wiring them means surgery on
-   large visual components (Header.astro 453 lines, JournalHeader.astro
-   541 lines), which does not belong in the same change as the token
-   unification:
-     - the hamburger bars: the blog's `.jnl-menu-bar*` is a verbatim copy
-       of the landingpage's `.menu-bar*` and says so in its own comment;
+   least two consumers actually need it"). These are real duplicates, but
+   each needs more than a CSS move:
      - the reading-progress bar: two implementations, `h-[2px]` gradient
-       (landingpage motion island) vs `h-[3px]` solid accent (blog script);
-     - the `[data-reveal]` scroll-reveal primitive (blog CSS/IO vs
-       landingpage framer-motion);
-     - the `.brand-logo` CSS-mask logomark, which is strictly better than
-       the landingpage's `filter: brightness(0) invert(1)` raster hack, but
+       (landingpage motion island) vs `h-[3px]` solid accent (blog
+       script). The CSS is trivial; the mechanisms differ, and unifying
+       the *look* would be the visual redesign this change rules out.
+     - the `[data-reveal]` scroll-reveal primitive: the blog uses CSS +
+       IntersectionObserver, the landingpage uses framer-motion. Not a
+       shared-CSS problem — promoting it means moving the landingpage off
+       `motion` for reveals, a behavioural change with its own risk.
+     - the `.brand-logo` CSS-mask logomark, strictly better than the
+       landingpage's `filter: brightness(0) invert(1)` raster hack, but it
        needs a single-colour silhouette asset the landingpage does not
-       currently ship. */
+       ship. Blocked on an asset, not on code. */
 
 /* === Version marker =============================================== */
 

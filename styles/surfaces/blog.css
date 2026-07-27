@@ -41,6 +41,7 @@
   --tds-radius-input: var(--tds-radius-none);
   --tds-radius-card: var(--tds-radius-none);
   --tds-radius-alert: var(--tds-radius-none);
+  --tds-radius-bar: var(--tds-radius-none);
 
   /* Never any lift — the flat kit separates with colour, not shadow. */
   --tds-elevation-card: none;

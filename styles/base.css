@@ -205,6 +205,7 @@
   --tds-radius-input: var(--tds-radius-xs); /* .field-boxed    was 2px     */
   --tds-radius-card: 0.75rem; /* .stat-tile      was 0.75rem */
   --tds-radius-alert: 0.5rem; /* .form-alert     was 0.5rem  */
+  --tds-radius-bar: var(--tds-radius-xs); /* .tds-menu-bar   was 2px     */
 
   /* --- Elevation ---------------------------------------------------
      Brand-tinted (navy) and layered, per the design-system handoff. The

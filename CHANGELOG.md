@@ -128,6 +128,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   all — `*__actions` / `*__toolbar` map onto the existing `.tds-toolbar`, and
   `*__meta` / `*__hint` onto the existing `.marginalia`.
 
+### Added — `.tds-menu-bar*` (hamburger toggle bars)
+- Promoted from the landingpage header and the blog's journal header, which
+  carried the same rules under two names (`.menu-bar*` / `.jnl-menu-bar*`), plus
+  the new `--tds-radius-bar` token.
+- The blog's copy described itself as a verbatim duplicate. It wasn't, and both
+  differences mattered: the landingpage set `border-radius: 2px` while the blog
+  omitted it — the flat surface talking, now a token override — and **only the
+  blog had a `prefers-reduced-motion` rule**, so promoting the block fixed an
+  accessibility gap on the landingpage instead of just deduplicating.
+- The open state keys on `[aria-expanded="true"]` on any ancestor rather than a
+  toggle class, so each header keeps its own button naming with nothing to
+  coordinate. Verified in both builds: identical shared rule, `--tds-radius-bar`
+  resolving to 2px on marketing and 0 on blog — so both render exactly as before.
+
 ### Added — `<ConfirmDialog>`, replacing `window.confirm()`
 - **`ConfirmDialog`** in `tds-shared/components`, plus the `.tds-modal*` CSS it
   needs. Built on the native **`<dialog>` + `showModal()`**, which is what makes

@@ -40,6 +40,7 @@ const GEOMETRY_TOKENS = [
   "--tds-radius-input",
   "--tds-radius-card",
   "--tds-radius-alert",
+  "--tds-radius-bar",
 ] as const;
 
 describe("surface token scale", () => {
@@ -345,6 +346,40 @@ describe("prose.css", () => {
 
   it("uses the fixed dark surface for code blocks so they never invert", () => {
     expect(prose).toContain("background: var(--color-surface-ink)");
+  });
+});
+
+describe("hamburger toggle bars", () => {
+  it("exposes .tds-menu-bar and its three positions", () => {
+    for (const sel of [".tds-menu-bar {", ".tds-menu-bar-top {", ".tds-menu-bar-bot {"]) {
+      expect(primitives).toContain(sel);
+    }
+  });
+
+  it("takes the bar radius from a token, not the landingpage's 2px literal", () => {
+    const rule = primitives.match(/\.tds-menu-bar \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toContain("border-radius: var(--tds-radius-bar)");
+    expect(rule).not.toMatch(/border-radius:\s*2px/);
+  });
+
+  it("flattens the bars on the blog surface", () => {
+    // The blog's copy omitted border-radius entirely; that is the surface
+    // talking, so it must be expressed as a token override.
+    expect(surfaceCss.blog).toMatch(/--tds-radius-bar:\s*var\(--tds-radius-none\)/);
+  });
+
+  it("keys the open state on aria-expanded, not a per-app toggle class", () => {
+    // Each header keeps its own button class (.menu-toggle / .jnl-menu-toggle),
+    // so the shared rule must not name either.
+    expect(primitives).toContain('[aria-expanded="true"] .tds-menu-bar-top');
+    expect(primitives).not.toContain("jnl-menu-toggle");
+    expect(primitives).not.toMatch(/\.menu-toggle\[/);
+  });
+
+  it("carries the reduced-motion rule the landingpage was missing", () => {
+    expect(primitives).toMatch(
+      /@media \(prefers-reduced-motion: reduce\) \{\s*\.tds-menu-bar \{/,
+    );
   });
 });
 

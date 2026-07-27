@@ -15,6 +15,19 @@ import this — they duplicate the small bit of validation they need, by design.
 - **Don't promote a component or util here until at least two
   consumers actually need it.** Duplication is cheaper than the wrong
   abstraction.
+  - **But check whether the duplicates really are identical before you
+    promote — the difference is usually the interesting part.** The two
+    hamburger-toggle blocks were labelled a verbatim copy (by the copy
+    itself) and were not: the landingpage set `border-radius: 2px` and the
+    blog omitted it, which is the *surface* speaking and is now
+    `--tds-radius-bar`; and only the blog had a `prefers-reduced-motion`
+    rule, so promoting the block **fixed an accessibility gap** on the
+    landingpage rather than merely deduplicating. Diff them line by line.
+  - **A shared rule must not name a per-app class.** `.tds-menu-bar`'s open
+    state keys on `[aria-expanded="true"]` on any ancestor, so each header
+    keeps its own toggle class (`.menu-toggle` / `.jnl-menu-toggle`) with
+    nothing to coordinate. Scope by the shared class so it cannot leak to
+    other expandable controls.
 - **No runtime side-effects in any JS module.** `sideEffects: ["*.css"]`
   in package.json — only the stylesheets carry side effects (so bundlers
   keep them); keep the JS modules pure so consumers tree-shake correctly.
