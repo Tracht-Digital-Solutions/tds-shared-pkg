@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+> **Release this as a `minor` → it must publish as `0.14.0`.** Every consumer of
+> this change pins `^0.14.0` (products/host) or `>=0.14.0` (extensions), so any
+> other number leaves 21 repos unable to resolve the dependency.
+>
+> The `version` field was reconciled `0.12.3` → `0.13.0` in this change, because
+> it had drifted **behind the registry**: `0.13.0` was published on 2026-07-25,
+> but the release workflow's `git push --follow-tags origin HEAD:main` never
+> landed, so `main` kept the pre-release value and no `release: 0.13.0` commit or
+> `v0.13.0` tag exists. Left at `0.12.3`, `npm version minor` would recompute
+> `0.13.0` and `npm publish` would fail with a 409 (version already exists).
+> Reconciling the field is not taking the bump by hand — it restores what the
+> workflow itself would have written, so its own arithmetic lands on `0.14.0`.
+> If a release ever 409s again, check `npm view … versions` against `main`'s
+> `version` before touching anything else.
+
 ### Changed
 - **One design library, three surfaces.** The design was maintained as three
   divergent variations — landingpage (round/pills), panel (8px), blog
