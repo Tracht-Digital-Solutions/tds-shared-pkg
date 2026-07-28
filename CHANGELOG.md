@@ -142,6 +142,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   coordinate. Verified in both builds: identical shared rule, `--tds-radius-bar`
   resolving to 2px on marketing and 0 on blog — so both render exactly as before.
 
+### Added — `themeBootstrapScript` + the theme contract constants
+- **`themeBootstrapScript`** (`tds-shared/astro`) — the no-flash theme
+  bootstrap as a raw JS source string, replacing three hand-maintained inline
+  copies in the landingpage, blog and frontend-host layouts. The logic was
+  identical in all three; the text was not (the host had dropped the
+  `catch` comment and rewrapped a line), which is exactly how a
+  behavioural difference would have crept in unnoticed.
+- **`THEME_STORAGE_KEY` / `THEME_ATTRIBUTE` / `THEMES`** (`tds-shared/design`) —
+  the contract between the bootstrap (reads the key before paint),
+  `ThemeToggle` (writes it) and `base.css` (selects on the attribute). All
+  three previously hardcoded `"tds-theme"` / `"data-theme"` independently, so
+  a rename in one would have silently split the toggle from the bootstrap:
+  the theme still persists, but every reload flashes the OS default for a
+  frame. `ThemeToggle` now imports both.
+- **Call it with `set:html`, not as a template body.** A template body would
+  leak literal braces into `dist/` (the raw-body trap in the root CLAUDE.md).
+  Verified in all four built sites that the emitted script is unescaped — the
+  `"tds-theme"` quotes stay `"` and `&&` does not become `&amp;&amp;` — and is
+  byte-identical to the script the landingpage shipped before.
+- Tested by **executing** the script against hand-rolled globals rather than
+  only asserting on its text: stored-wins-over-OS, corrupt stored value,
+  `localStorage` throwing (Safari private mode), and missing `matchMedia`.
+
 ### Added — `<ConfirmDialog>`, replacing `window.confirm()`
 - **`ConfirmDialog`** in `tds-shared/components`, plus the `.tds-modal*` CSS it
   needs. Built on the native **`<dialog>` + `showModal()`**, which is what makes
@@ -192,29 +215,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   29-consumer primitive is discoverability, not a speculative abstraction.
 
 ### Not done (deliberate, tracked)
-- Four known duplicates are **not** promoted, because AGENTS.md requires two
-  real consumers and wiring them means surgery on large visual components
-  (`Header.astro` 453 lines, `JournalHeader.astro` 541 lines) that does not
-  belong in the same change as the token unification: the hamburger bars (the
-  blog's `.jnl-menu-bar*` is a verbatim copy of the landingpage's
-  `.menu-bar*`), the reading-progress bar (2px gradient island vs 3px solid
-  script), the `[data-reveal]` scroll-reveal primitive, and the `.brand-logo`
-  CSS-mask logomark (better than the landingpage's
-  `filter: brightness(0) invert(1)` raster hack, but needs a single-colour
-  silhouette asset the landingpage does not ship). See the note at the bottom
-  of `styles/primitives.css`.
-- **`src/__tests__/design.test.ts`** — 43 tests guarding the contracts that
+- **Three** known duplicates remain unpromoted. Each is blocked on something
+  other than the CSS move, so none is a "just do it later" item:
+  - the **reading-progress bar** — two mechanisms (a framer-motion island vs a
+    vanilla script) *and* two looks (2px gradient vs 3px solid). Unifying the
+    look is the visual redesign this change explicitly rules out.
+  - the **`[data-reveal]` scroll-reveal primitive** — the blog uses CSS +
+    IntersectionObserver, the landingpage uses framer-motion. Promoting means
+    moving the landingpage off `motion` for reveals: a behavioural change with
+    its own risk, not a shared-CSS problem.
+  - the **`.brand-logo` CSS-mask logomark** — better than the landingpage's
+    `filter: brightness(0) invert(1)` raster hack, but needs a single-colour
+    silhouette asset the landingpage does not ship. Blocked on an asset.
+
+  See the note at the bottom of `styles/primitives.css`. (The hamburger bars
+  and the theme bootstrap, previously listed here, are now promoted — see
+  above. `<BrandWordmark>` was deliberately resolved as a *host-local*
+  component rather than a shared one; the rationale is in AGENTS.md.)
+- **`src/__tests__/design.test.ts`** — 54 tests guarding the contracts that
   fail silently: surface tokens present, geometry kept out of `@theme inline`,
   surface layers attribute-scoped and token-only, no `999px` literal left in
   primitives, `.btn` vs `.btn-*` split intact, `backdrop-filter` unprefixed,
-  no `border-radius` under `:focus-visible`, and the chip catalog matching the
-  `.chip--*` rules that actually exist.
+  no `border-radius` under `:focus-visible`, the `.tds-modal` top-layer rules,
+  the `.tds-menu-bar` open state, and the chip catalog matching the `.chip--*`
+  rules that actually exist. 180 tests across the whole suite.
 
 - **Display font is now Lato, not Hanken Grotesk.** `--font-display` moves to
   **Lato** — the official Tracht Digital Solutions brand font — so the whole
-  brand (display headings + `.brand-wordmark`) reads in Lato. Body/mono fonts are
-  unchanged (Geist on the landingpage, Plus Jakarta Sans on the frontends, JetBrains
-  Mono). Lato ships as the static `@fontsource/lato` package (weights 400/700/900),
+  brand (display headings + `.brand-wordmark`) reads in Lato. Body/mono are now
+  **Plus Jakarta Sans / JetBrains Mono everywhere** — this entry originally said
+  body/mono were "unchanged (Geist on the landingpage)", which the same
+  unreleased change then contradicted by moving the landingpage off Geist (where
+  `--font-mono` had been pointing at an uninstalled `Geist Mono`).
+  Lato ships as the static `@fontsource/lato` package (weights 400/700/900),
   so consumers import `@fontsource/lato/{400,700,900}.css` instead of the variable
   `@fontsource-variable/hanken-grotesk`. Hanken Grotesk is retired as the display
   face.

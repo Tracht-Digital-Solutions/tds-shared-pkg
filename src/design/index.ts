@@ -109,3 +109,21 @@ export function isKnownChipColor(color: string | null | undefined): boolean {
 /** The three design surfaces. Each app sets one on `<html data-surface>`. */
 export const SURFACES = ["marketing", "blog", "panel"] as const;
 export type Surface = (typeof SURFACES)[number];
+
+/**
+ * The attribute the theme lives on, and the localStorage key it persists to.
+ *
+ * These two are a **contract between three places**: the no-flash bootstrap
+ * (`themeBootstrapScript`, tds-shared/astro) READS the key in `<head>` before
+ * paint, `ThemeToggle` WRITES it, and `styles/base.css` selects on the
+ * attribute (`[data-theme="dark"]`). All three hardcoded the same literals
+ * independently — a rename in one would have silently split the toggle from
+ * the bootstrap (theme persists, but every reload flashes the OS default).
+ * Import these instead of retyping the strings.
+ */
+export const THEME_STORAGE_KEY = "tds-theme";
+export const THEME_ATTRIBUTE = "data-theme";
+
+/** The two theme values. Anything else in storage is ignored as corrupt. */
+export const THEMES = ["light", "dark"] as const;
+export type Theme = (typeof THEMES)[number];

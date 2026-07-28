@@ -59,7 +59,8 @@ describe("ConfirmDialog", () => {
     const showModal = vi.fn(function (this: HTMLDialogElement) {
       this.setAttribute("open", "");
     });
-    // @ts-expect-error -- installing the method jsdom lacks
+    // Installing the method jsdom lacks. This assignment type-checks (the DOM
+    // lib declares showModal); only the `delete` below needs a suppression.
     HTMLDialogElement.prototype.showModal = showModal;
     try {
       render(<ConfirmDialog open title="X?" onConfirm={noop} onCancel={noop} />);

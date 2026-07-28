@@ -28,6 +28,32 @@ import this — they duplicate the small bit of validation they need, by design.
     keeps its own toggle class (`.menu-toggle` / `.jnl-menu-toggle`) with
     nothing to coordinate. Scope by the shared class so it cannot leak to
     other expandable controls.
+  - **A shared *snippet* is fine when a shared *component* would be a
+    pass-through.** `.brand-wordmark` is used at a different size and colour
+    in every surface (landingpage footer `text-2xl`, blog sidebar
+    `text-[1.0625rem]` + inline ink, blog footer on `#fff`), so a shared
+    `<BrandWordmark>` would only forward `class` — the CSS class already *is*
+    the abstraction. The wordmark component that does exist is deliberately
+    **local to tds-core-frontend-pkg**, where the shell renders it three times
+    identically. Promote behaviour, not markup wrappers.
+- **`themeBootstrapScript` (src/astro) is the one no-flash theme script.**
+  It replaced three hand-copied inline scripts. Two hard rules at the call
+  site, both silent-failure traps:
+  - **Inject with `set:html`, never as a template body.**
+    `<script is:inline set:html={themeBootstrapScript} />` is correct;
+    `<script is:inline>{themeBootstrapScript}</script>` leaks the literal
+    braces into `dist/` (the raw-body trap in the root CLAUDE.md) and the
+    script never parses. Verified in `dist/`: the `"tds-theme"` quotes and the
+    `&&` must come out unescaped.
+  - **Keep `is:inline` and keep it in `<head>`.** Without `is:inline` Astro
+    hoists it into a deferred module and the theme lands *after* first paint —
+    exactly the flash it exists to prevent. In the frontend host it must also
+    stay **before** the pre-paint auth gate, whose spinner paints in theme
+    colours.
+  - `THEME_STORAGE_KEY` / `THEME_ATTRIBUTE` (src/design) are the contract
+    between the bootstrap (reads), `ThemeToggle` (writes) and `base.css`
+    (selects). All three used to hardcode the literals independently. Import
+    them; don't retype `"tds-theme"`.
 - **No runtime side-effects in any JS module.** `sideEffects: ["*.css"]`
   in package.json — only the stylesheets carry side effects (so bundlers
   keep them); keep the JS modules pure so consumers tree-shake correctly.
@@ -216,7 +242,8 @@ src/
 │                             #   ConfirmDialog, CookieNotice, LiveChatCta, Spinner, Skeleton,
 │                             #   SkeletonText — their CSS lives in base.css, not
 │                             #   app.css, so the landingpage (base-only) gets it too)
-└── astro/                    # build presets (cssTarget / tdsViteBuild)
+└── astro/                    # build presets (cssTarget / tdsViteBuild) +
+                              #   themeBootstrapScript (the no-flash <head> script)
 ```
 
 `src/__tests__/` holds the vitest suite (`npm run test` / `test:run`).
