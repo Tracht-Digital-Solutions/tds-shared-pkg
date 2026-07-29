@@ -329,6 +329,23 @@
 .portal-sidebar.collapsed .sidebar-hide-collapsed {
   display: none;
 }
+/* With the wordmark and the footer label hidden there is nothing left for
+   the head/foot rows to align against, so centre what remains (the collapse
+   button, the theme toggle) rather than leaving them pinned right. */
+.portal-sidebar.collapsed .sidebar-head,
+.portal-sidebar.collapsed .sidebar-foot {
+  justify-content: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+.portal-sidebar.collapsed .sidebar-head .btn {
+  margin-left: 0;
+}
+/* Hairline above the footer row, in the rail's remapped (translucent white)
+   line token. */
+.sidebar-foot {
+  border-top: 1px solid var(--color-line);
+}
 /* Keep a visible separation between groups once their labels are gone,
    otherwise the collapsed rail is one undifferentiated column of icons. */
 .portal-sidebar.collapsed .nav-group + .nav-group {
