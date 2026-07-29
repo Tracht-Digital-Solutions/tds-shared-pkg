@@ -264,3 +264,38 @@ Two GitHub Actions workflows (the old tag-triggered `publish.yml` is gone):
 
 Consumers pin a caret range (e.g. `^0.5.0`), so any matching `@latest` patch
 resolves on their next install/build.
+
+## Tests — LiveChatCta
+
+`src/components/LiveChatCta.tsx` is the visitor-facing support bubble, mounted
+on the **public** landing page, the blog, the portal and the tools site. It had
+no tests; `src/__tests__/LiveChatCta.test.tsx` adds 56.
+
+The first assertions are the negative ones, because the failure mode is a chat
+bubble appearing on tracht-digital.de that nobody switched on:
+
+- **nothing renders** while the config is in flight, when the backend says
+  `enabled: false`, when the config request fails, when the backend is
+  unreachable, or when every tab is switched off;
+- the **hide flag is per frontend** (`tds-live-chat-hidden:<frontend>`), so
+  dismissing it on the blog does not silence it on the landing page — and a
+  blocked `localStorage` (Safari private mode) must not crash the widget;
+- the panel **lands on the first ENABLED tab**, not blindly on chat, which
+  would otherwise show an empty body when chat is off.
+
+In the chat pane: the session token travels as the **`X-Chat-Token` header,
+never in the URL** (a URL lands in server logs), the session is stored per
+frontend, the poll cursor advances so a poll never re-fetches what it already
+has, the interval is cleared on unmount, and Enter sends while **Shift+Enter**
+inserts a newline.
+
+In the contact pane: the **honeypot** is the only bot defence available in the
+browser, so it is asserted to be present in the payload AND unreachable to a
+person (`tabIndex={-1}`, `aria-hidden`, positioned off-screen). A **429 says
+"too many requests"** rather than the validation message — otherwise the
+visitor is sent round in circles correcting a form that was fine.
+
+Admin-authored FAQ/doc text renders through `Prose`, which relies on React's
+escaping — asserted with an `<img onerror>` that must survive as inert text.
+
+Verified by mutation: 43 deliberate breakages introduced, 43 caught.

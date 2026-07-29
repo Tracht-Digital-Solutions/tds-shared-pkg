@@ -1,6 +1,6 @@
 {
   "name": "@tracht-digital-solutions/tds-shared",
-  "version": "0.13.0",
+  "version": "0.13.2",
   "description": "Shared design system (CSS foundation + React components), TypeScript types, Zod schemas, i18n strings, and motion presets used across the TDS frontends.",
   "license": "UNLICENSED",
   "private": false,
@@ -54,15 +54,15 @@
       "import": "./dist/astro/index.js",
       "require": "./dist/astro/index.cjs"
     },
+    "./styles/base.css": "./styles/base.css",
+    "./styles/app.css": "./styles/app.css",
     "./design": {
       "types": "./dist/design/index.d.ts",
       "import": "./dist/design/index.js",
       "require": "./dist/design/index.cjs"
     },
-    "./styles/base.css": "./styles/base.css",
     "./styles/primitives.css": "./styles/primitives.css",
     "./styles/prose.css": "./styles/prose.css",
-    "./styles/app.css": "./styles/app.css",
     "./styles/surfaces/marketing.css": "./styles/surfaces/marketing.css",
     "./styles/surfaces/blog.css": "./styles/surfaces/blog.css",
     "./styles/surfaces/panel.css": "./styles/surfaces/panel.css"
@@ -92,6 +92,7 @@
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
