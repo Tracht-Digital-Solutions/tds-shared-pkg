@@ -10,6 +10,7 @@ export default defineConfig({
     "motion/index": "src/motion/index.ts",
     "components/index": "src/components/index.ts",
     "astro/index": "src/astro/index.ts",
+    "design/index": "src/design/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,

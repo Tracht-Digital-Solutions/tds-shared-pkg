@@ -1,0 +1,272 @@
+/**
+ * TDS long-form prose — `.tds-prose`.
+ *
+ * Promoted verbatim (modulo tokenisation) from `tds-blog-frontend`'s
+ * `.prose-article`, which was the ONLY long-form typography implementation
+ * anywhere in the project. Two consumers need it:
+ *
+ *   1. the public blog article body, and
+ *   2. the blog-CMS markdown preview pane in the admin panel, which
+ *      rendered `class="blog-editor__preview prose"` where `prose` is
+ *      `@tailwindcss/typography` — a plugin that is installed in NO
+ *      product. That preview has therefore always rendered unstyled.
+ *
+ * Import it after primitives.css:
+ *
+ *   @import "@tracht-digital-solutions/tds-shared/styles/prose.css";
+ *
+ * NESTING A BLOG SURFACE INSIDE A PANEL: the CMS preview should look like
+ * the published article, so give the preview container both the class and
+ * the surface attribute —
+ *
+ *   <div class="tds-prose" data-surface="blog"> … </div>
+ *
+ * That is exactly why surfaces/*.css is scoped to `[data-surface="…"]`
+ * rather than `:root[data-surface="…"]`.
+ *
+ * Provenance note on `set:html` safety: the public blog renders
+ * admin-authored, build-time-baked markdown (safe by provenance). The CMS
+ * editor's preview uses the escape-first `renderMarkdown()` in
+ * `tds-ext-blog-cms-pkg`. Neither is affected by this stylesheet, but if a
+ * non-admin ever authors a body, add `isomorphic-dompurify` first.
+ */
+
+.tds-prose {
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--color-ink);
+  max-width: 65ch;
+}
+
+.tds-prose p {
+  margin: 1.25em 0;
+}
+.tds-prose p + p {
+  margin-top: 1.25em;
+}
+
+/* Heading weights are the EFFECTIVE values. The blog declared h2/h3 at
+   500 near the top of its global.css and then re-declared them at 700/600
+   in a later "Grotesk heading weights" block (the display face changed
+   from a serif to a grotesk and 500 stopped reading as a heading). Folded
+   together here so there is one number per property. */
+.tds-prose h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  font-size: 1.875rem;
+  line-height: 1.15;
+  margin-top: 2.5em;
+  margin-bottom: 0.5em;
+}
+.tds-prose h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.375rem;
+  line-height: 1.2;
+  margin-top: 2em;
+  margin-bottom: 0.5em;
+}
+
+.tds-prose a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  /* long bare URLs shouldn't force horizontal page scroll on mobile */
+  overflow-wrap: break-word;
+}
+.tds-prose a:hover {
+  text-decoration-thickness: 2px;
+}
+.tds-prose em {
+  font-style: italic;
+  color: var(--color-accent);
+}
+.tds-prose strong {
+  color: var(--color-black);
+  font-weight: 600;
+}
+
+/* Flat colour-block quote (kantig — a surface instead of a rule line).
+   `--tds-flat-tint` comes from surfaces/blog.css; the fallback keeps the
+   block legible if the prose is rendered on a surface that doesn't define
+   it. */
+.tds-prose blockquote {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 1.5rem;
+  line-height: 1.35;
+  color: var(--color-primary);
+  background: var(
+    --tds-flat-tint,
+    color-mix(in srgb, var(--color-primary) 9%, var(--color-paper))
+  );
+  margin: 1.5em 0;
+  padding: 1.25rem 1.5rem;
+}
+
+.tds-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--color-soft);
+  padding: 0.0625em 0.375em;
+}
+.tds-prose pre {
+  /* Shiki sets its own background/foreground via inline `style` — these
+     defaults only apply to non-highlighted blocks (no `lang` hint or an
+     unsupported language). `--color-surface-ink` is a FIXED dark surface,
+     so a code block never inverts in dark mode. */
+  background: var(--color-surface-ink);
+  color: #f5f3ec;
+  padding: 1.25rem 1.5rem;
+  overflow-x: auto;
+  margin: 1.75em 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.tds-prose pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  font-family: var(--font-mono);
+}
+/* Shiki output: each line is a <span class="line"> — keep the pre's own
+   padding and let Shiki's inline colours render. */
+.tds-prose pre.shiki .line {
+  display: block;
+}
+.tds-prose pre.shiki {
+  font-family: var(--font-mono);
+}
+
+.tds-prose ul,
+.tds-prose ol {
+  padding-left: 1.5em;
+  margin: 1.25em 0;
+}
+.tds-prose li {
+  margin: 0.5em 0;
+}
+.tds-prose hr {
+  border: 0;
+  border-top: 1px solid var(--color-line);
+  margin: 3em 0;
+}
+
+/* Responsive media + overflow guards — markdown bodies can contain
+   images, embeds, GFM tables and long inline tokens (URLs, code) that
+   would otherwise blow out the page width on a phone. Constrain media to
+   the column, let wide tables scroll inside their own box, and let long
+   tokens wrap. */
+.tds-prose :is(img, video, iframe) {
+  max-width: 100%;
+  height: auto;
+  margin: 1.75em 0;
+}
+.tds-prose :not(pre) > code {
+  overflow-wrap: break-word;
+}
+.tds-prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 1.75em 0;
+  font-size: 0.9375rem;
+}
+.tds-prose :is(th, td) {
+  border: 1px solid var(--color-line);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+.tds-prose thead th {
+  background: var(--color-soft);
+}
+
+/* Phone widths: the generous desktop padding on quote/code/table blocks
+   eats into the already-narrow reading column. Trim it (and the oversized
+   pull-quote) so these blocks breathe on small screens. `pre`/`table` keep
+   their own `overflow-x: auto` for wide content. */
+@media (max-width: 640px) {
+  .tds-prose blockquote {
+    font-size: 1.25rem;
+    padding: 1rem 1.125rem;
+  }
+  .tds-prose pre {
+    padding: 1rem 1.125rem;
+  }
+  .tds-prose :is(th, td) {
+    padding: 0.4em 0.6em;
+  }
+}
+
+/* === Block-renderer output (bodyFormat="blocks") ===================
+   Callouts, buttons, responsive video + custom embeds baked into the prose
+   by BlockRenderer.astro. */
+
+/* The radius is a surface token now, so on the blog surface a callout is
+   finally square — it used to carry a hard-coded 0.4rem, which the blog's
+   own AGENTS.md flagged as breaking the flat kit. */
+.tds-prose .tds-callout {
+  border-left: 3px solid var(--color-info);
+  background: color-mix(in srgb, var(--color-info) 8%, transparent);
+  padding: 0.85rem 1.1rem;
+  border-radius: var(--tds-radius-alert);
+  margin: 1.5rem 0;
+}
+.tds-prose .tds-callout--warn {
+  border-color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 8%, transparent);
+}
+.tds-prose .tds-callout--tip {
+  border-color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 8%, transparent);
+}
+
+.tds-prose .tds-block-button {
+  margin: 1.5rem 0;
+}
+/* Compatibility geometry: BlockRenderer emits a bare `.btn-primary` /
+   `.btn-ghost` link without the `.btn` geometry class, so supply the
+   geometry here. Prefer emitting `class="btn btn-primary"` in new markup —
+   then this block is redundant and the rule below simply agrees with it. */
+.tds-prose .tds-block-button .btn-primary,
+.tds-prose .tds-block-button .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.6rem 1.3rem;
+  border-radius: var(--tds-radius-btn);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background var(--tds-dur-fast) ease,
+    color var(--tds-dur-fast) ease;
+}
+.tds-prose .tds-block-button .btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+.tds-prose .tds-block-button .btn-ghost {
+  border: 1px solid var(--color-line);
+  color: var(--color-ink);
+}
+
+.tds-video-embed {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  margin: 1.75rem 0;
+}
+.tds-video-embed iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: var(--tds-radius-card);
+}
+.tds-block-embed {
+  margin: 1.75rem 0;
+}

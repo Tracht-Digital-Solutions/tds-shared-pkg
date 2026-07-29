@@ -1,0 +1,43 @@
+/**
+ * SURFACE: marketing (Variation 1)
+ *
+ * The public marketing voice: tracht-digital.de (`tds-landingpage-frontend`)
+ * and tools.tracht-digital.de (`tds-tools-frontend`).
+ *
+ * Character — fully round pill buttons, softly rounded cards WITH a
+ * brand-tinted drop shadow, and the 700-weight display voice. This is the
+ * only surface allowed to use elevation: the dashboard tint convention in
+ * base.css is deliberately flat, and the blog is flat by design.
+ *
+ * Usage — in the app's Layout.astro put `data-surface="marketing"` on
+ * <html>, and in its global.css:
+ *
+ *   @import "tailwindcss";
+ *   @import "@tracht-digital-solutions/tds-shared/styles/base.css";
+ *   @import "@tracht-digital-solutions/tds-shared/styles/primitives.css";
+ *   @import "@tracht-digital-solutions/tds-shared/styles/surfaces/marketing.css";
+ *
+ * The attribute selector is deliberately NOT `:root[data-surface=...]` so a
+ * surface can be nested inside another one (see surfaces/blog.css for the
+ * case that actually needs it).
+ *
+ * What stays app-local: the aurora hero, `.accent-letters`, the custom
+ * cursor, Lenis smooth scroll, the floating CTA and the glass nav pill.
+ * Those are landingpage identity, not shared design.
+ */
+
+[data-surface="marketing"] {
+  /* Round pills for actions; the burgundy/navy fills come from primitives. */
+  --tds-radius-btn: var(--tds-radius-pill);
+  --tds-radius-chip: var(--tds-radius-pill);
+  --tds-radius-input: var(--tds-radius-sm);
+
+  /* Marketing cards are gently rounded and lifted. 6px matches the
+     landingpage's existing `md:rounded-[6px]` teaser/callout cards. */
+  --tds-radius-card: 6px;
+  --tds-elevation-card: var(--tds-shadow-lg);
+
+  /* Display voice: 700. */
+  --tds-weight-display: 700;
+  --tds-tracking-display: -0.03em;
+}

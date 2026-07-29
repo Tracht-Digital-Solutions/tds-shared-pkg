@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { cssTarget, tdsViteBuild } from "../astro";
+import { cssTarget, tdsViteBuild, themeBootstrapScript } from "../astro";
+import { THEME_ATTRIBUTE, THEME_STORAGE_KEY } from "../design";
 
 /**
  * `cssTarget` is the one build setting every frontend MUST share: it pins
@@ -47,5 +48,105 @@ describe("tdsViteBuild", () => {
 
   it("is a spreadable vite.build fragment (only known keys)", () => {
     expect(Object.keys(tdsViteBuild).sort()).toEqual(["cssMinify", "cssTarget"]);
+  });
+});
+
+/**
+ * The no-flash theme bootstrap. It used to be three hand-copied inline
+ * scripts (landingpage / blog / frontend host); it is now one exported
+ * string injected with `set:html`.
+ *
+ * Two classes of regression are silent in the browser — the theme still
+ * "works", it just flashes the wrong colour for one frame on every load —
+ * so both are pinned here:
+ *   1. the string stops being safe to inject raw (unresolved interpolation,
+ *      a `</script>` sequence), and
+ *   2. it drifts from the key `ThemeToggle` writes.
+ *
+ * Rather than assert on the source text alone, the behaviour cases below
+ * actually EXECUTE the script against hand-rolled globals — that also
+ * covers the `localStorage`-throws path, which is awkward to force in jsdom.
+ */
+describe("themeBootstrapScript", () => {
+  /** Run the bootstrap with fake globals; returns the attribute it set. */
+  function run(opts: {
+    stored?: string | null;
+    storageThrows?: boolean;
+    prefersDark?: boolean;
+    noMatchMedia?: boolean;
+  }): { attr: string | null; name: string | null } {
+    let attr: string | null = null;
+    let name: string | null = null;
+    const documentStub = {
+      documentElement: {
+        setAttribute(key: string, value: string) {
+          name = key;
+          attr = value;
+        },
+      },
+    };
+    const localStorageStub = {
+      getItem(key: string) {
+        if (opts.storageThrows) throw new Error("storage disabled");
+        return key === THEME_STORAGE_KEY ? (opts.stored ?? null) : null;
+      },
+    };
+    const windowStub = opts.noMatchMedia
+      ? {}
+      : { matchMedia: (q: string) => ({ matches: !!opts.prefersDark && q.includes("dark") }) };
+
+    // eslint-disable-next-line no-new-func
+    new Function("window", "document", "localStorage", themeBootstrapScript)(
+      windowStub,
+      documentStub,
+      localStorageStub,
+    );
+    return { attr, name };
+  }
+
+  it("is safe to inject raw — no unresolved interpolation, no </script>", () => {
+    // A leftover `${` or backtick would mean the template never resolved and
+    // the emitted script is a syntax error (the CLAUDE.md raw-body trap).
+    expect(themeBootstrapScript).not.toContain("${");
+    expect(themeBootstrapScript).not.toContain("`");
+    // Would terminate the host <script> element early.
+    expect(themeBootstrapScript.toLowerCase()).not.toContain("</script");
+  });
+
+  it("is a self-invoking statement (leaks no globals into the page)", () => {
+    expect(themeBootstrapScript.trimStart().startsWith("(function")).toBe(true);
+    expect(themeBootstrapScript.trimEnd().endsWith("})();")).toBe(true);
+  });
+
+  it("reads the same storage key ThemeToggle writes", () => {
+    expect(themeBootstrapScript).toContain(`localStorage.getItem("${THEME_STORAGE_KEY}")`);
+  });
+
+  it("writes the attribute base.css selects on", () => {
+    expect(run({ stored: "dark" }).name).toBe(THEME_ATTRIBUTE);
+  });
+
+  it("lets a stored choice win over the OS preference", () => {
+    expect(run({ stored: "dark", prefersDark: false }).attr).toBe("dark");
+    expect(run({ stored: "light", prefersDark: true }).attr).toBe("light");
+  });
+
+  it("follows the OS when nothing is stored", () => {
+    expect(run({ stored: null, prefersDark: true }).attr).toBe("dark");
+    expect(run({ stored: null, prefersDark: false }).attr).toBe("light");
+  });
+
+  it("ignores a corrupt stored value and falls back to the OS", () => {
+    expect(run({ stored: "chartreuse", prefersDark: true }).attr).toBe("dark");
+    expect(run({ stored: "", prefersDark: false }).attr).toBe("light");
+  });
+
+  it("survives localStorage throwing (Safari private mode / cookies off)", () => {
+    expect(() => run({ storageThrows: true })).not.toThrow();
+    expect(run({ storageThrows: true, prefersDark: true }).attr).toBe("dark");
+  });
+
+  it("survives a missing matchMedia and still commits a theme", () => {
+    expect(run({ stored: null, noMatchMedia: true }).attr).toBe("light");
   });
 });

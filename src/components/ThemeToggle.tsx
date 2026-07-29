@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
-type Theme = "light" | "dark";
+import { THEME_ATTRIBUTE, THEME_STORAGE_KEY, type Theme } from "../design/index.js";
 
-const STORAGE_KEY = "tds-theme";
+// Shared with the no-flash <head> bootstrap (tds-shared/astro
+// `themeBootstrapScript`), which READS this key before paint while this
+// component WRITES it. Don't re-inline the literal — they must move together.
+const STORAGE_KEY = THEME_STORAGE_KEY;
 
 export interface ThemeToggleProps {
   /** aria-label / title shown in light mode (tap to go dark). */
@@ -38,7 +41,7 @@ export default function ThemeToggle({
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const current = document.documentElement.getAttribute("data-theme");
+    const current = document.documentElement.getAttribute(THEME_ATTRIBUTE);
     setTheme(current === "dark" ? "dark" : "light");
     setMounted(true);
   }, []);
@@ -50,7 +53,7 @@ export default function ThemeToggle({
     // immediately or inside a View Transition snapshot callback.
     const apply = () => {
       setTheme(next);
-      document.documentElement.setAttribute("data-theme", next);
+      document.documentElement.setAttribute(THEME_ATTRIBUTE, next);
       try {
         localStorage.setItem(STORAGE_KEY, next);
       } catch {

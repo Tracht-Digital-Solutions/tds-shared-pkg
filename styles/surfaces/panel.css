@@ -1,0 +1,51 @@
+/**
+ * SURFACE: panel (Variation 2)
+ *
+ * The frontend platform — management.tracht-digital.de and
+ * app.tracht-digital.de. Both products (`tds-admin-frontend` and
+ * `tds-customer-frontend`) are pure config over the SAME host shell
+ * (`tds-core-frontend-pkg/src/layouts/Layout.astro`), so they share this
+ * one layer.
+ *
+ * THERE IS EXACTLY ONE PANEL DESIGN. `config/target.ts` may branch on
+ * `FRONTEND_TARGET` only for functional values (`HINT_PREFIX`,
+ * `LOGIN_URL`) and the wordmark suffix text. It must never branch on
+ * anything styling-related: the management panel and the customer portal
+ * are required to look identical.
+ *
+ * Character — the 8px "product UI" geometry from the design-system
+ * handoff: 8px on buttons/cards, 0.75rem chips, flat (no elevation, per
+ * the base.css tint convention). Chips at 0.75rem is what
+ * tds-shared-pkg/AGENTS.md always specified for the dashboards; neither
+ * panel repo ever actually applied it, so panel chips rendered with the
+ * marketing pill geometry. Applying it here is a deliberate, intended
+ * correction rather than a no-op.
+ *
+ * Usage — `data-surface="panel"` on <html>, plus:
+ *
+ *   @import "@tracht-digital-solutions/tds-shared/styles/base.css";
+ *   @import "@tracht-digital-solutions/tds-shared/styles/primitives.css";
+ *   @import "@tracht-digital-solutions/tds-shared/styles/app.css";
+ *   @import "@tracht-digital-solutions/tds-shared/styles/surfaces/panel.css";
+ */
+
+[data-surface="panel"] {
+  /* Product-UI geometry: 8px is the workhorse radius. */
+  --tds-radius-btn: var(--tds-radius-md);
+  --tds-radius-card: var(--tds-radius-md);
+  --tds-radius-input: 0.5rem;
+
+  /* Chips round to 0.75rem here (see the note above) — they are dense
+     inline labels in a data-heavy UI, not marketing pills. */
+  --tds-radius-chip: 0.75rem;
+  --tds-radius-badge: 0.75rem;
+
+  /* Flat: the dashboard tint convention (45% border / 12% wash) carries
+     the hierarchy. No gradients, no shadows on resting surfaces. */
+  --tds-elevation-card: none;
+
+  /* Product display voice is the quieter one — dashboards are read, not
+     announced. */
+  --tds-weight-display: 700;
+  --tds-tracking-display: -0.025em;
+}

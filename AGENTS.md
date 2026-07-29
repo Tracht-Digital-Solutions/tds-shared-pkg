@@ -15,6 +15,45 @@ import this — they duplicate the small bit of validation they need, by design.
 - **Don't promote a component or util here until at least two
   consumers actually need it.** Duplication is cheaper than the wrong
   abstraction.
+  - **But check whether the duplicates really are identical before you
+    promote — the difference is usually the interesting part.** The two
+    hamburger-toggle blocks were labelled a verbatim copy (by the copy
+    itself) and were not: the landingpage set `border-radius: 2px` and the
+    blog omitted it, which is the *surface* speaking and is now
+    `--tds-radius-bar`; and only the blog had a `prefers-reduced-motion`
+    rule, so promoting the block **fixed an accessibility gap** on the
+    landingpage rather than merely deduplicating. Diff them line by line.
+  - **A shared rule must not name a per-app class.** `.tds-menu-bar`'s open
+    state keys on `[aria-expanded="true"]` on any ancestor, so each header
+    keeps its own toggle class (`.menu-toggle` / `.jnl-menu-toggle`) with
+    nothing to coordinate. Scope by the shared class so it cannot leak to
+    other expandable controls.
+  - **A shared *snippet* is fine when a shared *component* would be a
+    pass-through.** `.brand-wordmark` is used at a different size and colour
+    in every surface (landingpage footer `text-2xl`, blog sidebar
+    `text-[1.0625rem]` + inline ink, blog footer on `#fff`), so a shared
+    `<BrandWordmark>` would only forward `class` — the CSS class already *is*
+    the abstraction. The wordmark component that does exist is deliberately
+    **local to tds-core-frontend-pkg**, where the shell renders it three times
+    identically. Promote behaviour, not markup wrappers.
+- **`themeBootstrapScript` (src/astro) is the one no-flash theme script.**
+  It replaced three hand-copied inline scripts. Two hard rules at the call
+  site, both silent-failure traps:
+  - **Inject with `set:html`, never as a template body.**
+    `<script is:inline set:html={themeBootstrapScript} />` is correct;
+    `<script is:inline>{themeBootstrapScript}</script>` leaks the literal
+    braces into `dist/` (the raw-body trap in the root CLAUDE.md) and the
+    script never parses. Verified in `dist/`: the `"tds-theme"` quotes and the
+    `&&` must come out unescaped.
+  - **Keep `is:inline` and keep it in `<head>`.** Without `is:inline` Astro
+    hoists it into a deferred module and the theme lands *after* first paint —
+    exactly the flash it exists to prevent. In the frontend host it must also
+    stay **before** the pre-paint auth gate, whose spinner paints in theme
+    colours.
+  - `THEME_STORAGE_KEY` / `THEME_ATTRIBUTE` (src/design) are the contract
+    between the bootstrap (reads), `ThemeToggle` (writes) and `base.css`
+    (selects). All three used to hardcode the literals independently. Import
+    them; don't retype `"tds-theme"`.
 - **No runtime side-effects in any JS module.** `sideEffects: ["*.css"]`
   in package.json — only the stylesheets carry side effects (so bundlers
   keep them); keep the JS modules pure so consumers tree-shake correctly.
@@ -24,8 +63,15 @@ import this — they duplicate the small bit of validation they need, by design.
 - **The design system and i18n strings are the source of truth.** If you
   change a colour, font, shared component style, or copy string, do it
   here and bump the version — never duplicate into a frontend. Brand
-  tokens live as the `@theme` block in `styles/base.css`; Lato
-  is the canonical display font (headings + wordmark), Geist the body font.
+  tokens live as the `@theme inline` block in `styles/base.css`. Canonical
+  type stack: **Lato** display (headings + wordmark), **Plus Jakarta Sans**
+  body, **JetBrains Mono** mono. (Body/mono were unified here from three
+  divergent states — the blog and panel already shipped this pair, the
+  landingpage was the outlier on Geist and its `--font-mono` resolved to
+  nothing at all because Geist Mono was never installed. Any doc claiming
+  the display face is Hanken Grotesk is stale.) Each consuming app must
+  JS-import the matching Fontsource packages in its `Layout.astro`
+  frontmatter — never as a CSS `@import`.
 - **Colour tokens come in three families, all in `base.css` (light) +
   `:root[data-theme="dark"]` (dark).** (1) Brand: `--color-primary`/`-accent`/
   `-accent-pink` + the structural neutrals + the fixed `--color-surface-*` /
@@ -36,20 +82,119 @@ import this — they duplicate the small bit of validation they need, by design.
   dark value is usually brighter), or it breaks under `data-theme="dark"`.
   The status + categorical tokens used to be duplicated in tds-admin and
   tds-customer-legacy-frontend — they live here now, so don't re-inline them into a frontend.
-- **The dashboard colour classes live in `app.css`, the geometry stays
-  app-local.** `.chip--*` (status + `cat-*`), `.status-pill*`, `.stat-tile*`
-  (tinted KPI tiles, 3px hue top-rule), `.section-accent` (hue-coloured
-  section marker) and `.nav-item*` (tinted active nav) are shared. The pill
-  `border-radius` override is **not** shared — landing/blog keep round pills,
-  the dashboards round to 0.75rem in their own `global.css`. All tints are
-  flat (the 45% border / 12% wash convention) — no gradients, no shadows.
+- **Geometry lives in surface-layer tokens. An app never hand-authors a
+  radius.** This *reverses* the previous rule ("the dashboard colour classes
+  live in app.css, the geometry stays app-local", with the pill
+  `border-radius` deliberately unshared). That convention is exactly what let
+  one design drift into three separately-maintained variations, so it is
+  gone. The layer stack:
+
+  | File | Scope | Imported by |
+  |---|---|---|
+  | `styles/base.css` | tokens, resets, dark theme, type primitives | every app |
+  | `styles/primitives.css` | cross-surface components | every app |
+  | `styles/prose.css` | `.tds-prose` long-form typography | blog + blog-cms |
+  | `styles/surfaces/{marketing,blog,panel}.css` | geometry overrides only | exactly one per app |
+  | `styles/app.css` | panel/dashboard chrome (imports primitives) | panel + blog |
+
+  Each app sets `data-surface="marketing|blog|panel"` on `<html>` and imports
+  the matching surface layer. To change how a surface looks, set a token in
+  that layer — do **not** re-declare a shared class in an app's `global.css`.
+  Removed by this change: the blog's `.chip{border-radius:0}`, its
+  `.display`/`.display-tight`/`.eyebrow` forks and `--flat-tint`/`--flat-hover`;
+  the landingpage's duplicate `.display`/`.display-tight`; three separate
+  `--font-display` re-declarations.
+- **The geometry scale is a plain `:root` block, NOT `@theme inline`.**
+  `@theme inline` substitutes each token's literal value into Tailwind's
+  generated utilities, making it impossible to override further down the
+  cascade — a `[data-surface]` layer would never be seen. Colours and fonts
+  stay in `@theme inline` (so `text-primary` / `font-display` keep working);
+  anything a surface must flip goes in the ordinary `:root` block.
+- **Surface layers are scoped to the bare `[data-surface="…"]` attribute,
+  never `:root[data-surface="…"]`,** because one surface must nest inside
+  another: the blog-CMS markdown preview in the admin panel renders a blog
+  surface inside a panel surface
+  (`<div class="tds-prose" data-surface="blog">`).
+- **Surface-layer files may only declare custom properties** — no component
+  rules. The moment a surface layer styles components, the variations start
+  diverging again.
+- **The dashboard colour classes are shared; tints stay flat.** `.chip--*`
+  (status + `cat-*`), `.status-pill*`, `.stat-tile*` (tinted KPI tiles, 3px
+  hue top-rule), `.section-accent` and `.nav-item*`. Tints follow the 45%
+  border / 12% wash convention — no gradients, and no shadows except on the
+  marketing surface, the only one that sets `--tds-elevation-card`.
+- **Categorical chip variants are `--cat-` prefixed, and a dynamic variant
+  must go through `resolveChipVariant()`** (from
+  `@tracht-digital-solutions/tds-shared/design`). The panel wrote
+  `.chip--violet` / `--teal` / `--amber` / `--rose` for a long time; none of
+  those exist, so five user badges rendered with no colour coding. Worse, the
+  support-ticket board interpolated a colour straight out of the
+  `support_tickets_status` table — Tailwind cannot statically extract an
+  interpolated class name, and an admin could type a value matching no
+  variant. `resolveChipVariant` maps aliases (`violet`→`cat-violet`,
+  `red`→`danger`, …) and falls back to `neutral`, so the class is always styled.
+- **`--color-border` is an accepted alias of `--color-line`, not a second
+  token.** 27 call sites across 8 repos (all four `tds-tool-*` packs,
+  ext-website-cms, ext-tools, the panel host) write
+  `border-[color:var(--color-border)]`; before the alias they all silently
+  fell back to `currentColor`. Prefer `--color-line` in new code; don't
+  remove the alias without fixing all 27 sites first.
+- **`.btn` carries the geometry, `.btn-*` only the colour — both are
+  required.** `class="btn-primary"` alone is a navy rectangle with no
+  padding, no radius, no `:disabled` state and no 44px touch floor; that
+  shipped on the central login for a while. `.btn-danger` is the destructive
+  variant, replacing the bare `.danger` class the panel referenced in five
+  places and never defined.
+- **`.field` is the input element, not a wrapper.** The landingpage contact
+  form's wrapper family is `.contact-field-row` / `-line` / `-label`
+  specifically to avoid that collision.
+- **`.status-pill` is an inline label, not a banner.** For a block message use
+  `.form-alert` / `<FormAlert>` (danger) or `.tds-alert` with
+  `--tds-alert-hue`. The panel stretched a `.status-pill--info` `<p>` into an
+  alert in 11 places.
+- **Reach for the generic layout primitives before inventing a name.**
+  `.tds-stack` (+`--tight`/`--loose`) for a vertical stack, `.tds-row`
+  (+`--between`) for a wrapping horizontal row, `.tds-compose` (+`__actions`) for
+  a reply box, `.tds-toolbar` for an action row, `.marginalia` for metadata/hint
+  text. Extensions had invented ~46 separate names for exactly those five shapes
+  (`kb__form`, `contact-detail__body`, `project-card__head`, `chats__filters`,
+  `*__actions`, `*__meta`, …), none of which had a rule. ~31 genuinely singular
+  internals (`cms-editor__blocks`, `live-chat-settings__matrix`,
+  `blog-editor__preview`, …) legitimately stay bespoke and knowingly unstyled.
+- **Audit new classes for BOTH shapes.** A BEM-shaped audit (`__`/`--`) misses
+  single-word orphans, which is how `.btn-secondary` (7 sites, no such variant —
+  it is primary/accent/ghost/danger), `.error` and `.muted` all sat unstyled for
+  a long time. Check plain words too.
+- **Never `window.confirm()` — use `<ConfirmDialog>`.** It wraps a native
+  `<dialog>` opened with `showModal()`, so the browser supplies the focus trap,
+  Escape, `inert` background, focus restore and top-layer stacking. Two
+  non-obvious rules live inside it and must not be "simplified" away:
+  - `.tds-modal` carries **no `z-index` and no `position: fixed`** — a top-layer
+    dialog needs neither, and their reappearance means someone reverted to a
+    `div` overlay. Guarded by `design.test.ts`.
+  - Focus is set **imperatively after** `showModal()`, never via React's
+    `autoFocus` prop: React does not render that attribute, so the dialog's own
+    focusing steps run later and override it. And `showModal` is
+    **feature-detected** with an `open`-attribute fallback, because a `<dialog>`
+    without `open` is `display: none` — a missing method would make the gated
+    destructive action *unreachable*, not just unstyled.
+- **New primitives are `tds-`-prefixed** (matching `.tds-spinner` /
+  `.tds-skeleton`), because bare names like `.card` / `.page` / `.widget` are
+  far too generic for a library the marketing site also loads. Pre-existing
+  repo-spanning names (`.btn`, `.chip`, `.field`, `.status-pill`,
+  `.brand-header`) keep their names — renaming them would churn every
+  consumer for nothing.
+- **`src/__tests__/design.test.ts` guards all of the above.** Every failure
+  mode here is silent in the browser: a missing surface token just makes a
+  `var()` resolve to nothing, and an unknown chip variant renders an
+  uncoloured pill. Nothing throws, so nothing else would catch it.
 - **`:focus-visible` (base.css) must not set `border-radius` on the element.**
   It used to force `border-radius: 2px`, which visibly squashed every rounded
   control the moment it was focused (text inputs get `:focus-visible` on plain
   click-focus — the admin API-wiki search field went square). The outline
   follows the element's own radius in all supported browsers; only the
   outline itself is authored here.
-- **`.app-version` (app.css) renders on the baseline, not superscript.** The
+- **`.app-version` (primitives.css) renders on the baseline, not superscript.** The
   superscript treatment was reverted on user request; wrap versions in
   `<span class="app-version">v{APP_VERSION}</span>` (a leftover `<sup>` still
   renders baseline because the class neutralises the preflight offset).
@@ -94,10 +239,11 @@ src/
 │   └── react.tsx             # React Context provider + hook
 ├── motion/                   # animation presets
 ├── components/               # shared React islands (ThemeToggle, FormAlert,
-│                             #   CookieNotice, LiveChatCta, Spinner, Skeleton,
+│                             #   ConfirmDialog, CookieNotice, LiveChatCta, Spinner, Skeleton,
 │                             #   SkeletonText — their CSS lives in base.css, not
 │                             #   app.css, so the landingpage (base-only) gets it too)
-└── astro/                    # build presets (cssTarget / tdsViteBuild)
+└── astro/                    # build presets (cssTarget / tdsViteBuild) +
+                              #   themeBootstrapScript (the no-flash <head> script)
 ```
 
 `src/__tests__/` holds the vitest suite (`npm run test` / `test:run`).

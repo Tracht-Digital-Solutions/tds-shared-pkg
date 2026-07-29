@@ -6,12 +6,248 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+> **Release this as a `minor` → it must publish as `0.14.0`.** Every consumer of
+> this change pins `^0.14.0` (products/host) or `>=0.14.0` (extensions), so any
+> other number leaves 21 repos unable to resolve the dependency.
+>
+> The `version` field was reconciled `0.12.3` → `0.13.0` in this change, because
+> it had drifted **behind the registry**: `0.13.0` was published on 2026-07-25,
+> but the release workflow's `git push --follow-tags origin HEAD:main` never
+> landed, so `main` kept the pre-release value and no `release: 0.13.0` commit or
+> `v0.13.0` tag exists. Left at `0.12.3`, `npm version minor` would recompute
+> `0.13.0` and `npm publish` would fail with a 409 (version already exists).
+> Reconciling the field is not taking the bump by hand — it restores what the
+> workflow itself would have written, so its own arithmetic lands on `0.14.0`.
+> If a release ever 409s again, check `npm view … versions` against `main`'s
+> `version` before touching anything else.
+
 ### Changed
+- **One design library, three surfaces.** The design was maintained as three
+  divergent variations — landingpage (round/pills), panel (8px), blog
+  (`kantig`/flat, radius 0) — because the repo convention was *"colour lives in
+  shared CSS; geometry stays app-local"*. That convention is **reversed**:
+  geometry, elevation, motion and display type are now surface-layer tokens.
+  Each app sets `data-surface="marketing|blog|panel"` on `<html>` and imports
+  one `styles/surfaces/*.css`; it no longer hand-authors radii or re-declares
+  shared classes. New layer stack: `base.css` → `primitives.css` →
+  (`prose.css` / `app.css`) → `surfaces/<surface>.css`.
+  **The surface defaults are today's literals**, so a surface that has not yet
+  opted into a layer renders byte-identically to before.
+- **`app.css` is split.** Its cross-surface half moved to the new
+  `primitives.css`; `app.css` now `@import`s that (so it stays drop-in for
+  existing consumers) and keeps only dashboard chrome — `.portal-sidebar`,
+  `.nav-drawer*`, `.nav-item*`, `.stat-tile*`, `.section-accent`,
+  `.editorial-grid`, `.dashboard-grid`. This is what finally gives the
+  landingpage `.section-num` and `.brand-wordmark`: it skipped `app.css`
+  wholesale, so both classes shipped **unstyled** on tracht-digital.de.
+- **Body and mono fonts unified to Plus Jakarta Sans + JetBrains Mono.**
+  Previously three states: blog and panel shipped this pair, the landingpage
+  and central login were on Geist, and `--font-mono` resolved to nothing on
+  the landingpage because `@fontsource-variable/geist` is sans-only and Geist
+  Mono was never installed. Consumers must JS-import
+  `@fontsource-variable/plus-jakarta-sans` + `@fontsource-variable/jetbrains-mono`
+  in `Layout.astro`. `--font-display` (Lato) also picks up the better
+  `"Helvetica Neue", Arial` fallback chain that all three apps had been
+  re-declaring locally.
+- **`.display` / `.display-tight` / `.eyebrow` read their weight, tracking and
+  leading from surface tokens**, so the landingpage's 700 and the blog's 800
+  display voice no longer require forking the class.
+- **`.dashboard-grid` is an actual grid.** It carried no `display` property at
+  all, so the panel dashboard's "grid" was a plain block stack. Widgets size
+  via `data-size="md|lg"`.
+- **Callout radius follows the surface**, so on the blog a callout is finally
+  square — it had a hard-coded `0.4rem` that the blog's own AGENTS.md flagged
+  as breaking the flat kit.
+
+### Fixed
+- **`--color-border` now resolves.** It was referenced at 27 call sites across
+  8 repos (all four `tds-tool-*` packs, ext-website-cms, ext-tools, the panel
+  host) and **defined nowhere**, so every one of those borders silently fell
+  back to `currentColor`. Added as a documented alias of `--color-line`; being
+  a `var()` reference it re-resolves in dark mode automatically.
+- **Panel chips render with colour again.** `.chip--violet` / `--teal` /
+  `--amber` / `--rose` matched no rule (the real names are `--cat-`prefixed),
+  leaving the Admin / Support-Agent / Blog-Autor / Gesperrt / Panel-Nutzer
+  badges completely unstyled. Call sites corrected.
+
+### Added
+- **`styles/primitives.css`** — the cross-surface component layer, with all
+  geometry expressed through tokens. Beyond the classes moved out of
+  `app.css`, it adds the primitives the panel and extensions referenced but
+  never defined (~96 orphan BEM names): `.tds-card`, `.tds-page` (+`__head`,
+  `__title`, `__lede`), `.tds-widget` (+`__title`, `__metric`),
+  `.tds-settings-section`, `.tds-list` (+`__row`), `.tds-table`, `.tds-empty`,
+  `.tds-alert`, `.tds-modal` (+`__panel`, `__title`, `__actions`),
+  `.tds-toolbar`, `.tds-field-row`, `.tds-toggle-row`,
+  `.tds-thread` (+`__item--own`/`--other`, `__author`) and
+  `.btn-danger`. Note `.tds-page__title` exists because Tailwind preflight
+  strips heading sizes, so every extension page title rendered at body size.
+- **`styles/prose.css`** — `.tds-prose`, promoted from the blog's
+  `.prose-article` (the only long-form typography in the project). Also serves
+  the blog-CMS markdown preview, which asked for `@tailwindcss/typography`'s
+  `prose` class — a plugin installed in no product, so that preview had always
+  rendered unstyled. Includes `.tds-callout*`, `.tds-block-button`,
+  `.tds-video-embed`, `.tds-block-embed`.
+- **`styles/surfaces/{marketing,blog,panel}.css`** — token-only layers,
+  scoped to the bare `[data-surface="…"]` attribute (not `:root`) so a blog
+  surface can nest inside a panel surface for the CMS preview.
+- **Surface token scale in `base.css`** (plain `:root`, deliberately not
+  `@theme inline` — that would inline the literals into Tailwind's utilities
+  and make them unoverridable): `--tds-radius-*` (scale + per-component
+  `-btn`/`-chip`/`-badge`/`-input`/`-card`/`-alert`), `--tds-shadow-*` +
+  `--tds-elevation-*`, `--tds-ease-*` + `--tds-dur-*`, and the display-type
+  tokens.
+- **`/design` subpath** — `resolveChipVariant()` (+ `isKnownChipColor`,
+  `CHIP_VARIANTS`, `SURFACES` and types). Required for the support-ticket
+  board, which interpolated a status colour straight out of the
+  `support_tickets_status` table: Tailwind cannot statically extract an
+  interpolated class name, and an admin could type a value matching no
+  variant. Unknown input falls back to `neutral`.
+- **`.nav-group-label`** — promoted from the panel host's `global.css`, which
+  was the only component class it owned.
+- **`.tds-settings-section__body`** — the content wrapper an extension renders
+  for its own settings slot. Deliberately *not* `.tds-settings-section`: the
+  Einstellungen host already wraps every contributed panel in one, so an
+  extension using the outer class too would nest a card inside a card (double
+  border, padding and background). 10 extensions use it.
+- **`.tds-alert--success` / `--warning` / `--danger`** — hue modifiers, so a
+  consumer doesn't need an inline style (and, in TSX, a `CSSProperties` cast)
+  just to change the tone. Setting `--tds-alert-hue` inline still works for a
+  one-off hue such as a categorical colour.
+
+### Added — generic layout primitives
+- **`.tds-stack`** (+ `--tight` / `--loose`) and **`.tds-row`** (+ `--between`,
+  plus a `button.tds-row` reset so an expandable card header reads as a header)
+  and **`.tds-compose`** (+ `__actions`). Deliberately unopinionated — spacing
+  only, no surface, no border — so they compose inside `.tds-card` /
+  `.tds-widget` / `.tds-page`.
+  These three absorb **46** of the per-extension orphan class names, because the
+  "bespoke" internals turned out to be the same handful of shapes over and over:
+  a form body / detail region (stack), a header row / filter bar / tab strip
+  (row), and a reply box (compose). Two more groups needed no new primitive at
+  all — `*__actions` / `*__toolbar` map onto the existing `.tds-toolbar`, and
+  `*__meta` / `*__hint` onto the existing `.marginalia`.
+
+### Added — `.tds-menu-bar*` (hamburger toggle bars)
+- Promoted from the landingpage header and the blog's journal header, which
+  carried the same rules under two names (`.menu-bar*` / `.jnl-menu-bar*`), plus
+  the new `--tds-radius-bar` token.
+- The blog's copy described itself as a verbatim duplicate. It wasn't, and both
+  differences mattered: the landingpage set `border-radius: 2px` while the blog
+  omitted it — the flat surface talking, now a token override — and **only the
+  blog had a `prefers-reduced-motion` rule**, so promoting the block fixed an
+  accessibility gap on the landingpage instead of just deduplicating.
+- The open state keys on `[aria-expanded="true"]` on any ancestor rather than a
+  toggle class, so each header keeps its own button naming with nothing to
+  coordinate. Verified in both builds: identical shared rule, `--tds-radius-bar`
+  resolving to 2px on marketing and 0 on blog — so both render exactly as before.
+
+### Added — `themeBootstrapScript` + the theme contract constants
+- **`themeBootstrapScript`** (`tds-shared/astro`) — the no-flash theme
+  bootstrap as a raw JS source string, replacing three hand-maintained inline
+  copies in the landingpage, blog and frontend-host layouts. The logic was
+  identical in all three; the text was not (the host had dropped the
+  `catch` comment and rewrapped a line), which is exactly how a
+  behavioural difference would have crept in unnoticed.
+- **`THEME_STORAGE_KEY` / `THEME_ATTRIBUTE` / `THEMES`** (`tds-shared/design`) —
+  the contract between the bootstrap (reads the key before paint),
+  `ThemeToggle` (writes it) and `base.css` (selects on the attribute). All
+  three previously hardcoded `"tds-theme"` / `"data-theme"` independently, so
+  a rename in one would have silently split the toggle from the bootstrap:
+  the theme still persists, but every reload flashes the OS default for a
+  frame. `ThemeToggle` now imports both.
+- **Call it with `set:html`, not as a template body.** A template body would
+  leak literal braces into `dist/` (the raw-body trap in the root CLAUDE.md).
+  Verified in all four built sites that the emitted script is unescaped — the
+  `"tds-theme"` quotes stay `"` and `&&` does not become `&amp;&amp;` — and is
+  byte-identical to the script the landingpage shipped before.
+- Tested by **executing** the script against hand-rolled globals rather than
+  only asserting on its text: stored-wins-over-OS, corrupt stored value,
+  `localStorage` throwing (Safari private mode), and missing `matchMedia`.
+
+### Added — `<ConfirmDialog>`, replacing `window.confirm()`
+- **`ConfirmDialog`** in `tds-shared/components`, plus the `.tds-modal*` CSS it
+  needs. Built on the native **`<dialog>` + `showModal()`**, which is what makes
+  it an accessibility improvement rather than a reskin: the browser provides the
+  focus trap, `Escape`-to-dismiss, `inert` background, focus restoration to the
+  trigger, and top-layer stacking (no `z-index` can bury it). An earlier draft of
+  the CSS was a `div` overlay with `data-open` and a hand-rolled backdrop
+  element; it had to re-implement all of that. `design.test.ts` now guards
+  against that revert (no `z-index`/`position: fixed`, no `[data-open]`).
+- Auditing every `method: "DELETE"` against its gate found **only 3 of 10
+  destructive actions confirmed at all**. The three `window.confirm()` calls were
+  the visible half of the problem; the invisible half was seven deletes with no
+  prompt whatsoever. Now gated: users (host), blog authors, **blog posts**,
+  **invoices**, **customers**, **FAQ entries**, **docs**, **projects**,
+  **milestones** — nine in total.
+  - **Deliberate exception:** the time-tracker's per-entry delete stays ungated.
+    It is a single self-owned row in a high-frequency list, where a prompt on
+    every correction is friction rather than protection. The line drawn is *gate
+    what cascades or what another party depends on* — not every `DELETE`.
+  - The milestone delete is gated even though its trigger is a bare „×", because
+    a tiny control beside a title is exactly what a misclick hits.
+- Two behaviours the native dialog does *not* give you, so the component does:
+  - **Focus is set imperatively after `showModal()`,** not via React's
+    `autoFocus` prop. React never renders `autoFocus` as an HTML attribute (it
+    focuses on mount instead), so `showModal()`'s own focusing steps run
+    afterwards, find no `[autofocus]`, and settle on the first focusable
+    element. The prop was silently doing nothing. For a destructive prompt
+    focus starts on **Cancel**, and Cancel is also first in DOM order so a
+    platform ignoring the explicit call still lands somewhere safe.
+  - **`showModal` is feature-detected** with an `open`-attribute fallback. Not a
+    test concession: a bare `<dialog>` without `open` is `display: none`, so on
+    any platform lacking the method the dialog would silently never appear —
+    and since it gates destructive actions, the action would become
+    *unreachable*, not merely unstyled. (jsdom ≤25 implements none of the
+    `<dialog>` methods, which is how this surfaced.)
+  - `busy` disables both buttons and ignores backdrop clicks while the action is
+    in flight — double-submit protection that blocking `window.confirm()` gave
+    away for free.
+
+### Removed (never released — shipped no consumers)
+- **`.tds-search-field`** and **`.tds-toolbar__spacer`**. Don't ship a primitive
+  nothing uses. `.tds-search-field` is a wrapper for an icon + input, and the
+  only search input in the platform (the API-wiki filter) is a bare input with
+  no icon — it uses `.field-boxed` instead. `.tds-toolbar__spacer` was
+  `margin-left: auto`, which Tailwind's `ml-auto` already provides.
+  `.tds-alert--success` / `--warning` are deliberately kept despite having no
+  consumer yet: a three-line modifier completing an obvious axis on a
+  29-consumer primitive is discoverability, not a speculative abstraction.
+
+### Not done (deliberate, tracked)
+- **Three** known duplicates remain unpromoted. Each is blocked on something
+  other than the CSS move, so none is a "just do it later" item:
+  - the **reading-progress bar** — two mechanisms (a framer-motion island vs a
+    vanilla script) *and* two looks (2px gradient vs 3px solid). Unifying the
+    look is the visual redesign this change explicitly rules out.
+  - the **`[data-reveal]` scroll-reveal primitive** — the blog uses CSS +
+    IntersectionObserver, the landingpage uses framer-motion. Promoting means
+    moving the landingpage off `motion` for reveals: a behavioural change with
+    its own risk, not a shared-CSS problem.
+  - the **`.brand-logo` CSS-mask logomark** — better than the landingpage's
+    `filter: brightness(0) invert(1)` raster hack, but needs a single-colour
+    silhouette asset the landingpage does not ship. Blocked on an asset.
+
+  See the note at the bottom of `styles/primitives.css`. (The hamburger bars
+  and the theme bootstrap, previously listed here, are now promoted — see
+  above. `<BrandWordmark>` was deliberately resolved as a *host-local*
+  component rather than a shared one; the rationale is in AGENTS.md.)
+- **`src/__tests__/design.test.ts`** — 54 tests guarding the contracts that
+  fail silently: surface tokens present, geometry kept out of `@theme inline`,
+  surface layers attribute-scoped and token-only, no `999px` literal left in
+  primitives, `.btn` vs `.btn-*` split intact, `backdrop-filter` unprefixed,
+  no `border-radius` under `:focus-visible`, the `.tds-modal` top-layer rules,
+  the `.tds-menu-bar` open state, and the chip catalog matching the `.chip--*`
+  rules that actually exist. 180 tests across the whole suite.
+
 - **Display font is now Lato, not Hanken Grotesk.** `--font-display` moves to
   **Lato** — the official Tracht Digital Solutions brand font — so the whole
-  brand (display headings + `.brand-wordmark`) reads in Lato. Body/mono fonts are
-  unchanged (Geist on the landingpage, Plus Jakarta Sans on the frontends, JetBrains
-  Mono). Lato ships as the static `@fontsource/lato` package (weights 400/700/900),
+  brand (display headings + `.brand-wordmark`) reads in Lato. Body/mono are now
+  **Plus Jakarta Sans / JetBrains Mono everywhere** — this entry originally said
+  body/mono were "unchanged (Geist on the landingpage)", which the same
+  unreleased change then contradicted by moving the landingpage off Geist (where
+  `--font-mono` had been pointing at an uninstalled `Geist Mono`).
+  Lato ships as the static `@fontsource/lato` package (weights 400/700/900),
   so consumers import `@fontsource/lato/{400,700,900}.css` instead of the variable
   `@fontsource-variable/hanken-grotesk`. Hanken Grotesk is retired as the display
   face.
