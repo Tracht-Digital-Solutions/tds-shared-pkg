@@ -89,6 +89,21 @@ describe("surface token scale", () => {
     }
   });
 
+  it("keeps --font-mono the last declaration in `@theme inline`", () => {
+    // The test above locates the end of the @theme block by searching for the
+    // first `}` AFTER --font-mono. That is only the real end of the block
+    // while --font-mono is last: append a colour token after it and the slice
+    // silently shrinks, so the geometry-token check passes vacuously and a
+    // token wrongly placed in @theme inline would sail through. Adding new
+    // colour tokens BEFORE --font-mono keeps both tests honest.
+    const monoIdx = base.indexOf("--font-mono");
+    const blockEnd = base.indexOf("}", monoIdx);
+    const tail = base.slice(monoIdx + "--font-mono".length, blockEnd);
+    expect(tail, "a declaration follows --font-mono inside @theme inline").not.toMatch(
+      /--[a-z]/,
+    );
+  });
+
   it("aliases --color-border to --color-line", () => {
     // 27 call sites across 8 repos write `var(--color-border)`. Before the
     // alias existed the token resolved to nothing and every one of those
@@ -155,7 +170,70 @@ describe("surface character", () => {
 
   it("gives the panel the 0.75rem chip AGENTS.md always specified", () => {
     expect(surfaceCss.panel).toMatch(/--tds-radius-chip:\s*0\.75rem/);
-    expect(surfaceCss.panel).toMatch(/--tds-elevation-card:\s*none/);
+  });
+
+  it("has the panel state an elevation rather than inherit one", () => {
+    // The panel used to be pinned to `--tds-elevation-card: none`. That was
+    // right while the tint convention carried ALL hierarchy, but a dashboard
+    // of a dozen equal-weight cards on a near-white page read as one flat
+    // sheet, so the panel now takes the smallest shadow at rest and lifts on
+    // hover (app.css). What still matters is that the surface DECIDES —
+    // inheriting base's default silently would be the actual regression.
+    expect(surfaceCss.panel).toMatch(/--tds-elevation-card:\s*\S+/);
+  });
+
+  it("declares the whole panel token family in base.css", () => {
+    // surfaces/*.css may only reference --tds-* tokens base.css defines
+    // (asserted per-surface above); these are the ones app.css reads, which
+    // that check cannot see. A missing one is silent: the var() falls back
+    // to nothing and the rail loses its gradient / the canvas its tint.
+    for (const token of [
+      "--tds-panel-accent",
+      "--tds-panel-rail-from",
+      "--tds-panel-rail-to",
+      "--tds-panel-canvas",
+      "--tds-panel-glow",
+      "--tds-panel-title-size",
+      "--tds-page-card",
+      "--tds-page-line",
+      "--tds-page-muted",
+    ]) {
+      expect(base, `${token} missing from base.css`).toContain(`${token}:`);
+    }
+  });
+
+  it("keeps the per-product accent a token-only override", () => {
+    // The admin panel and the customer portal differ on exactly one axis:
+    // --tds-panel-accent, selected by the data-frontend attribute the host
+    // writes onto <html>. The "only custom properties" test above already
+    // rejects a component rule here; this pins the mechanism itself so a
+    // future per-target divergence has to be a deliberate edit.
+    expect(surfaceCss.panel).toContain(
+      '[data-surface="panel"][data-frontend="customer"]',
+    );
+    expect(surfaceCss.panel).toMatch(/--tds-panel-accent:\s*var\(--color-/);
+  });
+
+  it("scopes panel rules on generic primitives to the panel surface", () => {
+    // app.css is imported by the BLOG too (for .editorial-grid). An unscoped
+    // rule on .tds-card / .tds-widget / .tds-page__title would silently hand
+    // the blog the panel's canvas, hover elevation and display sizes.
+    for (const selector of [
+      ".tds-card:hover",
+      ".tds-widget__title",
+      ".tds-page__title",
+      ".panel-main",
+    ]) {
+      const idx = app.indexOf(selector);
+      expect(idx, `${selector} missing from app.css`).toBeGreaterThan(-1);
+      // Walk back to the start of the selector list and require the scope.
+      const lineStart = app.lastIndexOf("}", idx);
+      const selectorList = app.slice(lineStart + 1, idx);
+      expect(
+        selectorList,
+        `${selector} must be scoped [data-surface="panel"]`,
+      ).toContain('[data-surface="panel"]');
+    }
   });
 
   it("makes the three surfaces mutually distinct", () => {

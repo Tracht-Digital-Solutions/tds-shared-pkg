@@ -24,6 +24,13 @@
  * NOTE: this file deliberately does not import a surfaces/*.css layer.
  * The blog imports app.css for `.editorial-grid`, so importing the panel
  * layer here would silently hand the blog the panel's geometry.
+ *
+ * SCOPING RULE — for the same reason. Chrome that is panel-only BY NAME
+ * (`.portal-sidebar`, `.nav-item`, `.nav-drawer`, `.widget-slot`) is left
+ * unscoped: no other surface renders those classes. But anything styling a
+ * GENERIC primitive (`.tds-card`, `.tds-page__title`, `.tds-widget`) must be
+ * scoped `[data-surface="panel"] …`, or the blog silently inherits the
+ * panel's canvas, hover elevation and display sizes.
  */
 
 @import "./primitives.css";
@@ -121,33 +128,84 @@
 .nav-item {
   --nav-hue: var(--color-primary);
   position: relative;
+  display: grid;
+  /* icon | label. `1fr` (not `auto`) so every label starts on the same
+     x-position regardless of its length, and so the label can be hidden
+     in the collapsed rail without the icon moving. */
+  grid-template-columns: 1.75rem 1fr;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: var(--tds-radius-btn);
+  /* Transparent border at rest so `.nav-item--active`'s 1px border does
+     not shift the row by a pixel when it appears. */
+  border: 1px solid transparent;
   color: var(--color-muted);
   transition:
     color var(--tds-dur-fast) ease,
-    background-color var(--tds-dur-fast) ease;
+    background-color var(--tds-dur-fast) ease,
+    border-color var(--tds-dur-fast) ease;
 }
 .nav-item:hover {
   color: var(--color-ink);
   background: var(--color-soft);
 }
+/* The tinted icon chip — the same 14% wash / hue-coloured glyph as
+   `.stat-tile__icon`, so a nav row and a KPI tile of the same hue read as
+   the same family. Sized to the grid column. */
+.nav-item__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  color: currentColor;
+  background: transparent;
+  transition:
+    color var(--tds-dur-fast) ease,
+    background-color var(--tds-dur-fast) ease;
+}
+.nav-item:hover .nav-item__icon,
+.nav-item--active .nav-item__icon {
+  color: var(--nav-hue);
+  background: color-mix(in srgb, var(--nav-hue) 16%, transparent);
+}
+.nav-item__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .nav-item--active {
   color: var(--nav-hue);
   background: color-mix(in srgb, var(--nav-hue) 12%, var(--color-card));
-  border: 1px solid color-mix(in srgb, var(--nav-hue) 35%, var(--color-line));
+  border-color: color-mix(in srgb, var(--nav-hue) 35%, var(--color-line));
 }
-.nav-item--active::before {
+/* Left indicator bar. Drawn on every item but scaled to nothing until
+   active, so it GROWS into place instead of appearing — `scaleY` and
+   `opacity` are both compositor-only, and an unstyled non-active item
+   still paints nothing. */
+.nav-item::before {
   content: "";
   position: absolute;
   left: 0;
   top: 50%;
-  transform: translateY(-50%);
   width: 2px;
   height: 1.25rem;
   border-radius: 1px;
   background: var(--nav-hue);
+  opacity: 0;
+  transform: translateY(-50%) scaleY(0.2);
+  transition:
+    opacity var(--tds-dur-base) var(--tds-ease-out),
+    transform var(--tds-dur-base) var(--tds-ease-out);
+}
+.nav-item--active::before {
+  opacity: 1;
+  transform: translateY(-50%) scaleY(1);
 }
 /* Collapsed icon rail hides the indicator bar (the rail is centred). */
-.portal-sidebar.collapsed .nav-item--active::before {
+.portal-sidebar.collapsed .nav-item::before {
   display: none;
 }
 
@@ -179,7 +237,20 @@
    rail — it's added to each selector here rather than re-inlined. */
 .portal-sidebar,
 .nav-drawer-panel {
-  background: var(--color-surface-navy);
+  /* Gradient rail. Both stops are FIXED-dark tokens (surface-navy /
+     surface-ink), so this stays a dark panel in both themes — which is
+     what the token remap below depends on. The angle is off-vertical so
+     the deepening reads as depth rather than as a banded fill.
+     `--tds-panel-rail-*` are inert (flat navy) outside the panel surface,
+     so this is a no-op for any other consumer of app.css. */
+  background: linear-gradient(
+    168deg,
+    var(--tds-panel-rail-from) 0%,
+    var(--tds-panel-rail-to) 100%
+  );
+  /* 1px inner highlight on the trailing edge — catches the light against
+     the page canvas without a hard border. */
+  box-shadow: inset -1px 0 0 rgb(255 255 255 / 0.07);
   border-right-color: rgb(255 255 255 / 0.1);
   --color-ink: #ffffff;
   --color-muted: rgb(255 255 255 / 0.68);
@@ -220,18 +291,78 @@
   color: var(--color-surface-navy);
 }
 /* The floating expand button sits half-outside on the page edge, so it
-   must contrast with the PAGE, not the panel — restore the real
-   card/line/muted surface values (literal, since the tokens are remapped
-   inside the panel). */
+   must contrast with the PAGE, not the panel. It reaches the real page
+   values through the `--tds-page-*` aliases (base.css), which are
+   computed at :root and so survive the remap above — this used to be
+   three hard-coded hexes duplicating --color-card/-line/-muted, plus a
+   second dark-theme rule to re-duplicate them. Both are gone: these
+   flip with the theme on their own. */
 .portal-sidebar .sidebar-expand {
-  background: #ffffff;
-  border-color: #e8e6df;
-  color: #6b6b66;
+  background: var(--tds-page-card);
+  border-color: var(--tds-page-line);
+  color: var(--tds-page-muted);
 }
-:root[data-theme="dark"] .portal-sidebar .sidebar-expand {
-  background: #1a2138;
-  border-color: rgb(255 255 255 / 0.14);
-  color: rgb(255 255 255 / 0.62);
+
+/* === Collapsed icon rail ========================================== */
+
+/* The rail collapses to an icon strip, toggled by the host shell
+   (`sidebarCollapse.ts` adds `.collapsed` and persists the choice).
+   `.portal-sidebar.collapsed` previously had exactly ONE rule — hiding
+   the active indicator — with nothing to actually collapse; the width,
+   the label hiding and the tooltip below are what make it a feature.
+
+   Only the rail collapses. The mobile `.nav-drawer-panel` shares the
+   rail's surface but is already a deliberate full-label overlay. */
+.portal-sidebar {
+  transition: width var(--tds-dur-base) var(--tds-ease-in-out);
+}
+.portal-sidebar.collapsed {
+  width: 4.5rem;
+}
+.portal-sidebar.collapsed .nav-item {
+  grid-template-columns: 1.75rem;
+  justify-content: center;
+  gap: 0;
+}
+.portal-sidebar.collapsed .nav-item__label,
+.portal-sidebar.collapsed .nav-group-label,
+.portal-sidebar.collapsed .sidebar-hide-collapsed {
+  display: none;
+}
+/* Keep a visible separation between groups once their labels are gone,
+   otherwise the collapsed rail is one undifferentiated column of icons. */
+.portal-sidebar.collapsed .nav-group + .nav-group {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-line);
+}
+/* Label-as-tooltip. Pure CSS (no JS, no positioning library): the rail is
+   a fixed-width column, so a right-anchored absolute box is always in the
+   right place. `.nav-tip` opts OUT of the rail's token remap — it floats
+   over the page, so it uses the page tokens like `.sidebar-expand`. */
+.portal-sidebar.collapsed .nav-item[data-tip] {
+  position: relative;
+}
+.portal-sidebar.collapsed .nav-item[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 0.75rem);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 70;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--tds-radius-input);
+  background: var(--color-surface-ink);
+  color: #ffffff;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--tds-dur-fast) ease;
+}
+.portal-sidebar.collapsed .nav-item[data-tip]:hover::after,
+.portal-sidebar.collapsed .nav-item[data-tip]:focus-visible::after {
+  opacity: 1;
 }
 
 /* === Mobile nav drawer ============================================ */
@@ -309,10 +440,154 @@
   }
 }
 
+/* === Panel canvas ================================================= */
+
+/* The page area next to the rail. Everything from here down is scoped to
+   `[data-surface="panel"]` because this file is ALSO imported by the blog
+   (for `.editorial-grid`), and these rules target generic primitives
+   (`.tds-card`, `.tds-page__title`, `.tds-widget`) that the blog renders.
+   The rail chrome above needs no scoping — `.portal-sidebar` and friends
+   exist only on a panel.
+
+   The canvas is a 4% accent tint (`--tds-panel-canvas`) plus one soft
+   radial glow anchored top-right. Cards then sit on it as real objects.
+   Before this, page and card were both near-white and the dashboard read
+   as one flat sheet. */
+[data-surface="panel"] .panel-main {
+  background:
+    radial-gradient(
+      60rem 32rem at 100% 0%,
+      var(--tds-panel-glow) 0%,
+      transparent 70%
+    ),
+    var(--tds-panel-canvas);
+}
+
+/* === Panel page header ============================================ */
+
+/* The one place the panel speaks up: a short accent rule above a larger,
+   heavier title. `--tds-panel-title-size` is a surface token so the
+   marketing/blog surfaces keep the 1.5rem primitives default. */
+[data-surface="panel"] .tds-page__title {
+  font-size: var(--tds-panel-title-size);
+}
+[data-surface="panel"] .tds-page__head {
+  position: relative;
+  padding-top: 0.875rem;
+}
+[data-surface="panel"] .tds-page__head::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2.5rem;
+  height: 3px;
+  border-radius: var(--tds-radius-bar);
+  background: var(--tds-panel-accent);
+}
+/* Small uppercase kicker above the title, in the accent. Uses the shared
+   eyebrow tokens so it tracks the surface's type voice. */
+[data-surface="panel"] .tds-page__eyebrow {
+  font-family: var(--tds-eyebrow-family);
+  font-weight: var(--tds-eyebrow-weight);
+  letter-spacing: var(--tds-eyebrow-tracking);
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  color: var(--tds-panel-accent);
+}
+
+/* === Hued dashboard widgets ======================================= */
+
+/* Every widget was an identical white card: grey uppercase caption, black
+   number, no hue, no icon, no lift. The host now sets `--tds-widget-hue`
+   per slot (derived from the widget id, so no extension has to change),
+   and the tint convention from base.css does the rest — 3px top rule,
+   ~6% wash, 35% border. Same visual family as `.stat-tile--toned`. */
+[data-surface="panel"] .widget-slot {
+  --tds-widget-hue: var(--tds-panel-accent);
+  position: relative;
+}
+[data-surface="panel"] .widget-slot .tds-widget {
+  position: relative;
+  border-top: 3px solid var(--tds-widget-hue);
+  border-color: color-mix(in srgb, var(--tds-widget-hue) 35%, var(--color-line));
+  border-top-color: var(--tds-widget-hue);
+  background: color-mix(in srgb, var(--tds-widget-hue) 6%, var(--color-card));
+  transition:
+    box-shadow var(--tds-dur-base) var(--tds-ease-out),
+    transform var(--tds-dur-base) var(--tds-ease-out);
+}
+[data-surface="panel"] .widget-slot .tds-widget__title {
+  color: color-mix(in srgb, var(--tds-widget-hue) 75%, var(--color-muted));
+  /* Leave room for the corner icon so a long title never runs under it. */
+  padding-right: 2rem;
+}
+/* The corner icon, rendered by the host into the slot (the `.tds-widget`
+   markup itself belongs to each extension and is not touched). */
+[data-surface="panel"] .widget-slot__icon {
+  position: absolute;
+  top: 0.875rem;
+  right: 0.875rem;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  color: var(--tds-widget-hue);
+  background: color-mix(in srgb, var(--tds-widget-hue) 14%, transparent);
+  pointer-events: none;
+}
+
+/* === Panel hover elevation ======================================== */
+
+/* Resting cards take `--tds-elevation-card` (the panel's smallest shadow,
+   set in surfaces/panel.css); hovering lifts them to `--tds-elevation-raised`.
+   Gated on a real pointer so touch devices never get a stuck hover state. */
+@media (hover: hover) {
+  [data-surface="panel"] .widget-slot .tds-widget:hover {
+    box-shadow: var(--tds-elevation-raised);
+    transform: translateY(-2px);
+  }
+  [data-surface="panel"] .tds-card {
+    transition:
+      box-shadow var(--tds-dur-base) var(--tds-ease-out),
+      border-color var(--tds-dur-base) var(--tds-ease-out);
+  }
+  [data-surface="panel"] .tds-card:hover {
+    box-shadow: var(--tds-elevation-raised);
+    border-color: color-mix(
+      in srgb,
+      var(--tds-panel-accent) 30%,
+      var(--color-line)
+    );
+  }
+}
+
 /* === Touch ergonomics (panel chrome) ============================== */
 
 @media (pointer: coarse) {
   .nav-item {
     min-height: 44px;
+  }
+}
+
+/* === Reduced motion (panel chrome) ================================ */
+
+/* Everything the redesign animates, clamped in one place. The transform
+   is reset too, not just the duration — a hover lift that snaps 2px is
+   worse than no lift at all. */
+@media (prefers-reduced-motion: reduce) {
+  .portal-sidebar,
+  .nav-item,
+  .nav-item::before,
+  .nav-item__icon,
+  [data-surface="panel"] .tds-card,
+  [data-surface="panel"] .widget-slot .tds-widget {
+    transition-duration: 0.01ms;
+  }
+  [data-surface="panel"] .widget-slot .tds-widget:hover {
+    transform: none;
   }
 }

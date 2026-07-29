@@ -256,6 +256,51 @@
      needs no dark value of its own. Prefer `--color-line` in new code;
      do not "clean up" this alias without fixing all 27 sites first. */
   --color-border: var(--color-line);
+
+  /* --- Panel surface family ----------------------------------------
+     The dashboard chrome (app.css) reads these; only surfaces/panel.css
+     gives them real values. The defaults here are deliberately INERT —
+     a transparent glow, a rail that is a flat `--color-surface-navy`,
+     a canvas equal to `--color-paper` — so any consumer that renders
+     `.portal-sidebar` or `.tds-page` WITHOUT `data-surface="panel"`
+     (there are none today, but app.css is also imported by the blog for
+     `.editorial-grid`) is byte-identical to before these existed.
+
+     `--tds-panel-accent` is the one knob everything else derives from:
+     the rail gradient, the canvas tint, the glow and the page-head rule
+     are all `color-mix()`es over it. That is what lets a single
+     `[data-surface="panel"][data-frontend="customer"]` token block
+     re-theme the whole portal to teal without a second component rule.
+
+     No dark twins are needed: every value a surface layer builds from
+     these mixes an already-flipping token (`--color-paper`,
+     `--color-surface-navy`, `--color-surface-ink`), so dark mode
+     follows automatically. */
+  --tds-panel-accent: var(--color-primary);
+  --tds-panel-rail-from: var(--color-surface-navy);
+  --tds-panel-rail-to: var(--color-surface-navy);
+  --tds-panel-canvas: var(--color-paper);
+  --tds-panel-glow: transparent;
+  --tds-panel-title-size: 1.5rem;
+
+  /* --- Page-token escape hatch --------------------------------------
+     `.portal-sidebar` re-maps --color-ink/-muted/-line/-soft/-card to
+     light/translucent values WITHIN the rail, which is what makes every
+     child read correctly on the dark panel. A child that visually belongs
+     to the PAGE rather than to the rail (the floating expand button that
+     sits half-outside it) therefore has no way to reach the real page
+     values — app.css hard-coded #e8e6df / #6b6b66 / #1a2138 for exactly
+     this reason, duplicating three tokens that will drift the moment
+     anyone retunes the palette.
+
+     These aliases are the fix. A custom property's computed value has its
+     var()s already substituted ON THE ELEMENT THAT DECLARES IT, so these
+     resolve here at :root — against the page's tokens, and against the
+     dark ones under [data-theme="dark"] — and inherit down as literals
+     that the rail's remap cannot touch. */
+  --tds-page-card: var(--color-card);
+  --tds-page-line: var(--color-line);
+  --tds-page-muted: var(--color-muted);
 }
 
 html {

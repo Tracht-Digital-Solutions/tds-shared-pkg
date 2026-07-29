@@ -7,19 +7,33 @@
  * (`tds-core-frontend-pkg/src/layouts/Layout.astro`), so they share this
  * one layer.
  *
- * THERE IS EXACTLY ONE PANEL DESIGN. `config/target.ts` may branch on
- * `FRONTEND_TARGET` only for functional values (`HINT_PREFIX`,
- * `LOGIN_URL`) and the wordmark suffix text. It must never branch on
- * anything styling-related: the management panel and the customer portal
- * are required to look identical.
+ * ONE PANEL DESIGN, ONE ACCENT AXIS. The two products render the same
+ * shell, the same components and the same geometry; the ONLY thing that
+ * differs is `--tds-panel-accent`, selected by the `data-frontend`
+ * attribute the host writes onto <html>. Everything with colour in it —
+ * the rail gradient, the canvas tint, the ambient glow, the page-head
+ * rule — is a `color-mix()` over that single token, so the management
+ * panel reads navy and the customer portal reads teal while staying the
+ * same product.
+ *
+ * (This deliberately relaxes the older "the two must look IDENTICAL"
+ * rule. The point of that rule was to stop `config/target.ts` sprouting
+ * per-target styling branches; that still holds — target.ts carries one
+ * value, the attribute, and no component ever branches on the target.)
  *
  * Character — the 8px "product UI" geometry from the design-system
- * handoff: 8px on buttons/cards, 0.75rem chips, flat (no elevation, per
- * the base.css tint convention). Chips at 0.75rem is what
+ * handoff: 8px on buttons/cards, 0.75rem chips. Chips at 0.75rem is what
  * tds-shared-pkg/AGENTS.md always specified for the dashboards; neither
  * panel repo ever actually applied it, so panel chips rendered with the
- * marketing pill geometry. Applying it here is a deliberate, intended
- * correction rather than a no-op.
+ * marketing pill geometry.
+ *
+ * Elevation — the panel used to be dead flat (`--tds-elevation-card:
+ * none`), leaving the tint convention to carry ALL hierarchy. On a
+ * dashboard of a dozen equal-weight cards that read as an undifferentiated
+ * sheet. Resting cards now take the smallest shadow and lift to
+ * `--tds-elevation-raised` on hover (app.css). This is an intentional
+ * change of character, not drift — design.test.ts asserts the panel
+ * DECLARES an elevation rather than that it is `none`.
  *
  * Usage — `data-surface="panel"` on <html>, plus:
  *
@@ -40,12 +54,48 @@
   --tds-radius-chip: 0.75rem;
   --tds-radius-badge: 0.75rem;
 
-  /* Flat: the dashboard tint convention (45% border / 12% wash) carries
-     the hierarchy. No gradients, no shadows on resting surfaces. */
-  --tds-elevation-card: none;
+  /* Softly elevated: the tint convention still carries the colour-coding,
+     but a 1px shadow separates a card from the canvas it sits on. */
+  --tds-elevation-card: var(--tds-shadow-sm);
 
-  /* Product display voice is the quieter one — dashboards are read, not
-     announced. */
-  --tds-weight-display: 700;
-  --tds-tracking-display: -0.025em;
+  /* Product display voice. Dashboards are read, not announced — but the
+     page title is the one place the panel is allowed to be loud, so it
+     runs heavier and larger than the 1.5rem primitives default. */
+  --tds-weight-display: 800;
+  --tds-tracking-display: -0.03em;
+  --tds-panel-title-size: 1.875rem;
+
+  /* --- The accent axis --------------------------------------------
+     Admin/management reads in the brand navy. Everything below derives
+     from `--tds-panel-accent`, so the customer block further down only
+     has to restate the accent + its rail. */
+  --tds-panel-accent: var(--color-primary);
+
+  /* A tinted canvas, so cards read as objects ON a surface rather than
+     as slightly-different-white patches of the same sheet. 4% keeps it
+     a suggestion; it is still `--color-paper` underneath and it flips
+     with the theme for free. */
+  --tds-panel-canvas: color-mix(in srgb, var(--tds-panel-accent) 4%, var(--color-paper));
+
+  /* Ambient glow behind the page content (top-right), the one soft
+     gradient in an otherwise flat-tinted UI. */
+  --tds-panel-glow: color-mix(in srgb, var(--tds-panel-accent) 10%, transparent);
+
+  /* Navy rail, deepening toward the bottom. `--color-surface-navy` and
+     `--color-surface-ink` are both fixed-dark tokens, so the rail stays
+     a dark panel in BOTH themes — which is the whole point of the token
+     remap app.css applies inside it. */
+  --tds-panel-rail-from: var(--color-surface-navy);
+  --tds-panel-rail-to: color-mix(in srgb, var(--tds-panel-accent) 55%, var(--color-surface-ink));
+}
+
+/* The customer portal (app.tracht-digital.de). The ONLY per-product
+   difference in the entire design system: a teal accent instead of the
+   navy, so a user with both surfaces open knows at a glance which one
+   they are looking at. Tokens only — a component rule here would be a
+   layering violation and design.test.ts fails the build on one. */
+[data-surface="panel"][data-frontend="customer"] {
+  --tds-panel-accent: var(--color-cat-teal);
+  --tds-panel-rail-from: color-mix(in srgb, var(--color-cat-teal) 42%, var(--color-surface-ink));
+  --tds-panel-rail-to: color-mix(in srgb, var(--color-cat-teal) 18%, var(--color-surface-ink));
 }

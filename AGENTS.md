@@ -118,11 +118,39 @@ import this — they duplicate the small bit of validation they need, by design.
 - **Surface-layer files may only declare custom properties** — no component
   rules. The moment a surface layer styles components, the variations start
   diverging again.
-- **The dashboard colour classes are shared; tints stay flat.** `.chip--*`
-  (status + `cat-*`), `.status-pill*`, `.stat-tile*` (tinted KPI tiles, 3px
-  hue top-rule), `.section-accent` and `.nav-item*`. Tints follow the 45%
-  border / 12% wash convention — no gradients, and no shadows except on the
-  marketing surface, the only one that sets `--tds-elevation-card`.
+- **The dashboard colour classes are shared.** `.chip--*` (status + `cat-*`),
+  `.status-pill*`, `.stat-tile*` (tinted KPI tiles, 3px hue top-rule),
+  `.section-accent`, `.nav-item*` and the hued `.widget-slot`. Tints follow the
+  45% border / 12% wash convention from `base.css`.
+- **The panel surface is coloured and softly elevated (0.15.0).** It was dead
+  flat, monochrome and reliant on tints alone; a dozen equal-weight cards on a
+  near-white page read as one sheet. What changed, all of it token-driven:
+  - **`--tds-panel-accent` is the single knob.** The rail gradient, the canvas
+    tint, the ambient glow and the page-head rule are all `color-mix()`es over
+    it. That is what lets ONE token block re-theme a whole product.
+  - **Per-product accent.** `[data-surface="panel"][data-frontend="customer"]`
+    swaps the accent to `--color-cat-teal`; the host writes `data-frontend`
+    from `FRONTEND_TARGET`. This is the ONLY per-product styling difference —
+    admin reads navy, the portal reads teal, everything else is identical.
+    (`design.test.ts` pins the mechanism.)
+  - **Elevation.** `--tds-elevation-card: var(--tds-shadow-sm)` at rest,
+    `--tds-elevation-raised` on hover (`@media (hover: hover)`). The panel is
+    no longer the flat surface older notes describe; marketing is no longer
+    the only surface with a shadow.
+  - **`--tds-panel-*` + `--tds-page-*` families live in `base.css`** with inert
+    defaults, so a consumer that imports `app.css` without the panel surface
+    (the blog, for `.editorial-grid`) is byte-identical to before.
+  - **`--tds-page-card|line|muted` are the escape hatch out of the rail's token
+    remap.** A custom property's computed value substitutes its `var()`s on the
+    element that DECLARES it, so these resolve at `:root` against the page's
+    tokens and inherit into `.portal-sidebar` untouched. `.sidebar-expand` used
+    to hard-code `#e8e6df`/`#6b6b66`/`#1a2138` plus a second dark rule for
+    exactly this reason; both are gone.
+- **In `app.css`, scope anything that styles a generic primitive.**
+  Panel-only-by-name chrome (`.portal-sidebar`, `.nav-item`, `.widget-slot`)
+  stays unscoped, but a rule on `.tds-card` / `.tds-widget` / `.tds-page__title`
+  must be `[data-surface="panel"] …` — the blog imports this file and would
+  otherwise inherit the panel's canvas, hover lift and display sizes. Tested.
 - **Categorical chip variants are `--cat-` prefixed, and a dynamic variant
   must go through `resolveChipVariant()`** (from
   `@tracht-digital-solutions/tds-shared/design`). The panel wrote
