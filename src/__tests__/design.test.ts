@@ -288,9 +288,16 @@ describe("surface character", () => {
 describe("nav rail contrast", () => {
   type RGB = [number, number, number];
 
-  const hexOf = (h: string): RGB => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)) as RGB;
-  const mix = (a: RGB, b: RGB, pa: number): RGB =>
-    a.map((v, i) => v * pa + b[i] * (1 - pa)) as RGB;
+  const hexOf = (h: string): RGB => [
+    parseInt(h.slice(1, 3), 16),
+    parseInt(h.slice(3, 5), 16),
+    parseInt(h.slice(5, 7), 16),
+  ];
+  const mix = (a: RGB, b: RGB, pa: number): RGB => [
+    a[0] * pa + b[0] * (1 - pa),
+    a[1] * pa + b[1] * (1 - pa),
+    a[2] * pa + b[2] * (1 - pa),
+  ];
 
   const luminance = ([r, g, b]: RGB) => {
     const f = (v: number) => {
@@ -300,7 +307,10 @@ describe("nav rail contrast", () => {
     return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
   };
   const contrast = (a: RGB, b: RGB) => {
-    const [hi, lo] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+    const la = luminance(a);
+    const lb = luminance(b);
+    const hi = Math.max(la, lb);
+    const lo = Math.min(la, lb);
     return (hi + 0.05) / (lo + 0.05);
   };
 
@@ -309,15 +319,16 @@ describe("nav rail contrast", () => {
     const darkAt = base.indexOf('[data-theme="dark"]');
     const scope = theme === "dark" ? base.slice(darkAt) : base.slice(0, darkAt);
     const m = scope.match(new RegExp(`${name}:\\s*(#[0-9a-f]{6})`, "i"));
-    if (!m) throw new Error(`${name} (${theme}) not found in base.css`);
-    return hexOf(m[1]);
+    const hex = m?.[1];
+    if (!hex) throw new Error(`${name} (${theme}) not found in base.css`);
+    return hexOf(hex);
   };
 
   /** The ratios the CSS actually uses, read back rather than reassumed. */
   const pct = (css: string, re: RegExp) => {
-    const m = css.match(re);
-    if (!m) throw new Error(`ratio not found: ${re}`);
-    return Number(m[1]) / 100;
+    const raw = css.match(re)?.[1];
+    if (!raw) throw new Error(`ratio not found: ${re}`);
+    return Number(raw) / 100;
   };
 
   const LIFT = pct(app, /--nav-ink:\s*color-mix\(\s*in srgb,\s*var\(--nav-hue[^)]*\)[^)]*\)\s*(\d+)%/);
