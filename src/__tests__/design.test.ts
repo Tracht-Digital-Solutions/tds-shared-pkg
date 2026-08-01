@@ -352,22 +352,33 @@ describe("nav rail contrast", () => {
 
   it.each(["light", "dark"] as const)("clears AA for every nav zone in %s theme", (theme) => {
     const share = theme === "dark" ? 0.18 : 0.55;
+    const head = token("--color-surface-navy", theme);
     const foot = mix(token("--color-primary", theme), token("--color-surface-ink", theme), share);
 
+    // Nav rows run the WHOLE height of the rail, so the worst case is its
+    // LIGHTEST stop, not a fixed end. In light theme that is the head
+    // (#050f68) and in dark the foot — measuring only one end flattered the
+    // light theme by ~0.8:1 (browser-measured 5.06:1 at the head vs 5.88:1
+    // at the foot for the Verwaltung zone).
+    const worst = luminance(head) > luminance(foot) ? head : foot;
+
     // Idle rows are plain white on the rail.
-    expect(contrast(WHITE, foot)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(WHITE, worst)).toBeGreaterThanOrEqual(4.5);
 
     expect(SCRIM, "active-row scrim not found in app.css").toBeGreaterThan(0);
 
-    for (const name of HUES) {
-      const hue = token(`--color-cat-${name}`, theme);
+    // `--color-primary` is the Verwaltung zone's hue (via --tds-panel-accent),
+    // and it is the LOWEST of the six in practice — 5.06:1 measured in the
+    // browser — so leaving it out would have skipped the real worst case.
+    for (const name of [...HUES, "primary"] as const) {
+      const hue = token(name === "primary" ? "--color-primary" : `--color-cat-${name}`, theme);
       // --nav-ink lifts the hue toward the rail's ink (white in there).
       const ink = mix(hue, WHITE, LIFT);
       // The active row's own scrim sits between the label and the rail.
-      const bg = mix(WHITE, foot, SCRIM);
+      const bg = mix(WHITE, worst, SCRIM);
       expect(contrast(ink, bg), `${name} label in ${theme}`).toBeGreaterThanOrEqual(4.5);
       // Indicator bar + icon glyph are graphics: 3:1.
-      expect(contrast(ink, foot), `${name} graphic in ${theme}`).toBeGreaterThanOrEqual(3);
+      expect(contrast(ink, worst), `${name} graphic in ${theme}`).toBeGreaterThanOrEqual(3);
     }
   });
 });
