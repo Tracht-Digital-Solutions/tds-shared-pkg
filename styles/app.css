@@ -126,7 +126,26 @@
    them, so this active treatment was dead code from the panel's point of
    view. */
 .nav-item {
-  --nav-hue: var(--color-primary);
+  /* NOTE: `--nav-hue` is deliberately NOT declared here. It arrives by
+     inheritance - inline per section from NavList.astro, or the rail's white
+     fallback. Declaring it on this element would win over BOTH (an element's
+     own declaration beats an inherited value regardless of the parent's
+     specificity, and the inline style sits on `.nav-group`, a different
+     element). It used to be declared here, which is exactly what happened:
+     every active item resolved to `--color-primary` - navy text on the navy
+     rail, 1.11:1 - and the per-zone colour-coding reached nothing. */
+
+  /* The wayfinding hue as INK on the dark rail. The categorical palette is
+     tuned for dark-on-light body text, so the raw hue is unreadable here;
+     lifting it toward the panel's ink (white inside the rail, see the token
+     remap below) keeps the hue identifiable and clears AA in both themes.
+     Derived on THIS element so the mix substitutes the inherited
+     per-section hue. */
+  --nav-ink: color-mix(
+    in srgb,
+    var(--nav-hue, var(--color-primary)) 40%,
+    var(--color-ink)
+  );
   position: relative;
   display: grid;
   /* icon | label. `1fr` (not `auto`) so every label starts on the same
@@ -167,8 +186,11 @@
 }
 .nav-item:hover .nav-item__icon,
 .nav-item--active .nav-item__icon {
-  color: var(--nav-hue);
-  background: color-mix(in srgb, var(--nav-hue) 16%, transparent);
+  color: var(--nav-ink);
+  /* Scrim rather than a mix of the ink, for the same fallback reason as
+     `.nav-item--active` below: the glyph would otherwise vanish into its
+     own chip without `color-mix`. */
+  background: rgb(255 255 255 / 0.14);
 }
 .nav-item__label {
   min-width: 0;
@@ -177,9 +199,16 @@
   white-space: nowrap;
 }
 .nav-item--active {
-  color: var(--nav-hue);
-  background: color-mix(in srgb, var(--nav-hue) 12%, var(--color-card));
-  border-color: color-mix(in srgb, var(--nav-hue) 35%, var(--color-line));
+  color: var(--nav-ink);
+  /* A plain white scrim, NOT a `color-mix()` of the ink. Two reasons: the
+     rail is a gradient, so a `--color-card`-based fill would band against
+     it; and lightningcss emits a no-`color-mix` fallback that collapses a
+     `color-mix(var(--x) …)` to bare `var(--x)` — which, with the label also
+     reading `--nav-ink`, rendered the row's text in its own background
+     colour on any engine without `color-mix`. The hue still identifies the
+     row through the ink, the border, the indicator bar and the icon chip. */
+  background: rgb(255 255 255 / 0.1);
+  border-color: color-mix(in srgb, var(--nav-ink) 30%, transparent);
 }
 /* Left indicator bar. Drawn on every item but scaled to nothing until
    active, so it GROWS into place instead of appearing — `scaleY` and
@@ -193,7 +222,7 @@
   width: 2px;
   height: 1.25rem;
   border-radius: 1px;
-  background: var(--nav-hue);
+  background: var(--nav-ink);
   opacity: 0;
   transform: translateY(-50%) scaleY(0.2);
   transition:
@@ -264,18 +293,16 @@
      ink — near-black on navy in light mode. */
   color: var(--color-ink);
 }
-/* Active nav item: takes the per-item wayfinding hue (`--nav-hue`, set
-   inline per section) so the sections read as distinct colour-coded zones
-   on the navy panel. The categorical hues are bright enough to stay
-   legible on navy; items without an explicit hue fall back to the panel's
-   white `--nav-hue`. The left indicator bar (base `.nav-item--active::before`)
-   already tracks `--nav-hue`. */
-.portal-sidebar .nav-item--active,
-.nav-drawer-panel .nav-item--active {
-  color: var(--nav-hue);
-  background: color-mix(in srgb, var(--nav-hue) 16%, transparent);
-  border-color: color-mix(in srgb, var(--nav-hue) 42%, transparent);
-}
+/* The active nav item needs no rail-specific override any more. It reads
+   `--nav-ink`, derived per item from the inherited per-section `--nav-hue`
+   against the panel's `--color-ink` — white in here because of the remap
+   above — so the sections read as distinct colour-coded zones on the navy
+   panel automatically, in both themes.
+
+   This block used to restate the treatment in the RAW hue. That was a claim
+   ("the categorical hues are bright enough to stay legible on navy") that
+   measurement did not support: the light-theme palette is tuned for dark
+   text on a light canvas, and violet/teal on navy lands near 2:1. */
 /* Burgundy `--color-accent` is too dark on navy — lift the wordmark
    italic to the light pink accent. */
 .portal-sidebar .accent-italic,

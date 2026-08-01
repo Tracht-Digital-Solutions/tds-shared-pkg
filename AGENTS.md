@@ -146,6 +146,34 @@ import this — they duplicate the small bit of validation they need, by design.
     tokens and inherit into `.portal-sidebar` untouched. `.sidebar-expand` used
     to hard-code `#e8e6df`/`#6b6b66`/`#1a2138` plus a second dark rule for
     exactly this reason; both are gone.
+  - **`--nav-hue` must NEVER be declared on `.nav-item` (0.15.1).** It is set
+    per SECTION — inline on `.nav-group` by the host's `NavList.astro` — and
+    falls back to white on `.portal-sidebar`. Declaring it on the item wins
+    over both, because an element's own declaration beats an inherited value
+    no matter how specific the ancestor's selector is, and an inline style on
+    the PARENT never competes. 0.15.0 shipped exactly that: every active nav
+    item resolved to `--color-primary`, i.e. navy text on the navy rail at
+    **1.11:1**, and the per-zone colour-coding reached nothing at all.
+    `design.test.ts` now fails the build on a `--nav-hue` declaration there.
+  - **`--nav-ink`, not `--nav-hue`, paints anything on the rail (0.15.1).**
+    The categorical palette is tuned for dark text on a LIGHT canvas; the rail
+    is dark in both themes, so the raw hue lands near 2:1. `.nav-item` derives
+    `--nav-ink: color-mix(in srgb, var(--nav-hue) 40%, var(--color-ink))` —
+    on the item, so the mix substitutes the inherited per-section hue — and
+    the label, glyph, indicator bar and border all read that. Measured floor
+    is now **6.9:1**; a numeric contrast test resolves the real token chain
+    and asserts AA, so a ratio tweak that breaks it fails the build.
+  - **Active-row fills are plain white scrims, not `color-mix()`es of the
+    ink.** lightningcss emits a no-`color-mix` fallback that collapses
+    `color-mix(var(--x) …)` to bare `var(--x)`; with the label also reading
+    `--nav-ink` that rendered the row's text in its own background colour.
+  - **The dark rail deepens via an explicit override.** `--tds-panel-accent`
+    follows `--color-primary`, which FLIPS light in dark mode, so the 55%
+    foot mix written to darken the rail did the opposite there (luminance
+    0.034 → 0.134, a 4x lift) — inverting the intended character and eating
+    the contrast headroom. `[data-surface="panel"][data-theme="dark"]` drops
+    the share to 18% (and the portal's teal to 16/7%). Both attributes sit on
+    `<html>`, so it stays one compound selector, tokens only.
 - **In `app.css`, scope anything that styles a generic primitive.**
   Panel-only-by-name chrome (`.portal-sidebar`, `.nav-item`, `.widget-slot`)
   stays unscoped, but a rule on `.tds-card` / `.tds-widget` / `.tds-page__title`

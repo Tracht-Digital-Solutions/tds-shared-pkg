@@ -62,6 +62,10 @@
      page title is the one place the panel is allowed to be loud, so it
      runs heavier and larger than the 1.5rem primitives default. */
   --tds-weight-display: 800;
+  /* `.tds-page__title` and `.display-tight` read the *tight* weight, not the
+     one above — raising only `--tds-weight-display` left every page heading at
+     the 600 default, i.e. bigger but not bolder. Both have to move. */
+  --tds-weight-display-tight: 700;
   --tds-tracking-display: -0.03em;
   --tds-panel-title-size: 1.875rem;
 
@@ -89,6 +93,22 @@
   --tds-panel-rail-to: color-mix(in srgb, var(--tds-panel-accent) 55%, var(--color-surface-ink));
 }
 
+/* Dark theme deepens the rail instead of brightening it.
+   `--tds-panel-accent` follows `--color-primary`, which FLIPS to a light
+   lavender (#93a7ff) in dark mode — so the 55% mix above, written to darken
+   the rail's foot in light mode, did the opposite here: the foot came out
+   lighter than its head (relative luminance 0.034 → 0.134, a 4x lift). That
+   inverted the "deepening toward the bottom" character AND left so little
+   headroom over the rail that white body text sat at 5.7:1 and anything
+   coloured failed AA outright. A smaller accent share restores the descent
+   and gives the nav ink room to breathe.
+
+   `data-theme` and `data-surface` are both written onto <html>, so this is
+   one compound selector on one element, not a descendant rule. */
+[data-surface="panel"][data-theme="dark"] {
+  --tds-panel-rail-to: color-mix(in srgb, var(--tds-panel-accent) 18%, var(--color-surface-ink));
+}
+
 /* The customer portal (app.tracht-digital.de). The ONLY per-product
    difference in the entire design system: a teal accent instead of the
    navy, so a user with both surfaces open knows at a glance which one
@@ -98,4 +118,13 @@
   --tds-panel-accent: var(--color-cat-teal);
   --tds-panel-rail-from: color-mix(in srgb, var(--color-cat-teal) 42%, var(--color-surface-ink));
   --tds-panel-rail-to: color-mix(in srgb, var(--color-cat-teal) 18%, var(--color-surface-ink));
+}
+
+/* Same correction as the admin rail above, for the portal's teal.
+   `--color-cat-teal` flips to #5eead4 in dark mode — near-mint — so the 42%
+   head mix rendered the portal rail as a bright teal slab rather than a deep
+   one. The shares drop to keep it a dark panel that still reads teal. */
+[data-surface="panel"][data-theme="dark"][data-frontend="customer"] {
+  --tds-panel-rail-from: color-mix(in srgb, var(--color-cat-teal) 16%, var(--color-surface-ink));
+  --tds-panel-rail-to: color-mix(in srgb, var(--color-cat-teal) 7%, var(--color-surface-ink));
 }

@@ -236,9 +236,128 @@ describe("surface character", () => {
     }
   });
 
+  it("never lets .nav-item declare the hue it is supposed to inherit", () => {
+    // `--nav-hue` is set per SECTION (inline on .nav-group by NavList.astro)
+    // and falls back to white on .portal-sidebar. Declaring it on .nav-item
+    // silently wins over both — an element's own declaration beats an
+    // inherited value no matter how specific the ancestor's selector is, and
+    // an inline style on the PARENT never competes. That is not a
+    // near-miss: it shipped, and every active nav item resolved to
+    // --color-primary, i.e. navy text on the navy rail at 1.11:1, with the
+    // per-zone colour-coding reaching nothing at all.
+    const block = app.slice(app.indexOf(".nav-item {"), app.indexOf(".nav-item:hover"));
+    expect(block.length).toBeGreaterThan(0);
+    expect(block).not.toMatch(/^\s*--nav-hue:/m);
+    // It must still derive the on-rail ink, or the active state loses its colour.
+    expect(block).toMatch(/--nav-ink:/);
+  });
+
+  it("keeps the nav's on-rail ink lifted off the raw categorical hue", () => {
+    // The categorical palette is tuned for dark text on a light canvas. Used
+    // raw as ink on the dark rail it lands around 2:1. Every place the active
+    // nav item paints text or a glyph must read --nav-ink, not --nav-hue.
+    for (const decl of [
+      "color: var(--nav-ink)",
+      "background: var(--nav-ink)",
+    ]) {
+      expect(app, `${decl} missing — active nav lost its lifted ink`).toContain(decl);
+    }
+  });
+
+  it("makes the dark rail descend rather than brighten", () => {
+    // --tds-panel-accent follows --color-primary, which FLIPS light in dark
+    // mode, so the light-mode 55% foot mix brightened the dark rail 4x and
+    // squeezed out the contrast headroom.
+    expect(surfaceCss.panel).toContain('[data-surface="panel"][data-theme="dark"]');
+  });
+
   it("makes the three surfaces mutually distinct", () => {
     const bodies = SURFACES.map((s) => surfaceCss[s].replace(/\s+/g, ""));
     expect(new Set(bodies).size).toBe(SURFACES.length);
+  });
+});
+
+/**
+ * The panel rail is the one place in the library where text sits on a
+ * DARK ground in BOTH themes, so none of the palette's own light/dark
+ * pairing protects it. The active nav item shipped at 1.11:1 (light) and
+ * 2.13:1 (dark) — effectively invisible — because two independent token
+ * choices were never measured together. This resolves the real chain from
+ * the stylesheets and measures it.
+ */
+describe("nav rail contrast", () => {
+  type RGB = [number, number, number];
+
+  const hexOf = (h: string): RGB => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)) as RGB;
+  const mix = (a: RGB, b: RGB, pa: number): RGB =>
+    a.map((v, i) => v * pa + b[i] * (1 - pa)) as RGB;
+
+  const luminance = ([r, g, b]: RGB) => {
+    const f = (v: number) => {
+      const s = v / 255;
+      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+  };
+  const contrast = (a: RGB, b: RGB) => {
+    const [hi, lo] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+
+  /** Pull a token's hex out of base.css, from the light or the dark block. */
+  const token = (name: string, theme: "light" | "dark"): RGB => {
+    const darkAt = base.indexOf('[data-theme="dark"]');
+    const scope = theme === "dark" ? base.slice(darkAt) : base.slice(0, darkAt);
+    const m = scope.match(new RegExp(`${name}:\\s*(#[0-9a-f]{6})`, "i"));
+    if (!m) throw new Error(`${name} (${theme}) not found in base.css`);
+    return hexOf(m[1]);
+  };
+
+  /** The ratios the CSS actually uses, read back rather than reassumed. */
+  const pct = (css: string, re: RegExp) => {
+    const m = css.match(re);
+    if (!m) throw new Error(`ratio not found: ${re}`);
+    return Number(m[1]) / 100;
+  };
+
+  const LIFT = pct(app, /--nav-ink:\s*color-mix\(\s*in srgb,\s*var\(--nav-hue[^)]*\)[^)]*\)\s*(\d+)%/);
+  /** The active row's white scrim, which sits between the label and the rail. */
+  const SCRIM = Number(
+    app.match(/\.nav-item--active\s*\{[\s\S]*?background:\s*rgb\(255 255 255 \/ ([\d.]+)\)/)?.[1] ??
+      NaN,
+  );
+  const WHITE: RGB = [255, 255, 255];
+
+  const HUES = ["violet", "teal", "amber", "rose", "cyan"] as const;
+
+  it.each(["light", "dark"] as const)("keeps the %s rail deepening toward its foot", (theme) => {
+    // A rail that brightens at the foot both inverts the intended character
+    // and eats the headroom every measurement below depends on.
+    const share = theme === "dark" ? 0.18 : 0.55;
+    const head = token("--color-surface-navy", theme);
+    const foot = mix(token("--color-primary", theme), token("--color-surface-ink", theme), share);
+    expect(luminance(foot)).toBeLessThan(luminance(head));
+  });
+
+  it.each(["light", "dark"] as const)("clears AA for every nav zone in %s theme", (theme) => {
+    const share = theme === "dark" ? 0.18 : 0.55;
+    const foot = mix(token("--color-primary", theme), token("--color-surface-ink", theme), share);
+
+    // Idle rows are plain white on the rail.
+    expect(contrast(WHITE, foot)).toBeGreaterThanOrEqual(4.5);
+
+    expect(SCRIM, "active-row scrim not found in app.css").toBeGreaterThan(0);
+
+    for (const name of HUES) {
+      const hue = token(`--color-cat-${name}`, theme);
+      // --nav-ink lifts the hue toward the rail's ink (white in there).
+      const ink = mix(hue, WHITE, LIFT);
+      // The active row's own scrim sits between the label and the rail.
+      const bg = mix(WHITE, foot, SCRIM);
+      expect(contrast(ink, bg), `${name} label in ${theme}`).toBeGreaterThanOrEqual(4.5);
+      // Indicator bar + icon glyph are graphics: 3:1.
+      expect(contrast(ink, foot), `${name} graphic in ${theme}`).toBeGreaterThanOrEqual(3);
+    }
   });
 });
 
