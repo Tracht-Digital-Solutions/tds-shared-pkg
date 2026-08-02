@@ -174,6 +174,37 @@ import this — they duplicate the small bit of validation they need, by design.
     the contrast headroom. `[data-surface="panel"][data-theme="dark"]` drops
     the share to 18% (and the portal's teal to 16/7%). Both attributes sit on
     `<html>`, so it stays one compound selector, tokens only.
+- **Never write `outline: none` in a `:focus` rule.** `.field:focus` and
+  `.field-boxed:focus` did, and at (0,2,0) they beat the library's only focus
+  rule — the global `:focus-visible` at (0,1,0) — so every text input in the
+  panel gave keyboard users a 1px border-colour change as its entire focus
+  indicator (WCAG 2.4.11 / 1.4.11). A colour shift is a supplementary cue, not
+  an indicator. `design.test.ts` fails the build on one now, and also on a
+  `border-radius` inside a `:focus-visible` block (that reshapes the control the
+  moment it is focused).
+- **`:hover` on a container needs `:focus-within` beside it.** A list row, table
+  row, card or widget is not the thing that takes focus — the link or button
+  inside it is. Every one of these had pointer feedback and nothing for the
+  keyboard.
+- **Nothing transitions `box-shadow`.** Interpolating a blurred shadow
+  re-rasterises the blur every frame, and the panel's hover ALSO translates the
+  element, so the repaint was landing on an already-promoted layer. The hover
+  elevation is an `opacity` fade on a pseudo-element carrying the raised shadow.
+  Tested.
+- **Every duration and easing comes from a token.** 8 of the 10 durations in use
+  were magic numbers and the bare `ease` keyword appeared ~18 times. Loops have
+  their own scale (`--tds-dur-spin`, `--tds-dur-pulse`, `--tds-ease-spin`) —
+  they are periods, not response times, and a spinner tuned to `--tds-dur-base`
+  would strobe. `/motion` exports `cssEase` + `durations` for JS-driven
+  animation, which cannot read a custom property.
+- **Reduced motion needs END STATES reset, not just durations.** The global
+  clamp in base.css shortens time with `!important`, but a clamped transition
+  still ARRIVES — so every hover-lift still happened and merely snapped, which
+  is worse than not lifting. base.css resets the offending transforms, reverts
+  `scroll-behavior` (WCAG 2.3.3, which the clamp cannot reach), and flattens the
+  spinner to an even ring rather than leaving it frozen mid-rotation.
+  `.portal-sidebar` takes `contain: layout` — **not `paint`**, which would clip
+  the collapsed rail's tooltips, and not `size`, since the width is what changes.
 - **In `app.css`, scope anything that styles a generic primitive.**
   Panel-only-by-name chrome (`.portal-sidebar`, `.nav-item`, `.widget-slot`)
   stays unscoped, but a rule on `.tds-card` / `.tds-widget` / `.tds-page__title`
