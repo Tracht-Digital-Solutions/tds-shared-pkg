@@ -114,6 +114,26 @@
   color: var(--color-muted);
   background: transparent;
 }
+/* Chips are static labels by default, but they are ALSO the library's filter
+   and tab control (blog category strips, and now the extensions' tab bars,
+   which used to hand-roll an undefined `.tab`). When one is rendered as a
+   button or a link it has to read as interactive — hence the treatment being
+   scoped to those elements rather than applied to every chip. */
+button.chip,
+a.chip {
+  cursor: pointer;
+  transition: color var(--tds-dur-fast) var(--tds-ease-out),
+    border-color var(--tds-dur-fast) var(--tds-ease-out);
+}
+button.chip:hover,
+a.chip:hover {
+  color: var(--color-ink);
+  border-color: var(--color-ink);
+}
+button.chip:focus-visible,
+a.chip:focus-visible {
+  outline-offset: 2px;
+}
 .chip-active {
   color: var(--color-accent);
   border-color: var(--color-accent);
@@ -316,15 +336,34 @@
   border-radius: var(--tds-radius-btn);
   border: 1px solid transparent;
   cursor: pointer;
+  /* Only the two compositor-friendly properties live here, because they are
+     the only ones the SOLID variants change. `.btn` used to transition
+     background-color and color too, which is wasted work on every
+     `.btn-primary` / `.btn-accent` — by far the most-used variants. The
+     variants that actually recolour on hover declare their own transition. */
   transition:
-    opacity var(--tds-dur-base) ease,
-    transform var(--tds-dur-base) ease,
-    background-color var(--tds-dur-base) ease,
-    color var(--tds-dur-base) ease;
+    opacity var(--tds-dur-base) var(--tds-ease-out),
+    transform var(--tds-dur-base) var(--tds-ease-out);
 }
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+/* In-flight state. Every island was inventing its own — a label swap
+   ("Speichern …"), a bespoke inline SVG, or nothing at all — because the
+   library offered only `:disabled`'s flat 50% opacity, which is
+   indistinguishable from "not available yet". Mark the button
+   `aria-busy="true"` (and keep it `disabled`) and render a
+   `<Spinner size="sm" />` inside it; this rule handles the rest.
+   `cursor: progress` is the affordance difference from `:disabled`. */
+.btn[aria-busy="true"] {
+  cursor: progress;
+  /* Hold the resting opacity: a busy button is still the active control, so
+     it should not read as greyed out the way a disabled one does. */
+  opacity: 0.75;
+}
+.btn[aria-busy="true"]:hover {
+  transform: none;
 }
 .btn-primary {
   background: var(--color-primary);
@@ -341,6 +380,15 @@
 .btn-accent:hover:not(:disabled) {
   opacity: 0.92;
   transform: translateY(-1px);
+}
+/* The two outline variants recolour on hover instead of lifting, so they —
+   and only they — pay for a background transition. */
+.btn-ghost,
+.btn-danger {
+  transition:
+    opacity var(--tds-dur-base) var(--tds-ease-out),
+    transform var(--tds-dur-base) var(--tds-ease-out),
+    background-color var(--tds-dur-base) var(--tds-ease-out);
 }
 .btn-ghost {
   background: transparent;
@@ -380,10 +428,15 @@
   font-family: var(--font-body);
   font-size: 0.9375rem;
   color: var(--color-ink);
-  transition: border-color var(--tds-dur-base) ease;
+  transition: border-color var(--tds-dur-base) var(--tds-ease-out);
 }
+/* `:focus`, NOT `:focus-visible`, and deliberately WITHOUT `outline: none`.
+   This rule used to kill the outline — and because `.field:focus` is (0,2,0)
+   against the global `:focus-visible` at (0,1,0), it won: every text input in
+   the panel gave keyboard users a 1px border-colour change as its ONLY focus
+   indicator, which fails WCAG 2.4.11 and 1.4.11 on its own. The colour shift
+   is a nice supplementary cue for pointer users; it is not an indicator. */
 .field:focus {
-  outline: none;
   border-bottom-color: var(--color-accent);
 }
 .field::placeholder {
@@ -399,10 +452,10 @@
   font-family: var(--font-body);
   font-size: 0.875rem;
   color: var(--color-ink);
-  transition: border-color var(--tds-dur-base) ease;
+  transition: border-color var(--tds-dur-base) var(--tds-ease-out);
 }
+/* Same correction as `.field:focus` above — the outline stays. */
 .field-boxed:focus {
-  outline: none;
   border-color: var(--color-accent);
 }
 
@@ -425,6 +478,14 @@
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-muted);
+  transition: color var(--tds-dur-fast) var(--tds-ease-out);
+}
+/* Lift the caption out of muted while its control has focus, so the row a
+   keyboard user is editing is identifiable from the label as well as from
+   the field's own ring. */
+.tds-field-row:focus-within > label,
+.tds-field-row:focus-within > .tds-field-row__label {
+  color: var(--color-ink);
 }
 label.tds-field-row {
   font-size: 0.8125rem;
@@ -445,9 +506,15 @@ label.tds-field-row > :is(input, select, textarea) {
   gap: 1rem;
   padding: 0.5rem 0;
   border-bottom: 1px solid var(--color-line);
+  transition: color var(--tds-dur-fast) var(--tds-ease-out);
 }
 .tds-toggle-row:last-child {
   border-bottom: 0;
+}
+/* The control here is a bare checkbox, whose focus ring is small and easy to
+   lose against a list of a dozen identical rows. */
+.tds-toggle-row:focus-within {
+  color: var(--color-ink);
 }
 
 /* === Surfaces: card / page / widget / settings ===================== */
@@ -460,10 +527,14 @@ label.tds-field-row > :is(input, select, textarea) {
   border: 1px solid var(--color-line);
   border-radius: var(--tds-radius-card);
   box-shadow: var(--tds-elevation-card);
+  /* No `box-shadow` here. Transitioning a blurred shadow repaints the whole
+     blur every frame, and the panel's hover rule (app.css) also translates
+     the card — so the shadow was being re-rasterised on a layer that had
+     already been promoted. The panel expresses its hover lift with transform
+     plus a static raised shadow instead. */
   transition:
-    border-color var(--tds-dur-base) ease,
-    background-color var(--tds-dur-base) ease,
-    box-shadow var(--tds-dur-base) ease;
+    border-color var(--tds-dur-base) var(--tds-ease-out),
+    background-color var(--tds-dur-base) var(--tds-ease-out);
 }
 
 /* Page shell + header. Every extension page renders
@@ -573,12 +644,18 @@ label.tds-field-row > :is(input, select, textarea) {
   gap: 0.75rem;
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--color-line);
-  transition: background-color var(--tds-dur-base) ease;
+  transition: background-color var(--tds-dur-base) var(--tds-ease-out);
 }
 .tds-list__row:last-child {
   border-bottom: 0;
 }
-.tds-list__row:hover {
+/* `:focus-within` alongside `:hover` — a row is a container, so the thing
+   that actually takes focus is the link or button INSIDE it. Without this a
+   keyboard user tabbing down a list gets no row-level feedback at all while
+   a mouse user gets it for free. Same reasoning for the table and the panel
+   cards/widgets further down. */
+.tds-list__row:hover,
+.tds-list__row:focus-within {
   background: var(--color-soft);
 }
 
@@ -605,7 +682,14 @@ label.tds-field-row > :is(input, select, textarea) {
 .tds-table tbody tr:last-child td {
   border-bottom: 0;
 }
-.tds-table tbody tr:hover td {
+.tds-table td {
+  /* The row hover below had no transition, so tables snapped while the
+     visually identical `.tds-list__row` faded. Declared on the cell because
+     that is what actually paints the background. */
+  transition: background-color var(--tds-dur-base) var(--tds-ease-out);
+}
+.tds-table tbody tr:hover td,
+.tds-table tbody tr:focus-within td {
   background: var(--color-soft);
 }
 
@@ -667,6 +751,15 @@ button.tds-row {
   cursor: pointer;
   font: inherit;
   color: inherit;
+  transition: color var(--tds-dur-fast) var(--tds-ease-out);
+}
+/* It reads as a header, but it is a disclosure control and had no feedback
+   at all beyond the cursor — no hover, no transition, no focus treatment. */
+button.tds-row:hover {
+  color: var(--color-accent);
+}
+button.tds-row:focus-visible {
+  outline-offset: 2px;
 }
 
 /* === Composer ===================================================== */
@@ -749,14 +842,65 @@ button.tds-row {
   justify-content: flex-end;
   gap: 0.5rem;
 }
-/* Entry animation. `allow-discrete` is what lets a top-layer element
-   animate in from `display: none` at all; without it the panel would pop. */
+/* Entry animation — keyframes, which work in every engine we target.
+   (The comment that used to sit here claimed `allow-discrete` was what made
+   this work. It wasn't: the property was never declared. It is declared
+   below now, and it buys the EXIT, not the entry.) */
 @media (prefers-reduced-motion: no-preference) {
   .tds-modal[open] {
-    animation: tds-modal-in var(--tds-dur-base) var(--tds-ease-out);
+    animation: tds-modal-in var(--tds-dur-slow) var(--tds-ease-out);
   }
   .tds-modal[open]::backdrop {
-    animation: tds-modal-backdrop-in var(--tds-dur-base) ease;
+    animation: tds-modal-backdrop-in var(--tds-dur-slow) var(--tds-ease-out);
+  }
+
+  /* Exit. A <dialog> closed with `.close()` goes straight back to
+     `display: none` and leaves the top layer immediately, so there is no
+     frame left to animate — the modal snapped shut while animating open,
+     which is the asymmetry this fixes. Transitioning `display` and `overlay`
+     with `allow-discrete` keeps it around for the duration.
+
+     Behind `@supports` because it is Chrome 117+ / Safari 17.4+ / Firefox
+     129+: older engines skip this block entirely and keep the keyframe entry
+     above plus the instant close they already had. Inside the block the
+     keyframes are switched off so the two mechanisms cannot fight over
+     `opacity` on the same frame. */
+  @supports (transition-behavior: allow-discrete) {
+    .tds-modal,
+    .tds-modal::backdrop {
+      animation: none;
+      opacity: 0;
+      transition:
+        opacity var(--tds-dur-slow) var(--tds-ease-out),
+        display var(--tds-dur-slow) allow-discrete,
+        overlay var(--tds-dur-slow) allow-discrete;
+    }
+    .tds-modal {
+      transform: translateY(0.5rem) scale(0.98);
+      transition: opacity var(--tds-dur-slow) var(--tds-ease-out),
+        transform var(--tds-dur-slow) var(--tds-ease-out),
+        display var(--tds-dur-slow) allow-discrete,
+        overlay var(--tds-dur-slow) allow-discrete;
+    }
+    .tds-modal[open],
+    .tds-modal[open]::backdrop {
+      opacity: 1;
+    }
+    .tds-modal[open] {
+      transform: none;
+    }
+    /* The from-state for the entry transition. Without it the element is
+       already at its final value on the first rendered frame and nothing
+       animates in. */
+    @starting-style {
+      .tds-modal[open],
+      .tds-modal[open]::backdrop {
+        opacity: 0;
+      }
+      .tds-modal[open] {
+        transform: translateY(0.5rem) scale(0.98);
+      }
+    }
   }
 }
 @keyframes tds-modal-in {
@@ -860,7 +1004,7 @@ button.tds-row {
   background: currentColor;
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 280ms var(--tds-ease-out);
+  transition: transform var(--tds-dur-slow) var(--tds-ease-out);
 }
 .link-underline:hover::after,
 .link-underline:focus-visible::after {
@@ -869,7 +1013,7 @@ button.tds-row {
 
 .entry-row {
   position: relative;
-  transition: background-color var(--tds-dur-base) ease;
+  transition: background-color var(--tds-dur-base) var(--tds-ease-out);
 }
 .entry-row:hover {
   background: var(--color-soft);
@@ -906,8 +1050,8 @@ button.tds-row {
   transform-origin: center;
   transform: translate(-50%, -50%);
   transition:
-    transform var(--tds-dur-base) cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 180ms ease;
+    transform var(--tds-dur-base) var(--tds-ease-in-out),
+    opacity var(--tds-dur-fast) var(--tds-ease-out);
 }
 .tds-menu-bar-top {
   transform: translate(-50%, calc(-50% - 6px));

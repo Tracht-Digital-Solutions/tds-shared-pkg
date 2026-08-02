@@ -62,14 +62,15 @@
    with `color: var(--tile-hue)` (custom properties inherit). No gradients,
    no shadows: the lift is all flat tint + rule, so it stays on-brand and
    theme-flips cleanly. */
+/* No transition here. It used to declare one for `border-color` and
+   `background-color`, but `.stat-tile` has no `:hover`, `:focus` or `:active`
+   rule in ANY repo — the only thing that changes its colours is the static
+   `--toned` modifier, applied at render. It was pure dead weight. */
 .stat-tile {
   --tile-hue: var(--color-primary);
   border: 1px solid var(--color-line);
   border-radius: var(--tds-radius-card);
   background: var(--color-card);
-  transition:
-    border-color var(--tds-dur-base) ease,
-    background-color var(--tds-dur-base) ease;
 }
 .stat-tile--toned {
   background: color-mix(in srgb, var(--tile-hue) 9%, var(--color-card));
@@ -160,9 +161,9 @@
   border: 1px solid transparent;
   color: var(--color-muted);
   transition:
-    color var(--tds-dur-fast) ease,
-    background-color var(--tds-dur-fast) ease,
-    border-color var(--tds-dur-fast) ease;
+    color var(--tds-dur-fast) var(--tds-ease-out),
+    background-color var(--tds-dur-fast) var(--tds-ease-out),
+    border-color var(--tds-dur-fast) var(--tds-ease-out);
 }
 .nav-item:hover {
   color: var(--color-ink);
@@ -181,8 +182,8 @@
   color: currentColor;
   background: transparent;
   transition:
-    color var(--tds-dur-fast) ease,
-    background-color var(--tds-dur-fast) ease;
+    color var(--tds-dur-fast) var(--tds-ease-out),
+    background-color var(--tds-dur-fast) var(--tds-ease-out);
 }
 .nav-item:hover .nav-item__icon,
 .nav-item--active .nav-item__icon {
@@ -342,6 +343,25 @@
    rail's surface but is already a deliberate full-label overlay. */
 .portal-sidebar {
   transition: width var(--tds-dur-base) var(--tds-ease-in-out);
+  /* A collapsing rail that is a flex sibling of `main` CANNOT be made
+     compositor-only — changing its width is a layout change by definition,
+     and there is no transform that moves the page content with it. So the
+     goal here is not to avoid the reflow but to bound it: `contain` tells
+     the engine that nothing outside this subtree depends on its internals,
+     so the per-frame work is the rail plus the main column rather than the
+     whole document.
+
+     `layout` ONLY. Not `paint` — the collapsed rail's tooltips are
+     `::after`s at `left: calc(100% + 0.75rem)`, i.e. deliberately outside
+     the rail's own box, and paint containment would clip every one of them.
+     Not `size` either — the width is precisely what changes here. */
+  contain: layout;
+}
+/* `will-change` only while it is actually moving. Left on permanently it
+   holds a composited layer for a rail that is static ~100% of the time;
+   sidebarCollapse.ts adds the class on toggle and drops it on transitionend. */
+.portal-sidebar.is-animating {
+  will-change: width;
 }
 .portal-sidebar.collapsed {
   width: 4.5rem;
@@ -402,7 +422,7 @@
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--tds-dur-fast) ease;
+  transition: opacity var(--tds-dur-fast) var(--tds-ease-out);
 }
 .portal-sidebar.collapsed .nav-item[data-tip]:hover::after,
 .portal-sidebar.collapsed .nav-item[data-tip]:focus-visible::after {
@@ -432,7 +452,7 @@
   inset: 0;
   background: rgb(4 8 20 / 0.55);
   opacity: 0;
-  transition: opacity 220ms ease;
+  transition: opacity var(--tds-dur-slow) var(--tds-ease-out);
 }
 .nav-drawer[data-open="true"] .nav-drawer-backdrop {
   opacity: 1;
@@ -444,18 +464,18 @@
   display: flex;
   flex-direction: column;
   transform: translateX(-100%);
-  transition: transform 260ms var(--tds-ease-in-out);
+  transition: transform var(--tds-dur-slow) var(--tds-ease-in-out);
   overflow-y: auto;
 }
 .nav-drawer[data-open="true"] .nav-drawer-panel {
   transform: translateX(0);
 }
-@media (prefers-reduced-motion: reduce) {
-  .nav-drawer-backdrop,
-  .nav-drawer-panel {
-    transition-duration: 0.01ms;
-  }
-}
+/* NB: no reduced-motion block here any more. The one that used to sit at
+   this spot only re-clamped `transition-duration`, which base.css already
+   does globally with `!important` — it read as coverage while adding
+   nothing. The drawer's motion is a slide from off-screen, so clamping the
+   duration IS the correct reduced-motion behaviour; there is no end state
+   to reset the way a hover-lift has. */
 
 /* === Dashboard widget grid ======================================== */
 
@@ -557,9 +577,25 @@
   border-color: color-mix(in srgb, var(--tds-widget-hue) 35%, var(--color-line));
   border-top-color: var(--tds-widget-hue);
   background: color-mix(in srgb, var(--tds-widget-hue) 6%, var(--color-card));
-  transition:
-    box-shadow var(--tds-dur-base) var(--tds-ease-out),
-    transform var(--tds-dur-base) var(--tds-ease-out);
+  transition: transform var(--tds-dur-base) var(--tds-ease-out);
+}
+/* The hover elevation as a FADING OVERLAY, not an animated `box-shadow`.
+   Transitioning the shadow itself re-rasterises a 32px blur every frame —
+   and because the hover also translates the widget, that repaint was landing
+   on an element the transform had already promoted to its own layer, which
+   is the most expensive combination available. An `opacity` fade on a
+   pseudo-element carrying the raised shadow is compositor-only.
+   `.tds-widget` is already `position: relative` (set just above), so this
+   introduces no new containing block. */
+[data-surface="panel"] .widget-slot .tds-widget::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: var(--tds-elevation-raised);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--tds-dur-base) var(--tds-ease-out);
 }
 [data-surface="panel"] .widget-slot .tds-widget__title {
   color: color-mix(in srgb, var(--tds-widget-hue) 75%, var(--color-muted));
@@ -590,17 +626,42 @@
    set in surfaces/panel.css); hovering lifts them to `--tds-elevation-raised`.
    Gated on a real pointer so touch devices never get a stuck hover state. */
 @media (hover: hover) {
-  [data-surface="panel"] .widget-slot .tds-widget:hover {
-    box-shadow: var(--tds-elevation-raised);
+  /* `:focus-within` alongside `:hover` throughout — a widget or card is a
+     container, so what receives focus is a control inside it. Without this a
+     keyboard user gets none of the elevation a mouse user gets. */
+  [data-surface="panel"] .widget-slot .tds-widget:hover,
+  [data-surface="panel"] .widget-slot .tds-widget:focus-within {
     transform: translateY(-2px);
   }
-  [data-surface="panel"] .tds-card {
-    transition:
-      box-shadow var(--tds-dur-base) var(--tds-ease-out),
-      border-color var(--tds-dur-base) var(--tds-ease-out);
+  [data-surface="panel"] .widget-slot .tds-widget:hover::after,
+  [data-surface="panel"] .widget-slot .tds-widget:focus-within::after {
+    opacity: 1;
   }
-  [data-surface="panel"] .tds-card:hover {
+
+  /* Same overlay technique for the card. It needs `position: relative` of
+     its own — `.tds-card` is unpositioned in primitives.css — which is safe
+     here because the overlay is the only absolutely-positioned child the
+     panel adds. */
+  [data-surface="panel"] .tds-card {
+    position: relative;
+    transition: border-color var(--tds-dur-base) var(--tds-ease-out);
+  }
+  [data-surface="panel"] .tds-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
     box-shadow: var(--tds-elevation-raised);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--tds-dur-base) var(--tds-ease-out);
+  }
+  [data-surface="panel"] .tds-card:hover::after,
+  [data-surface="panel"] .tds-card:focus-within::after {
+    opacity: 1;
+  }
+  [data-surface="panel"] .tds-card:hover,
+  [data-surface="panel"] .tds-card:focus-within {
     border-color: color-mix(
       in srgb,
       var(--tds-panel-accent) 30%,
@@ -623,15 +684,19 @@
    is reset too, not just the duration — a hover lift that snaps 2px is
    worse than no lift at all. */
 @media (prefers-reduced-motion: reduce) {
-  .portal-sidebar,
-  .nav-item,
-  .nav-item::before,
-  .nav-item__icon,
-  [data-surface="panel"] .tds-card,
-  [data-surface="panel"] .widget-slot .tds-widget {
-    transition-duration: 0.01ms;
-  }
-  [data-surface="panel"] .widget-slot .tds-widget:hover {
+  /* The duration clamp is base.css's job (globally, with `!important`).
+     What can only be done HERE is resetting the end states — movement that
+     still occurs, just instantly. The elevation overlays are left alone on
+     purpose: a shadow appearing is not motion, and it is the only hover
+     affordance left once the lift is gone. */
+  [data-surface="panel"] .widget-slot .tds-widget:hover,
+  [data-surface="panel"] .widget-slot .tds-widget:focus-within {
     transform: none;
+  }
+  /* The rail resizes rather than moves, and a rail that jumps between two
+     widths on click is the intended behaviour under `reduce` — but it must
+     not also hold a compositor layer for a transition that no longer runs. */
+  .portal-sidebar.is-animating {
+    will-change: auto;
   }
 }

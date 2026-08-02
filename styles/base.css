@@ -228,7 +228,17 @@
   --tds-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --tds-dur-fast: 160ms;
   --tds-dur-base: 200ms;
+  /* Reserved for the two genuinely slow surfaces — the modal and the mobile
+     drawer. It had no consumers at all until those adopted it. */
   --tds-dur-slow: 320ms;
+
+  /* Loop durations for the indeterminate indicators. Kept separate from the
+     transition scale above because they are periods, not response times: a
+     spinner tuned to `--tds-dur-base` would strobe. The reduced-motion clamp
+     stops both regardless. */
+  --tds-ease-spin: cubic-bezier(0.5, 0.15, 0.5, 0.85);
+  --tds-dur-spin: 700ms;
+  --tds-dur-pulse: 1400ms;
 
   /* --- Display type -------------------------------------------------
      The landingpage renders `.display` at 700 and the blog at 800; both
@@ -306,6 +316,10 @@
 html {
   scroll-behavior: smooth;
   color-scheme: light dark;
+  /* NOTE: `scroll-behavior` is reverted to `auto` in the reduced-motion block
+     at the foot of this file. The global clamp there cannot do it — it only
+     shortens durations, and smooth scrolling is neither a transition nor an
+     animation. Leaving it on is a WCAG 2.3.3 failure. */
   /* Firefox + IE/Edge legacy — the thin pill is rendered by the
      WebKit rules below for everyone else. */
   scrollbar-width: thin;
@@ -338,7 +352,7 @@ html {
   border: 3px solid transparent;
   background-clip: padding-box;
   border-radius: 9999px;
-  transition: background-color 200ms ease;
+  transition: background-color var(--tds-dur-base) var(--tds-ease-out);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -495,6 +509,7 @@ body {
   color: var(--color-ink);
   text-decoration: underline;
   text-underline-offset: 2px;
+  transition: color var(--tds-dur-fast) var(--tds-ease-out);
 }
 .cookie-notice-link:hover {
   color: var(--color-accent);
@@ -510,7 +525,7 @@ body {
   background: var(--color-surface-navy);
   color: #fff;
   cursor: pointer;
-  transition: background-color 160ms ease;
+  transition: background-color var(--tds-dur-fast) var(--tds-ease-out);
 }
 .cookie-notice-btn:hover {
   background: color-mix(in srgb, var(--color-surface-navy) 88%, #fff);
@@ -545,7 +560,7 @@ body {
   border-radius: 9999px;
   border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
   border-top-color: currentColor;
-  animation: tds-spin 0.7s cubic-bezier(0.5, 0.15, 0.5, 0.85) infinite;
+  animation: tds-spin var(--tds-dur-spin) var(--tds-ease-spin) infinite;
 }
 .tds-spinner--sm {
   width: 1rem;
@@ -571,7 +586,8 @@ body {
   display: block;
   border-radius: 0.375rem;
   background: color-mix(in srgb, var(--color-muted) 22%, transparent);
-  animation: tds-skeleton-pulse 1.4s ease-in-out infinite;
+  animation: tds-skeleton-pulse var(--tds-dur-pulse) var(--tds-ease-in-out)
+    infinite;
 }
 .tds-skeleton--circle {
   border-radius: 9999px;
@@ -600,6 +616,38 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* The clamp above only shortens time. Three things it cannot reach, each
+     of which is a separate failure: */
+
+  /* 1. Smooth scrolling is neither a transition nor an animation, so the
+        clamp never touched it (WCAG 2.3.3). */
+  html {
+    scroll-behavior: auto;
+  }
+
+  /* 2. END STATES. A clamped transition still ARRIVES at its target — so
+        every hover-lift below still happened, it just snapped there in
+        0.01ms, which is worse than not lifting at all. Duration alone is
+        not a reduced-motion implementation; the movement has to not occur.
+        (app.css does the same for the panel's cards and widgets, which are
+        the only ones it can see from there.) */
+  .btn-primary:hover,
+  .btn-accent:hover,
+  .live-chat-cta__launcher:hover {
+    transform: none;
+  }
+
+  /* 3. The spinner is the one indicator that must survive the clamp: it
+        still means "working". Frozen mid-rotation it reads as a broken ring
+        with one dark quarter, so flatten it to an even circle — present and
+        legible, but not a stopped animation. */
+  .tds-spinner {
+    border-color: color-mix(in srgb, currentColor 35%, transparent);
+  }
+  .tds-spinner--primary {
+    border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
   }
 }
 
@@ -639,12 +687,15 @@ body {
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-  transition: transform 140ms ease, box-shadow 140ms ease;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+  /* Transform only. The shadow used to be transitioned alongside it, which
+     repaints a 28px blur every frame on an element the transform has already
+     promoted to its own layer — the most expensive way to express a 1px
+     lift. It is held at the hover value instead. */
+  transition: transform var(--tds-dur-fast) var(--tds-ease-out);
 }
 .live-chat-cta__launcher:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
 }
 .live-chat-cta__launcher-icon {
   font-size: 1.05rem;
@@ -662,6 +713,12 @@ body {
   font-size: 0.85rem;
   line-height: 1;
   cursor: pointer;
+  transition: color var(--tds-dur-fast) var(--tds-ease-out),
+    border-color var(--tds-dur-fast) var(--tds-ease-out);
+}
+.live-chat-cta__hide:hover {
+  color: var(--color-ink);
+  border-color: var(--color-ink);
 }
 
 /* Panel (open) */
@@ -696,6 +753,17 @@ body {
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
+  opacity: 0.85;
+  transition: opacity var(--tds-dur-fast) var(--tds-ease-out);
+}
+.live-chat-cta__close:hover {
+  opacity: 1;
+}
+/* The head is the accent fill, so the global accent-coloured focus ring
+   would sit invisible on it. White, inset. */
+.live-chat-cta__close:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 .live-chat-cta__tabs {
   display: flex;
@@ -711,6 +779,15 @@ body {
   font-weight: 600;
   cursor: pointer;
   border-bottom: 2px solid transparent;
+  transition: color var(--tds-dur-fast) var(--tds-ease-out),
+    border-color var(--tds-dur-fast) var(--tds-ease-out);
+}
+.live-chat-cta__tabs button:hover {
+  color: var(--color-ink);
+}
+/* Inset so the ring is not clipped by the tab strip's own bottom border. */
+.live-chat-cta__tabs button:focus-visible {
+  outline-offset: -3px;
 }
 .live-chat-cta__tabs button.is-active {
   color: var(--color-ink);
@@ -819,6 +896,17 @@ body {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
+  transition: color var(--tds-dur-fast) var(--tds-ease-out);
+}
+.live-chat-cta__faq > li > button:hover,
+.live-chat-cta__docs > li > button:hover {
+  color: var(--lc-accent);
+}
+/* Full-bleed rows inside a 1rem-padded panel: the global 4px outline offset
+   would be clipped by the panel edge. */
+.live-chat-cta__faq > li > button:focus-visible,
+.live-chat-cta__docs > li > button:focus-visible {
+  outline-offset: -2px;
 }
 .live-chat-cta__faq-answer,
 .live-chat-cta__doc-body {
@@ -834,6 +922,10 @@ body {
   cursor: pointer;
   font-size: 0.85rem;
   padding: 0 0 0.4rem;
+  transition: opacity var(--tds-dur-fast) var(--tds-ease-out);
+}
+.live-chat-cta__back:hover {
+  opacity: 0.75;
 }
 .live-chat-cta__ok {
   color: var(--color-success, #1a7f4b);

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import { THEME_ATTRIBUTE, THEME_STORAGE_KEY, type Theme } from "../design/index.js";
+import { cssEase } from "../motion/index.js";
 
 // Shared with the no-flash <head> bootstrap (tds-shared/astro
 // `themeBootstrapScript`), which READS this key before paint while this
@@ -102,8 +103,10 @@ export default function ThemeToggle({
           ],
         },
         {
+          // Deliberately longer than `--tds-dur-slow`: this is a full-viewport
+          // wipe, not a control's response, and it reads as abrupt below ~450ms.
           duration: 480,
-          easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+          easing: cssEase.inOut,
           pseudoElement: "::view-transition-new(root)",
         },
       );

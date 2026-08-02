@@ -443,6 +443,80 @@ describe("primitives.css tokenisation", () => {
   });
 });
 
+/**
+ * Motion + focus contracts. Every failure here is silent in the browser: a
+ * suppressed outline still looks fine to a mouse user, an animated
+ * `box-shadow` still renders, and a hard-coded duration still moves. They
+ * only show up as jank, or as a keyboard user who cannot see where they are.
+ */
+describe("motion and focus contracts", () => {
+  const styleFiles = { base, primitives, app, prose } as const;
+
+  it("never suppresses the outline inside a :focus rule", () => {
+    // `.field:focus { outline: none }` is (0,2,0) and the library's only
+    // focus rule, the global `:focus-visible`, is (0,1,0) — so this beat it
+    // and left every text input in the panel with a 1px border-colour change
+    // as its entire focus indicator. WCAG 2.4.11 / 1.4.11.
+    for (const [name, css] of Object.entries(styleFiles)) {
+      for (const block of css.matchAll(/:focus(-visible|-within)?[^{]*\{([^}]*)\}/g)) {
+        expect(block[2], `outline suppressed in a :focus rule in ${name}`).not.toMatch(
+          /outline:\s*(none|0)\b/,
+        );
+      }
+    }
+  });
+
+  it("never transitions box-shadow", () => {
+    // Interpolating a blurred shadow re-rasterises the blur every frame, and
+    // the panel's hover also translates the element — so the repaint landed
+    // on an already-promoted layer. Express the lift as an opacity fade on a
+    // pseudo-element carrying the raised shadow instead.
+    for (const [name, css] of Object.entries(styleFiles)) {
+      for (const decl of css.matchAll(/transition:\s*([^;}]*)[;}]/g)) {
+        expect(decl[1], `box-shadow transition in ${name}`).not.toContain("box-shadow");
+      }
+    }
+  });
+
+  it("never transitions the background shorthand", () => {
+    // `background` also covers background-image and background-position,
+    // neither of which is cheap to interpolate. Name `background-color`.
+    for (const [name, css] of Object.entries(styleFiles)) {
+      for (const decl of css.matchAll(/transition:\s*([^;}]*)[;}]/g)) {
+        expect(decl[1], `background shorthand transitioned in ${name}`).not.toMatch(
+          /(^|,)\s*background\s+/,
+        );
+      }
+    }
+  });
+
+  it("takes every duration and easing from a token", () => {
+    // 8 of the 10 durations in use were magic numbers and the bare `ease`
+    // keyword appeared ~18 times, so "the motion scale" described nothing.
+    for (const [name, css] of Object.entries(styleFiles)) {
+      for (const decl of css.matchAll(/(?:transition|animation):\s*([^;}]*)[;}]/g)) {
+        const body = decl[1];
+        expect(body, `hard-coded duration in ${name}: ${body}`).not.toMatch(
+          /\b\d+(\.\d+)?m?s\b/,
+        );
+        // `linear` is legitimate (the landingpage's marquee); the default
+        // `ease` family is what drifts.
+        expect(body, `bare easing keyword in ${name}: ${body}`).not.toMatch(
+          /(^|[\s,])ease(-in|-out|-in-out)?(?=[\s,;]|$)/,
+        );
+      }
+    }
+  });
+
+  it("resets end states under reduced motion, not just durations", () => {
+    // The global clamp only shortens time — a clamped transition still
+    // ARRIVES, so every hover-lift still happened and merely snapped there.
+    const reduced = base.slice(base.indexOf("@media (prefers-reduced-motion: reduce)"));
+    expect(reduced).toMatch(/scroll-behavior:\s*auto/);
+    expect(reduced).toMatch(/transform:\s*none/);
+  });
+});
+
 describe("app.css split", () => {
   it("imports primitives.css so existing consumers stay drop-in", () => {
     expect(app).toContain('@import "./primitives.css"');

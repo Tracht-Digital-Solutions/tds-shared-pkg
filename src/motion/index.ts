@@ -14,6 +14,34 @@
  */
 export const ease = [0.2, 0.8, 0.2, 1] as const;
 
+/**
+ * The symmetric curve — `--tds-ease-in-out` in styles/base.css. Same
+ * change-one-change-both rule as `ease` above.
+ */
+export const easeInOut = [0.4, 0, 0.2, 1] as const;
+
+/**
+ * The curves again as CSS strings, for the Web Animations API — which takes
+ * an `easing` string, not a coefficient tuple, and cannot read a custom
+ * property. `ThemeToggle` hand-wrote `cubic-bezier(0.4, 0, 0.2, 1)` inline
+ * for exactly this reason, which is a third copy of a value that is supposed
+ * to have one source.
+ */
+export const cssEase = {
+  out: `cubic-bezier(${ease.join(", ")})`,
+  inOut: `cubic-bezier(${easeInOut.join(", ")})`,
+} as const;
+
+/**
+ * Durations in milliseconds, mirroring the `--tds-dur-*` scale in base.css.
+ * For JS-driven animation only — CSS should reference the tokens directly.
+ */
+export const durations = {
+  fast: 160,
+  base: 200,
+  slow: 320,
+} as const;
+
 /** Standard "fade up on scroll-into-view" variant. */
 export const fadeUp = {
   initial: { opacity: 0, y: 24 },

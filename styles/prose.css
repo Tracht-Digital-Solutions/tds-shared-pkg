@@ -243,9 +243,12 @@
   border-radius: var(--tds-radius-btn);
   font-weight: 600;
   text-decoration: none;
+  /* `background-color`, not the `background` SHORTHAND — the shorthand also
+     covers background-image and background-position, neither of which can be
+     interpolated cheaply, and neither of which changes here. */
   transition:
-    background var(--tds-dur-fast) ease,
-    color var(--tds-dur-fast) ease;
+    background-color var(--tds-dur-fast) var(--tds-ease-out),
+    color var(--tds-dur-fast) var(--tds-ease-out);
 }
 .tds-prose .tds-block-button .btn-primary {
   background: var(--color-primary);
