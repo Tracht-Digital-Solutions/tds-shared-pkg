@@ -126,9 +126,37 @@ import { ContactSchema, BlogPostCreateSchema } from "@tracht-digital-solutions/t
 import { translations, type Language } from "@tracht-digital-solutions/tds-shared/i18n";
 import { LanguageProvider, useLang } from "@tracht-digital-solutions/tds-shared/i18n/react";
 import { ease } from "@tracht-digital-solutions/tds-shared/motion";
-import { ThemeToggle, CookieNotice, LiveChatCta, Spinner, Skeleton, SkeletonText } from "@tracht-digital-solutions/tds-shared/components";
+import { ThemeToggle, CookieNotice, LiveChatCta, ToastHost, Spinner, Skeleton, SkeletonText } from "@tracht-digital-solutions/tds-shared/components";
+import { toast } from "@tracht-digital-solutions/tds-shared/toast";
 import { tdsViteBuild, cssTarget } from "@tracht-digital-solutions/tds-shared/astro";
 ```
+
+## Toasts
+
+Feedback for an action's outcome, in the four signal hues. Mount the host
+**once** in the shell layout, then raise toasts from anywhere — including
+code that is not React:
+
+```astro
+---
+import { ToastHost } from "@tracht-digital-solutions/tds-shared/components";
+---
+<ToastHost client:idle lang="de" />
+```
+
+```ts
+// In an island, or in a plain <script> module — same call either way.
+import { toast } from "@tracht-digital-solutions/tds-shared/toast";
+
+const res = await fetch(url, { method: "PUT", body });
+if (res.ok) toast.success("Gespeichert.");
+else toast.danger(`Speichern fehlgeschlagen (HTTP ${res.status}).`);
+```
+
+They travel as a `tds:toast` window event, so islands, plain modules and the
+browser console all reach the same stack without a shared React tree. Toasts
+auto-dismiss (4 s success … 10 s danger, paused while hovered) — so anything
+the user must **read or copy** belongs in an in-flow `.tds-alert`, not here.
 
 ## Design system (CSS, in each frontend)
 

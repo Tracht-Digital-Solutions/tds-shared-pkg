@@ -11,6 +11,7 @@ export default defineConfig({
     "components/index": "src/components/index.ts",
     "astro/index": "src/astro/index.ts",
     "design/index": "src/design/index.ts",
+    "toast/index": "src/toast/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,

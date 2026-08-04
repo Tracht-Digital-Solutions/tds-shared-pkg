@@ -106,6 +106,35 @@ export function isKnownChipColor(color: string | null | undefined): boolean {
   return VARIANT_SET.has(key) || key in CHIP_ALIASES;
 }
 
+/**
+ * Toast variants — the `.tds-toast--*` rules in styles/base.css.
+ *
+ * Deliberately the SEMANTIC chip vocabulary minus `neutral`: a toast always
+ * carries a signal, and a fifth word for "red" (`error`) would split the
+ * library's vocabulary the way `.chip--violet` once did. `design.test.ts`
+ * asserts this list against the rules actually defined in the stylesheet, so
+ * a variant can never be shipped without a colour.
+ */
+export const TOAST_VARIANTS = ["success", "warning", "danger", "info"] as const;
+export type ToastVariant = (typeof TOAST_VARIANTS)[number];
+
+const TOAST_VARIANT_SET: ReadonlySet<string> = new Set(TOAST_VARIANTS);
+
+/**
+ * Map an untrusted variant to one that definitely has a rule.
+ *
+ * The toast bus is a window event, so a `detail.variant` can come from code
+ * this library never type-checked (an older extension, a console call). Same
+ * doctrine as {@link resolveChipVariant}: never render an uncoloured signal.
+ */
+export function resolveToastVariant(
+  variant: string | null | undefined,
+  fallback: ToastVariant = "info",
+): ToastVariant {
+  const key = (variant ?? "").trim().toLowerCase();
+  return TOAST_VARIANT_SET.has(key) ? (key as ToastVariant) : fallback;
+}
+
 /** The three design surfaces. Each app sets one on `<html data-surface>`. */
 export const SURFACES = ["marketing", "blog", "panel"] as const;
 export type Surface = (typeof SURFACES)[number];

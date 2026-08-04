@@ -6,20 +6,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> **Release this as a `minor` → it must publish as `0.14.0`.** Every consumer of
-> this change pins `^0.14.0` (products/host) or `>=0.14.0` (extensions), so any
-> other number leaves 21 repos unable to resolve the dependency.
+> **Release this as a `minor` → `0.16.0`** (the package is at `0.15.1`). It adds
+> an export subpath (`./toast`), and every consumer repins: host + products to
+> `^0.16.0`, extensions to `>=0.16.0` in their peer range. A `0.x` caret is
+> minor-locked, so `^0.15.0` would silently keep resolving 0.15.x and the toast
+> import would fail to resolve at build time.
 >
-> The `version` field was reconciled `0.12.3` → `0.13.0` in this change, because
-> it had drifted **behind the registry**: `0.13.0` was published on 2026-07-25,
-> but the release workflow's `git push --follow-tags origin HEAD:main` never
-> landed, so `main` kept the pre-release value and no `release: 0.13.0` commit or
-> `v0.13.0` tag exists. Left at `0.12.3`, `npm version minor` would recompute
-> `0.13.0` and `npm publish` would fail with a 409 (version already exists).
-> Reconciling the field is not taking the bump by hand — it restores what the
-> workflow itself would have written, so its own arithmetic lands on `0.14.0`.
-> If a release ever 409s again, check `npm view … versions` against `main`'s
-> `version` before touching anything else.
+> *(The note that used to sit here demanded `0.14.0`; that release shipped long
+> ago. If a release ever 409s, check `npm view … versions` against `main`'s
+> `version` before touching anything else.)*
+
+### Added
+- **Toast notifications — `ToastHost` + the `./toast` bus.** Transient outcome
+  feedback in the four signal hues (`success` / `warning` / `danger` / `info`),
+  raised from anywhere with `toast.success("Gespeichert.")`. The bus is a
+  `window` CustomEvent (`tds:toast`), because Astro mounts up to 17 separate
+  React roots per page and the loudest caller — the frontend host's
+  `dashboardLayout.ts` — is not React at all; `src/toast/index.ts` therefore
+  stays React-free so a plain-TS chunk can import it. `showToast` is SSR-safe
+  and cannot throw into the caller it reports on, and buffers until the
+  `client:idle` host has mounted.
+  Two live regions render from first paint (assertive for failures, polite for
+  everything else) because a region inserted *together with* its first message
+  is never announced. Auto-dismiss is per variant (4 s success … 10 s danger),
+  paused on hover/focus, capped at three per region, with repeats counted
+  instead of stacked. Focus is never moved.
+  The stack shares the bottom of the viewport with the cookie notice, so the
+  notice now MEASURES itself and publishes `--tds-bottom-lane`; the toast adds
+  it to its own `bottom`. A guessed offset was wrong on both sizes (the notice
+  is 71px on a wide screen and 161px on a phone) and the stack rendered on top
+  of it — caught in a browser, invisible to the unit tests.
+  CSS is `.tds-toast*` in `base.css` (with the other floating shell components,
+  so the public sites can adopt it with no CSS work); `app.css` offsets the
+  bottom-left stack past the panel rail. `.tds-alert` remains the in-flow block
+  message — see AGENTS.md for which to use when.
 
 ### Changed
 - **One design library, three surfaces.** The design was maintained as three

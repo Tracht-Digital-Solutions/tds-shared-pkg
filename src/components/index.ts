@@ -25,6 +25,21 @@ export {
   type AdConsent,
 } from "./CookieNotice";
 
+export { default as ToastHost } from "./ToastHost";
+export type { ToastHostProps } from "./ToastHost";
+/* The bus is re-exported here so a React island needs ONE import path; a
+   plain-TS module (e.g. the host's dashboardLayout.ts) imports
+   `@tracht-digital-solutions/tds-shared/toast` instead and stays React-free. */
+export {
+  showToast,
+  toast,
+  TOAST_EVENT,
+  TOAST_DURATIONS,
+  TOAST_MAX_VISIBLE,
+  type ToastDetail,
+  type ToastVariant,
+} from "../toast";
+
 export { default as Spinner } from "./Spinner";
 export type { SpinnerProps } from "./Spinner";
 

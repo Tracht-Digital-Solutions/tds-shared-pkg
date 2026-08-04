@@ -352,6 +352,12 @@ export const translations = {
       consentAccept: "Akzeptieren",
       consentDecline: "Ablehnen",
     },
+    /* Only the chrome. A toast's TEXT always comes from the caller — a
+       catalogue of canned messages here would be a second source of truth for
+       copy the call sites already own. */
+    toast: {
+      dismiss: "Schließen",
+    },
   },
   en: {
     nav: {
@@ -705,6 +711,9 @@ export const translations = {
         "This blog shows advertising from Google AdSense. With your consent — and only then — cookies and similar technologies are set for advertising. Your choice is free and can be changed at any time.",
       consentAccept: "Accept",
       consentDecline: "Decline",
+    },
+    toast: {
+      dismiss: "Dismiss",
     },
   },
 } as const;

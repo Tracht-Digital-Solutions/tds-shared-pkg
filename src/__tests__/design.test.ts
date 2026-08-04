@@ -6,6 +6,7 @@ import {
   CHIP_VARIANTS,
   SEMANTIC_CHIP_VARIANTS,
   SURFACES,
+  TOAST_VARIANTS,
   isKnownChipColor,
   resolveChipVariant,
 } from "../design";
@@ -712,5 +713,77 @@ describe("modal / confirm", () => {
     expect(primitives).toMatch(
       /@media \(prefers-reduced-motion: no-preference\) \{\s*\.tds-modal\[open\]/,
     );
+  });
+});
+
+describe("toast stack", () => {
+  // Every assertion here guards a failure that is invisible in review and
+  // silent in the browser: a toast buried behind the chat bubble, a stack
+  // that swallows clicks in an empty corner, or one sitting on the panel's
+  // theme toggle.
+  const hostRule = base.match(/\.tds-toast-host \{([^}]*)\}/)?.[1] ?? "";
+  const toastRule = base.match(/\.tds-toast \{([^}]*)\}/)?.[1] ?? "";
+  /** z-index of the rule that starts exactly at `<selector> {`. */
+  const zIndexOf = (css: string, selector: string) => {
+    const start = css.indexOf(`${selector} {`);
+    if (start === -1) return NaN;
+    const rule = css.slice(start, css.indexOf("}", start));
+    return Number(rule.match(/z-index:\s*(\d+)/)?.[1] ?? NaN);
+  };
+
+  it("matches the .tds-toast--* rules actually defined in base.css", () => {
+    const defined = new Set([...base.matchAll(/\.tds-toast--([a-z-]+)\s*\{/g)].map((m) => m[1]));
+    expect([...defined].sort()).toEqual([...TOAST_VARIANTS].sort());
+  });
+
+  it("stacks above the live-chat launcher and the cookie notice", () => {
+    // Both of those are fixed too; losing this order hides the message
+    // reporting the very action the user just took.
+    expect(zIndexOf(base, ".tds-toast-host")).toBeGreaterThan(zIndexOf(base, ".live-chat-cta"));
+    expect(zIndexOf(base, ".live-chat-cta")).toBeGreaterThan(zIndexOf(base, ".cookie-notice"));
+  });
+
+  it("anchors bottom-LEFT so it never covers the live-chat launcher", () => {
+    expect(hostRule).toMatch(/bottom:/);
+    expect(hostRule).toMatch(/left:/);
+    expect(hostRule).not.toMatch(/right:/);
+  });
+
+  it("offsets itself by the measured bottom lane, not a guessed height", () => {
+    // The cookie notice is fixed to the same corner and publishes its own
+    // height as `--tds-bottom-lane` (components/CookieNotice). A hard-coded
+    // offset was wrong on desktop AND on a phone — the notice is one line on
+    // one and four on the other — and the stack landed on top of it.
+    expect(hostRule).toMatch(/bottom:\s*calc\([^)]*--tds-bottom-lane/);
+    const mobile = base.slice(base.indexOf("@media (max-width: 40rem)"));
+    expect(mobile).toMatch(/bottom:\s*calc\([^)]*--tds-bottom-lane/);
+  });
+
+  it("is click-through when empty", () => {
+    // The host is always in the DOM (the live regions must pre-exist), so
+    // without this it would silently eat clicks in that corner forever.
+    expect(hostRule).toMatch(/pointer-events:\s*none/);
+    expect(toastRule).toMatch(/pointer-events:\s*auto/);
+  });
+
+  it("takes the alert radius from the surface token, not a literal", () => {
+    expect(toastRule).toContain("border-radius: var(--tds-radius-alert)");
+  });
+
+  it("never transitions its shadow", () => {
+    expect(toastRule).not.toMatch(/transition:[^;]*box-shadow/);
+  });
+
+  it("gates the entry animation on reduced motion", () => {
+    expect(base).toMatch(/@media \(prefers-reduced-motion: no-preference\) \{\s*\.tds-toast \{/);
+  });
+
+  it("offsets the stack past the panel rail, scoped to the panel surface", () => {
+    // app.css is imported by the blog too, which has no rail — an unscoped
+    // offset would push the blog's toasts 15rem off their corner.
+    const idx = app.indexOf(".tds-toast-host");
+    expect(idx, ".tds-toast-host offset missing from app.css").toBeGreaterThan(-1);
+    const selectorList = app.slice(app.lastIndexOf("}", idx) + 1, idx);
+    expect(selectorList).toContain('[data-surface="panel"]');
   });
 });

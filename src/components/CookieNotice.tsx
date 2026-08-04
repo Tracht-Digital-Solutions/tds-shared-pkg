@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { translations, type Language } from "../i18n/translations";
 
 const DEFAULT_STORAGE_KEY = "tds-cookie-notice";
@@ -88,6 +88,7 @@ export default function CookieNotice({
   storageKey = DEFAULT_STORAGE_KEY,
 }: CookieNoticeProps = {}) {
   const [visible, setVisible] = useState(false);
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     try {
@@ -101,6 +102,33 @@ export default function CookieNotice({
     }
     setVisible(true);
   }, [consent, storageKey]);
+
+  /**
+   * Publish the space this notice occupies at the bottom of the viewport, so
+   * other fixed bottom chrome can sit ABOVE it instead of on top of it — today
+   * that is the toast stack (`.tds-toast-host` in base.css reads
+   * `--tds-bottom-lane`). Measured rather than guessed: the notice is one line
+   * on a wide screen and four on a phone, so any hard-coded offset is wrong on
+   * one of them (it was, on both). Cleared on unmount/dismissal, so the lane
+   * exists only while something is actually in it.
+   */
+  useEffect(() => {
+    const el = ref.current;
+    if (!visible || !el || typeof window === "undefined") return;
+    const root = document.documentElement;
+    const publish = () => {
+      root.style.setProperty("--tds-bottom-lane", `${Math.ceil(el.getBoundingClientRect().height)}px`);
+    };
+    publish();
+    const ro = typeof ResizeObserver === "function" ? new ResizeObserver(publish) : null;
+    ro?.observe(el);
+    window.addEventListener("resize", publish);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", publish);
+      root.style.removeProperty("--tds-bottom-lane");
+    };
+  }, [visible]);
 
   if (!visible) return null;
 
@@ -121,7 +149,7 @@ export default function CookieNotice({
   };
 
   return (
-    <aside className="cookie-notice" role="region" aria-label={t.label}>
+    <aside ref={ref} className="cookie-notice" role="region" aria-label={t.label}>
       <p className="cookie-notice-text">
         {consent ? t.consentText : variant === "panel" ? t.panelText : t.siteText}{" "}
         <a className="cookie-notice-link" href={privacyUrl}>

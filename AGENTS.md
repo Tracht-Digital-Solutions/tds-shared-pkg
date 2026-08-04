@@ -239,6 +239,28 @@ import this — they duplicate the small bit of validation they need, by design.
   `.form-alert` / `<FormAlert>` (danger) or `.tds-alert` with
   `--tds-alert-hue`. The panel stretched a `.status-pill--info` `<p>` into an
   alert in 11 places.
+- **Three feedback primitives, three jobs — and one event is reported ONCE.**
+  `.status-pill` inline label · `.tds-alert`/`<FormAlert>` block **in the flow**
+  · `ToastHost` **transient overlay**. The rule:
+  > Vorübergehendes Ergebnis („Gespeichert.", „Fehler (HTTP 500).") → **Toast**.
+  > Dauerzustand (Ladefehler, Validierungs-Zusammenfassung, Leerzustand) →
+  > **in-flow alert**. Alles, was gelesen oder kopiert werden muss (temporäres
+  > Passwort, ID, Link) → **immer in-flow**, nie ein Toast, der wegblendet.
+
+  Do not do both for the same event — that is duplication, not redundancy.
+  Raise a toast with `toast.success("…")` / `.warning` / `.danger` / `.info`
+  from `@tracht-digital-solutions/tds-shared/toast` (plain TS, React-free) or
+  from `/components` (re-exported, one import for an island). Mount `ToastHost`
+  **once** per app in the shell layout; a second one renders nothing and warns.
+  The variant vocabulary is `danger`, not `error` — same words as
+  `.tds-alert--danger` / `.chip--danger`, and `design.test.ts` pins the list
+  against the `.tds-toast--*` rules that actually exist.
+  **Fixed bottom chrome shares one lane.** Anything pinned to the bottom of the
+  viewport publishes its height as `--tds-bottom-lane` (CookieNotice measures
+  itself with a ResizeObserver) and anything else pinned there adds it to its
+  own `bottom`. Do not hard-code an offset instead: the notice is one line wide
+  and four narrow, so a literal is wrong on one of them — it shipped on top of
+  the notice on BOTH until a browser test caught it.
 - **Reach for the generic layout primitives before inventing a name.**
   `.tds-stack` (+`--tight`/`--loose`) for a vertical stack, `.tds-row`
   (+`--between`) for a wrapping horizontal row, `.tds-compose` (+`__actions`) for
@@ -325,10 +347,15 @@ src/
 │   ├── index.ts              # re-exports translations
 │   └── react.tsx             # React Context provider + hook
 ├── motion/                   # animation presets
+├── toast/                    # the toast BUS (tds:toast window event,
+│                             #   showToast + toast.*). React-free on purpose:
+│                             #   plain-TS callers (the host's dashboardLayout.ts)
+│                             #   import it without pulling in the runtime.
 ├── components/               # shared React islands (ThemeToggle, FormAlert,
-│                             #   ConfirmDialog, CookieNotice, LiveChatCta, Spinner, Skeleton,
-│                             #   SkeletonText — their CSS lives in base.css, not
-│                             #   app.css, so the landingpage (base-only) gets it too)
+│                             #   ConfirmDialog, CookieNotice, LiveChatCta, ToastHost,
+│                             #   Spinner, Skeleton, SkeletonText — their CSS lives in
+│                             #   base.css, not app.css, so the landingpage (base-only)
+│                             #   gets it too)
 └── astro/                    # build presets (cssTarget / tdsViteBuild) +
                               #   themeBootstrapScript (the no-flash <head> script)
 ```

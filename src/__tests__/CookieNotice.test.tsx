@@ -83,3 +83,39 @@ describe("CookieNotice", () => {
     });
   });
 });
+
+describe("the bottom lane", () => {
+  /**
+   * The notice is fixed to the bottom of the viewport, and so is the toast
+   * stack. Rather than have the toast guess an offset — which was wrong on
+   * desktop AND on a phone, because the notice is one line wide-screen and
+   * four narrow — the notice measures itself and publishes the space it
+   * occupies as `--tds-bottom-lane`; `.tds-toast-host` adds it to its own
+   * `bottom`. If this ever stops being set, the toast lands on the notice
+   * again, which nothing else would catch.
+   */
+  const lane = () => document.documentElement.style.getPropertyValue("--tds-bottom-lane");
+
+  it("publishes its height while it is visible", () => {
+    render(<CookieNotice />);
+    expect(lane()).toMatch(/^\d+px$/);
+  });
+
+  it("clears the lane when dismissed, so nothing reserves empty space", () => {
+    const { getByRole } = render(<CookieNotice />);
+    fireEvent.click(getByRole("button"));
+    expect(lane()).toBe("");
+  });
+
+  it("clears the lane on unmount", () => {
+    const { unmount } = render(<CookieNotice />);
+    unmount();
+    expect(lane()).toBe("");
+  });
+
+  it("never sets a lane when the notice does not render", () => {
+    localStorage.setItem("tds-cookie-notice", "1");
+    render(<CookieNotice />);
+    expect(lane()).toBe("");
+  });
+});
