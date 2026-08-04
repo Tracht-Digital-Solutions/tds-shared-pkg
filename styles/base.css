@@ -564,7 +564,12 @@ body {
 .tds-toast-host {
   position: fixed;
   left: 1rem;
-  bottom: 1rem;
+  /* `--tds-bottom-lane` is the height of whatever else currently occupies the
+     bottom of the viewport — today the cookie notice, which MEASURES itself and
+     publishes it (components/CookieNotice). Guessing that offset instead was
+     wrong on both sizes: the notice is one line wide-screen and four on a
+     phone, so the stack landed on top of it either way. Unset ⇒ 0px. */
+  bottom: calc(1rem + var(--tds-bottom-lane, 0px));
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -686,14 +691,8 @@ body {
   .tds-toast-host {
     left: 0.75rem;
     right: 0.75rem;
-    bottom: 0.75rem;
+    bottom: calc(0.75rem + var(--tds-bottom-lane, 0px));
     width: auto;
-  }
-  /* The cookie notice is a full-width bar at the bottom on this size. It is
-     one-time and permanently dismissible, so rather than reserve space for
-     it forever, lift the stack only while it is actually present. */
-  body:has(.cookie-notice) .tds-toast-host {
-    bottom: 7.5rem;
   }
 }
 

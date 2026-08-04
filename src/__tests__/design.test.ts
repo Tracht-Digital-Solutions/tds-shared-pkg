@@ -749,6 +749,16 @@ describe("toast stack", () => {
     expect(hostRule).not.toMatch(/right:/);
   });
 
+  it("offsets itself by the measured bottom lane, not a guessed height", () => {
+    // The cookie notice is fixed to the same corner and publishes its own
+    // height as `--tds-bottom-lane` (components/CookieNotice). A hard-coded
+    // offset was wrong on desktop AND on a phone — the notice is one line on
+    // one and four on the other — and the stack landed on top of it.
+    expect(hostRule).toMatch(/bottom:\s*calc\([^)]*--tds-bottom-lane/);
+    const mobile = base.slice(base.indexOf("@media (max-width: 40rem)"));
+    expect(mobile).toMatch(/bottom:\s*calc\([^)]*--tds-bottom-lane/);
+  });
+
   it("is click-through when empty", () => {
     // The host is always in the DOM (the live regions must pre-exist), so
     // without this it would silently eat clicks in that corner forever.
