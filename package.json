@@ -61,6 +61,11 @@
       "import": "./dist/design/index.js",
       "require": "./dist/design/index.cjs"
     },
+    "./toast": {
+      "types": "./dist/toast/index.d.ts",
+      "import": "./dist/toast/index.js",
+      "require": "./dist/toast/index.cjs"
+    },
     "./styles/primitives.css": "./styles/primitives.css",
     "./styles/prose.css": "./styles/prose.css",
     "./styles/surfaces/marketing.css": "./styles/surfaces/marketing.css",

@@ -700,3 +700,23 @@
     will-change: auto;
   }
 }
+
+/* === Toast placement over the panel rail ========================== */
+
+/* The toast stack (base.css) is fixed bottom-left, which on the panel would
+   land exactly on the rail — and specifically on its foot, where the theme
+   toggle and the collapse button live. The rail is a flex sibling of `main`,
+   not a fixed element, so nothing else pushes the stack aside; it has to be
+   offset here.
+   Scoped to `[data-surface="panel"]`, as every rule in this file touching a
+   shared primitive must be — the blog imports app.css too and has no rail.
+   `:has()` reads the collapsed state straight off the rail, so the offset
+   follows the toggle with no JS and no second source of truth. */
+@media (min-width: 64rem) {
+  [data-surface="panel"] .tds-toast-host {
+    left: calc(15rem + 1rem); /* .portal-sidebar is w-60 */
+  }
+  [data-surface="panel"]:has(.portal-sidebar.collapsed) .tds-toast-host {
+    left: calc(4.5rem + 1rem); /* .portal-sidebar.collapsed */
+  }
+}
