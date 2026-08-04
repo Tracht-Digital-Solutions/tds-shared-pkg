@@ -31,6 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is never announced. Auto-dismiss is per variant (4 s success … 10 s danger),
   paused on hover/focus, capped at three per region, with repeats counted
   instead of stacked. Focus is never moved.
+  The stack shares the bottom of the viewport with the cookie notice, so the
+  notice now MEASURES itself and publishes `--tds-bottom-lane`; the toast adds
+  it to its own `bottom`. A guessed offset was wrong on both sizes (the notice
+  is 71px on a wide screen and 161px on a phone) and the stack rendered on top
+  of it — caught in a browser, invisible to the unit tests.
   CSS is `.tds-toast*` in `base.css` (with the other floating shell components,
   so the public sites can adopt it with no CSS work); `app.css` offsets the
   bottom-left stack past the panel rail. `.tds-alert` remains the in-flow block

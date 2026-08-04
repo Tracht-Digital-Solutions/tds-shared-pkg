@@ -255,6 +255,12 @@ import this — they duplicate the small bit of validation they need, by design.
   The variant vocabulary is `danger`, not `error` — same words as
   `.tds-alert--danger` / `.chip--danger`, and `design.test.ts` pins the list
   against the `.tds-toast--*` rules that actually exist.
+  **Fixed bottom chrome shares one lane.** Anything pinned to the bottom of the
+  viewport publishes its height as `--tds-bottom-lane` (CookieNotice measures
+  itself with a ResizeObserver) and anything else pinned there adds it to its
+  own `bottom`. Do not hard-code an offset instead: the notice is one line wide
+  and four narrow, so a literal is wrong on one of them — it shipped on top of
+  the notice on BOTH until a browser test caught it.
 - **Reach for the generic layout primitives before inventing a name.**
   `.tds-stack` (+`--tight`/`--loose`) for a vertical stack, `.tds-row`
   (+`--between`) for a wrapping horizontal row, `.tds-compose` (+`__actions`) for
