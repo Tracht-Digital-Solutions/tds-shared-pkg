@@ -6,15 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> **Release this as a `minor` → `0.16.0`** (the package is at `0.15.1`). It adds
-> an export subpath (`./toast`), and every consumer repins: host + products to
-> `^0.16.0`, extensions to `>=0.16.0` in their peer range. A `0.x` caret is
-> minor-locked, so `^0.15.0` would silently keep resolving 0.15.x and the toast
-> import would fail to resolve at build time.
->
-> *(The note that used to sit here demanded `0.14.0`; that release shipped long
-> ago. If a release ever 409s, check `npm view … versions` against `main`'s
-> `version` before touching anything else.)*
+## [0.16.0] — 2026-08-05
+
+> Shipped as a **minor** because it adds the `./toast` export subpath: a `0.x`
+> caret is minor-locked, so consumers had to repin (host + products `^0.16.0`,
+> extensions `>=0.16.0`) — `^0.15.0` would have kept resolving the toast-less
+> build. Released together with core-frontend 0.14.0, all 14 extensions and both
+> products.
 
 ### Added
 - **Toast notifications — `ToastHost` + the `./toast` bus.** Transient outcome
