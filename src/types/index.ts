@@ -144,6 +144,19 @@ export interface BlogPost {
    */
   bodyFormat?: BlogBodyFormat;
   coverHint: string | null;
+  /**
+   * Comma-separated tag list, exactly as the content API stores and returns it
+   * (`"digitalisierung, kmu"`). Split + trimmed by the consumer — the blog's
+   * `getTaxonomy()` is the reference reader.
+   *
+   * Optional for the same reason as `machineTranslated` / `viewCount` below:
+   * older API deployments omit it. It lived as a local `declare module`
+   * augmentation in `tds-blog-frontend` until 2026-08-05, which was a genuine
+   * hazard — a module augmentation applies repo-wide, so the blog treated the
+   * field as guaranteed while the library never promised it, moving the failure
+   * from the type-check into runtime.
+   */
+  tags?: string | null;
   publishedAt: string | null;
   draft: boolean;
   createdAt: string;
