@@ -160,40 +160,61 @@ the user must **read or copy** belongs in an in-flow `.tds-alert`, not here.
 
 ## Design system (CSS, in each frontend)
 
-The brand design system ships as two stylesheets. Tailwind v4 processes
-the `@theme` tokens they declare, so just `@import` them after Tailwind
-and the font faces — there is no Tailwind preset or `tailwind.config`.
+**One library, three surfaces.** The CSS ships as layers, not as one blob. An
+app imports `base` + `primitives`, then whichever of `prose`/`app` it needs,
+then **exactly one** surface layer — and sets the matching `data-surface` on
+`<html>`.
+
+| Layer | Holds | Imported by |
+|---|---|---|
+| `styles/base.css` | tokens (`@theme inline` colours/fonts + a plain `:root` geometry scale), dark theme, resets, type primitives, the floating shell components (`.cookie-notice`, `.live-chat-cta`, `.tds-toast*`) | every app |
+| `styles/primitives.css` | cross-surface components — `.btn*`, `.chip*`, `.field`, `.tds-card`, `.tds-page`, `.tds-widget`, `.tds-list`, `.tds-table`, `.tds-alert`, `.tds-modal`, `.tds-thread`, … | every app |
+| `styles/prose.css` | `.tds-prose` long-form typography | blog + blog-CMS |
+| `styles/app.css` | dashboard chrome (`.portal-sidebar`, `.nav-item*`, `.nav-drawer*`, `.stat-tile*`, `.dashboard-grid`); it `@import`s primitives.css | panel + blog |
+| `styles/surfaces/{marketing,blog,panel}.css` | **custom properties only** — geometry, elevation, motion, display voice | exactly one per app |
 
 ```css
 /* src/styles/global.css */
-@import "tailwindcss";
+@import "tailwindcss/index.css";   /* NOT the bare "tailwindcss" — see below */
 
-@import "@fontsource/lato/400.css";
-@import "@fontsource/lato/700.css";
-@import "@fontsource/lato/900.css";
-@import "@fontsource-variable/geist/index.css";
-
-/* Tokens, dark theme, base resets, scrollbar, focus, theme-switch,
-   editorial type primitives — imported by every frontend. */
 @import "@tracht-digital-solutions/tds-shared/styles/base.css";
+@import "@tracht-digital-solutions/tds-shared/styles/primitives.css";
+@import "@tracht-digital-solutions/tds-shared/styles/surfaces/marketing.css";
 
-/* Shared application chrome (chips, buttons, fields, header shell,
-   hairlines, drop-cap, link/row interactions). Dashboard/content apps
-   only — the marketing site omits this and keeps bespoke section CSS. */
-@import "@tracht-digital-solutions/tds-shared/styles/app.css";
+/* Tailwind ignores node_modules, and the shared islands (ThemeToggle,
+   CookieNotice, Spinner, ConfirmDialog, ToastHost) are built out of utility
+   classes — without this they render unstyled, with no error and no warning.
+   MUST come after the @imports; @source before an @import is a build error. */
+@source "../../node_modules/@tracht-digital-solutions/tds-shared";
 ```
 
-Lato is the single canonical display font (headings + brand
-wordmark); Geist is the body font. Add app-specific CSS below the imports.
+Three things that are load-bearing and easy to get wrong:
+
+- **`tailwindcss/index.css`, not `tailwindcss`.** Under Vite 8 the built-in
+  postcss-import step resolves the specifier before `@tailwindcss/postcss` can
+  expand it, and a bare package name is not a file — the build dies with
+  `[postcss] ENOENT: … open '<root>/tailwindcss'`.
+- **Font faces are JS imports in `Layout.astro`, never CSS `@import`s here.**
+  `@tailwindcss/postcss` inlines a CSS `@import` without rebasing the package's
+  relative `url(./files/*.woff2)`, so Vite emits no font files at all and every
+  font 404s.
+- **Set `data-surface` on `<html>`** or the surface layer never applies and
+  every component falls back to the base geometry.
+
+Canonical type stack: **Lato** (display) / **Plus Jakarta Sans** (body) /
+**JetBrains Mono** (mono).
 
 `base.css` declares three colour-token families — brand
 (`--color-primary`/`-accent`/surfaces/neutrals), semantic status
 (`--color-success`/`-warning`/`-danger`/`-info`) and categorical wayfinding
-(`--color-cat-*`) — each with light + navy-tinted dark values. `app.css`
-carries the dashboard surface classes that consume them: `.chip--*`,
-`.status-pill*`, `.stat-tile*`, `.section-accent` and `.nav-item*`. Use these
-rather than re-declaring status colours in a frontend (the admin + customer
-frontends did, until 0.5.x).
+(`--color-cat-*`) — each with light + navy-tinted dark values. Use those rather
+than re-declaring status colours in a frontend.
+
+**Mobile is handled here, not per page** (0.18.0). `.tds-table` turns itself
+into a horizontal scroller below 40rem, `.tds-page__head` stacks, interactive
+chips take the 44px touch target, and the fixed bottom elements clear the home
+indicator. Consumers should not wrap a table in their own `overflow-x` or
+hand-author a breakpoint for these — see AGENTS.md for the three layout rules.
 
 ## Astro build preset (`./astro`)
 

@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] — 2026-08-07
+
 ### Added
 - **Mobile pass over the `panel` surface.** The shell had a drawer below `lg`
   from the start, so the phone layout *looked* handled — but across the whole
@@ -710,7 +712,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tsup` dual ESM/CJS build with per-entry `exports` map.
 - Publish workflow on `v*.*.*` tags to GitHub Packages.
 
-[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.15.1...v0.16.0
 [0.5.2]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.5.1...v0.5.2
