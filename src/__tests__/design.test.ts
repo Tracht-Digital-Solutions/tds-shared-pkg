@@ -787,3 +787,102 @@ describe("toast stack", () => {
     expect(selectorList).toContain('[data-surface="panel"]');
   });
 });
+
+describe("mobile contracts", () => {
+  // Every failure guarded here is SILENT on a phone. A table that loses its
+  // right-hand columns looks like a table with fewer columns; a 22px tap
+  // target looks like a chip. Nothing throws, nothing logs, and none of it
+  // is visible on the desktop the code was written on.
+
+  /** The body of the first `@media (<query>)` block in `css`, braces balanced. */
+  const mediaBlock = (css: string, query: string) => {
+    const start = css.indexOf(`@media (${query})`);
+    if (start === -1) return "";
+    let depth = 0;
+    for (let i = css.indexOf("{", start); i < css.length; i++) {
+      if (css[i] === "{") depth++;
+      else if (css[i] === "}" && --depth === 0) return css.slice(start, i);
+    }
+    return "";
+  };
+
+  it("lets a wide table scroll rather than clipping it", () => {
+    // `body { overflow-x: hidden }` means an overflowing table is CLIPPED,
+    // not scrollable — the module page's update button was unreachable on a
+    // phone with no scrollbar to hint that anything was missing.
+    const narrow = mediaBlock(primitives, "max-width: 40rem");
+    expect(narrow, "no max-width:40rem block in primitives.css").not.toBe("");
+    const rule = narrow.match(/\.tds-table \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toMatch(/display:\s*block/);
+    expect(rule).toMatch(/overflow-x:\s*auto/);
+  });
+
+  it("keeps body's clipping overflow, which is what makes that necessary", () => {
+    // If this ever becomes `auto`/`clip`, the rule above is still correct but
+    // its comment is not — and a reviewer would rightly wonder why it exists.
+    expect(base).toMatch(/body \{[^}]*overflow-x:\s*hidden/);
+  });
+
+  it("gives an interactive chip a 44px target but leaves labels compact", () => {
+    const coarse = mediaBlock(primitives, "pointer: coarse");
+    expect(coarse).toMatch(/button\.chip,\s*\n?\s*a\.chip \{[^}]*min-height:\s*44px/);
+    // `.chip` on its own is a status badge — read, not tapped. Growing it
+    // would inflate every table row and list item that carries one.
+    expect(coarse).not.toMatch(/^\s*\.chip \{/m);
+  });
+
+  it("wraps the label/control row instead of squeezing it", () => {
+    const rule = primitives.match(/\.tds-toggle-row \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toMatch(/flex-wrap:\s*wrap/);
+  });
+
+  it("breaks a pasted URL inside a thread bubble", () => {
+    // `max-width` caps the bubble; only this breaks a single long token.
+    const rule = primitives.match(/\.tds-thread__item \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toMatch(/overflow-wrap:\s*anywhere/);
+  });
+
+  it("leaves the modal a gutter without disturbing its centring", () => {
+    const rule = primitives.match(/\.tds-modal \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toMatch(/width:\s*min\(100% - 2rem,/);
+    // A `margin-inline` gutter would have overridden this and dropped the
+    // dialog to the top of the screen.
+    expect(rule).toMatch(/margin:\s*auto/);
+  });
+
+  it("sizes viewport-tall floating panels in dvh, not vh", () => {
+    // `100vh` on iOS is the viewport with the URL bar retracted, so a panel
+    // measured in it is taller than the space it actually has.
+    expect(base).not.toMatch(/100vh/);
+  });
+
+  /** Body of the rule that starts exactly at `<selector> {` — no regex, so
+   *  a selector full of dots and dashes needs no escaping. */
+  const ruleBody = (css: string, selector: string) => {
+    const start = css.indexOf(`${selector} {`);
+    return start === -1 ? "" : css.slice(start, css.indexOf("}", start));
+  };
+
+  it("clears the home indicator on every fixed bottom element", () => {
+    for (const sel of [".tds-toast-host", ".cookie-notice", ".live-chat-cta"]) {
+      expect(ruleBody(base, sel), `${sel} has no safe-area inset`).toMatch(
+        /env\(safe-area-inset-bottom/,
+      );
+    }
+  });
+
+  it("names the bottom lane before env() in the toast offset", () => {
+    // Not style policing: design.test.ts matches `calc([^)]*--tds-bottom-lane`,
+    // so an `env()` placed first puts a `)` in that span and fails the lane
+    // assertion — with an error that points nowhere near the safe-area work.
+    for (const rule of base.match(/bottom:\s*calc\([^;]*--tds-bottom-lane[^;]*;/g) ?? []) {
+      expect(rule.indexOf("--tds-bottom-lane")).toBeLessThan(
+        rule.includes("env(") ? rule.indexOf("env(") : Infinity,
+      );
+    }
+  });
+
+  it("scales the panel page title with the viewport", () => {
+    expect(surfaceCss.panel).toMatch(/--tds-panel-title-size:\s*clamp\(/);
+  });
+});

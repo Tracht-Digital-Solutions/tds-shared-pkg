@@ -67,7 +67,13 @@
      the 600 default, i.e. bigger but not bolder. Both have to move. */
   --tds-weight-display-tight: 700;
   --tds-tracking-display: -0.03em;
-  --tds-panel-title-size: 1.875rem;
+  /* Fluid, because 30px at weight 700 with -0.03em tracking is a page title
+     roughly as wide as a 375px phone MINUS its padding — "Nutzerverwaltung"
+     lands within a few pixels of the edge. `.lead` and `.section-spacing`
+     already clamp in base.css; this was the outlier. A surface layer may
+     only declare custom properties (design.test.ts), so the fluid step has
+     to live in the token, not in a media query. */
+  --tds-panel-title-size: clamp(1.5rem, 1.1rem + 1.6vw, 1.875rem);
 
   /* --- The accent axis --------------------------------------------
      Admin/management reads in the brand navy. Everything below derives

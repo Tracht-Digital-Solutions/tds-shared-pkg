@@ -235,6 +235,21 @@ import this — they duplicate the small bit of validation they need, by design.
 - **`.field` is the input element, not a wrapper.** The landingpage contact
   form's wrapper family is `.contact-field-row` / `-line` / `-label`
   specifically to avoid that collision.
+- **A `.tds-table` scrolls itself on a phone — don't wrap it, and don't
+  hand-author an `overflow-x` beside it.** Below 40rem the primitive becomes
+  `display: block; overflow-x: auto`, the same treatment `.tds-prose table`
+  has always had. This matters more than it sounds: `body` is
+  `overflow-x: hidden`, so before the rule existed a wide table was *clipped*
+  rather than scrollable — the columns on the right simply did not exist on a
+  phone, with no scrollbar to suggest otherwise, and the module page's update
+  button was among them. **A table whose cells hold no focusable control
+  needs `tabindex="0"` + `role="region"` + a label at the call site**,
+  otherwise its scrollport is unreachable by keyboard (WCAG 2.1.1).
+- **The 44px coarse-pointer floor covers `.btn`, `.field`, `.field-boxed` and
+  an INTERACTIVE chip (`button.chip` / `a.chip`) — not `.chip` itself.** The
+  distinction is the point: a chip is both this library's status badge and its
+  filter/tab control, and only the second is a tap target. Growing the badge
+  would bloat every table row that carries one.
 - **`.status-pill` is an inline label, not a banner.** For a block message use
   `.form-alert` / `<FormAlert>` (danger) or `.tds-alert` with
   `--tds-alert-hue`. The panel stretched a `.status-pill--info` `<p>` into an

@@ -483,7 +483,11 @@ body {
 .cookie-notice {
   position: fixed;
   inset-inline: 1rem;
-  bottom: 1rem;
+  /* Same home-indicator clearance as the toast stack and the chat launcher.
+     The measured `--tds-bottom-lane` this element publishes is its HEIGHT,
+     not its offset, so raising it here keeps the toast stack sitting exactly
+     on top of it. */
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   z-index: 90;
   margin-inline: auto;
   max-width: 46rem;
@@ -568,8 +572,13 @@ body {
      bottom of the viewport — today the cookie notice, which MEASURES itself and
      publishes it (components/CookieNotice). Guessing that offset instead was
      wrong on both sizes: the notice is one line wide-screen and four on a
-     phone, so the stack landed on top of it either way. Unset ⇒ 0px. */
-  bottom: calc(1rem + var(--tds-bottom-lane, 0px));
+     phone, so the stack landed on top of it either way. Unset ⇒ 0px.
+
+     `--tds-bottom-lane` is named FIRST inside the calc on purpose:
+     design.test.ts matches `bottom:\s*calc\([^)]*--tds-bottom-lane`, and
+     `env()` before it would put a `)` in that span and fail the assertion
+     for a reason that looks nothing like the change being made. */
+  bottom: calc(var(--tds-bottom-lane, 0px) + 1rem + env(safe-area-inset-bottom, 0px));
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -691,7 +700,8 @@ body {
   .tds-toast-host {
     left: 0.75rem;
     right: 0.75rem;
-    bottom: calc(0.75rem + var(--tds-bottom-lane, 0px));
+    /* Lane first — see the note on the base rule. */
+    bottom: calc(var(--tds-bottom-lane, 0px) + 0.75rem + env(safe-area-inset-bottom, 0px));
     width: auto;
   }
 }
@@ -809,7 +819,10 @@ body {
 .live-chat-cta {
   position: fixed;
   right: 1.25rem;
-  bottom: 1.25rem;
+  /* Clear the home indicator / gesture bar on a notched phone. `env()`
+     resolves to 0px everywhere else, so this is the plain 1.25rem on a
+     desktop. */
+  bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
   z-index: 95;
   font-family: var(--font-body);
   --lc-accent: var(--color-surface-navy);
@@ -876,7 +889,11 @@ body {
   display: flex;
   flex-direction: column;
   width: min(22rem, calc(100vw - 2rem));
-  max-height: min(34rem, calc(100vh - 3rem));
+  /* `dvh`, not `vh`: on iOS `100vh` is the viewport with the URL bar
+     RETRACTED, so with the bar showing the panel is taller than the space it
+     has and its composer is pushed off the bottom of the screen. `.tds-modal`
+     has always used `dvh`; this predates it. */
+  max-height: min(34rem, calc(100dvh - 3rem));
   border: 1px solid var(--color-line);
   border-radius: 0.9rem;
   background: var(--color-card);
@@ -1085,4 +1102,30 @@ body {
   color: var(--color-danger, #b42318);
   font-size: 0.8rem;
   margin: 0 0 0.4rem;
+}
+
+/* Finger-sized hit areas for the widget's own chrome. These are the last
+   sub-44px controls in the library: the dismiss dot is 20px, the close glyph
+   is a bare font-size button with no box at all, and the tab strip is ~35px.
+   The dot and the close glyph grow the AREA and not the icon (negative
+   margins, the `.tds-toast__dismiss` pattern) so neither the launcher's
+   alignment nor the accent-filled head shifts. */
+@media (pointer: coarse) {
+  .live-chat-cta__hide {
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-left: -1.25rem;
+    margin-top: -1.1rem;
+  }
+  .live-chat-cta__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: -0.75rem -0.75rem -0.75rem 0;
+  }
+  .live-chat-cta__tabs button {
+    min-height: 44px;
+  }
 }

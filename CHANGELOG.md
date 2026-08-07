@@ -6,6 +6,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Mobile pass over the `panel` surface.** The shell had a drawer below `lg`
+  from the start, so the phone layout *looked* handled — but across the whole
+  composed panel (host + 13 extensions) Tailwind emitted exactly two
+  content-level breakpoint utilities, and this library carried three
+  width-based media queries in six stylesheets. Everything else rode on
+  `flex-wrap` or on luck.
+  - **`.tds-table` scrolls below 40rem** (`display: block; overflow-x: auto`).
+    It had no mobile treatment at all, and `body { overflow-x: hidden }` CLIPS
+    the resulting overflow instead of revealing it — so a wide table silently
+    lost its right-hand columns with no scrollbar to hint at them. On the
+    module page that was the *Aktion* column, i.e. the update button. The
+    identical treatment has been on `.tds-prose table` for the blog since the
+    library was split; the panel's own table primitive never got it.
+  - **`button.chip` / `a.chip` get the 44px coarse-pointer target.** A chip is
+    also this library's filter and tab control, and those were sitting at the
+    status badge's ~22px. Plain `.chip` stays compact — it is read, not tapped.
+  - `.tds-toggle-row` wraps, `.tds-thread__item` breaks a pasted URL
+    (`overflow-wrap: anywhere` — the chat widget's own bubble always had this),
+    and `.tds-modal` keeps a 1rem gutter instead of running to the display edge.
+  - The live-chat panel measures in `dvh` rather than `vh` (on iOS `100vh` is
+    the viewport with the URL bar retracted, so its composer was pushed off the
+    screen), and its dismiss dot, close glyph and tab strip grow to 44px on a
+    touch pointer.
+  - `env(safe-area-inset-bottom)` on all three fixed bottom elements. Note the
+    toast's `calc()` must name `--tds-bottom-lane` FIRST — `design.test.ts`
+    matches `calc([^)]*--tds-bottom-lane`, and an `env()` ahead of it fails
+    that assertion for a reason unrelated to the change.
+  - `--tds-panel-title-size` is a `clamp()`. At a fixed 30px/700/-0.03em,
+    "Nutzerverwaltung" was as wide as a 375px phone minus its padding.
+
+### Fixed
+- Changelog housekeeping: **0.17.0 shipped without an entry** (below), and the
+  `[Unreleased]` compare link had pointed at `v0.5.2` for eleven releases.
+
+## [0.17.0] — 2026-08-06
+
+### Added
+- `tags?: string[]` on the `BlogPost` type (`src/types/index.ts`), for the blog
+  CMS. Types only — no CSS, no component, no runtime change.
+
+> Note for consumers: a `0.x` caret is minor-locked, so `^0.16.0` never
+> resolved this. The host and both products picked it up with the repin that
+> came with the mobile pass above.
+
 ## [0.16.0] — 2026-08-05
 
 > Shipped as a **minor** because it adds the `./toast` export subpath: a `0.x`
@@ -646,7 +691,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tsup` dual ESM/CJS build with per-entry `exports` map.
 - Publish workflow on `v*.*.*` tags to GitHub Packages.
 
-[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.16.0...v0.17.0
+[0.16.0]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.15.1...v0.16.0
 [0.5.2]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.4.2...v0.5.1
 [0.4.0]: https://github.com/Tracht-Digital-Solutions/tds-shared-pkg/compare/v0.3.1...v0.4.0
