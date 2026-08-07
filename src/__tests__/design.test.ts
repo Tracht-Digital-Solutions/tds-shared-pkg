@@ -794,16 +794,32 @@ describe("mobile contracts", () => {
   // target looks like a chip. Nothing throws, nothing logs, and none of it
   // is visible on the desktop the code was written on.
 
-  /** The body of the first `@media (<query>)` block in `css`, braces balanced. */
+  /**
+   * EVERY `@media (<query>)` block in `css`, concatenated, braces balanced.
+   *
+   * All of them, not the first: base.css has two `pointer: coarse` blocks —
+   * one hiding scrollbars near the top, one holding the touch targets far
+   * below — so a first-match helper silently asserted against the wrong one
+   * and reported a rule as missing that was right there.
+   */
   const mediaBlock = (css: string, query: string) => {
-    const start = css.indexOf(`@media (${query})`);
-    if (start === -1) return "";
-    let depth = 0;
-    for (let i = css.indexOf("{", start); i < css.length; i++) {
-      if (css[i] === "{") depth++;
-      else if (css[i] === "}" && --depth === 0) return css.slice(start, i);
+    const out: string[] = [];
+    let from = 0;
+    for (;;) {
+      const start = css.indexOf(`@media (${query})`, from);
+      if (start === -1) break;
+      let depth = 0;
+      for (let i = css.indexOf("{", start); i < css.length; i++) {
+        if (css[i] === "{") depth++;
+        else if (css[i] === "}" && --depth === 0) {
+          out.push(css.slice(start, i));
+          from = i;
+          break;
+        }
+      }
+      if (from < start) break;
     }
-    return "";
+    return out.join("\n");
   };
 
   it("lets a wide table scroll rather than clipping it", () => {
@@ -884,5 +900,41 @@ describe("mobile contracts", () => {
 
   it("scales the panel page title with the viewport", () => {
     expect(surfaceCss.panel).toMatch(/--tds-panel-title-size:\s*clamp\(/);
+  });
+
+  it("stacks the page head instead of squeezing the title", () => {
+    // `flex-wrap` was not enough: the toolbar wraps its own buttons before it
+    // will move to a new line, so it stayed beside the title and squeezed it
+    // narrower than the word "Dashboard", which then ran under the buttons.
+    const narrow = mediaBlock(primitives, "max-width: 40rem");
+    const rule = narrow.match(/\.tds-page__head \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toMatch(/flex-direction:\s*column/);
+  });
+
+  it("keeps the small-caps treatment on column headings only", () => {
+    // Applied to every `th` it also caught `<th scope="row">`, rendering a
+    // module name as letterspaced uppercase muted text — six wrapped lines on
+    // a phone. A row header labels its row; it is not a column heading.
+    const head = primitives.match(/\.tds-table thead th \{([^}]*)\}/)?.[1] ?? "";
+    const any = primitives.match(/\.tds-table th \{([^}]*)\}/)?.[1] ?? "";
+    expect(head).toMatch(/text-transform:\s*uppercase/);
+    expect(any).not.toMatch(/text-transform/);
+  });
+
+  it("keeps a scrolled table's caption inside the viewport", () => {
+    const narrow = mediaBlock(primitives, "max-width: 40rem");
+    const rule = narrow.match(/\.tds-table > caption \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toMatch(/position:\s*sticky/);
+  });
+
+  it("gives the last sub-44px chrome controls a touch target", () => {
+    const coarse = mediaBlock(base, "pointer: coarse");
+    for (const sel of [".tds-theme-toggle", ".cookie-notice-btn"]) {
+      expect(coarse, `${sel} has no coarse-pointer size`).toContain(sel);
+    }
+    // 24px, not 44: the WCAG 2.5.8 (AA) minimum. These sit inside a <label>,
+    // so the effective target is the whole row, and a 44px box would tear
+    // open every settings list in the panel.
+    expect(coarse).toMatch(/input\[type="checkbox"\][\s\S]{0,80}min-height:\s*1\.5rem/);
   });
 });

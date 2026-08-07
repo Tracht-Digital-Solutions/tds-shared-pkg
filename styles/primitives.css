@@ -670,13 +670,24 @@ label.tds-field-row > :is(input, select, textarea) {
 }
 .tds-table th {
   text-align: left;
-  font-size: 0.6875rem;
   font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--color-line);
+}
+/* The small-caps treatment belongs to COLUMN headings only. Applied to every
+   `th`, it also caught `<th scope="row">` — a row header is a label for its
+   row, not a heading for a column — so a module name and its package id
+   rendered as 11px letterspaced uppercase muted text. On a phone that block
+   wrapped over six lines and dominated the table. */
+.tds-table thead th {
+  font-size: 0.6875rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-muted);
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--color-line);
+}
+.tds-table tbody th {
+  font-size: 0.875rem;
+  color: var(--color-ink);
 }
 .tds-table td {
   padding: 0.625rem 0.75rem;
@@ -728,6 +739,26 @@ label.tds-field-row > :is(input, select, textarea) {
     overflow-x: auto;
     overscroll-behavior-x: contain;
     padding-block: 2px 6px;
+  }
+  /* Title and actions stack. `flex-wrap` alone did not save this: the toolbar
+     wraps its OWN buttons before it will move to a new line, so it stayed
+     beside the title and squeezed it to 113px — narrower than the word
+     "Dashboard", which then overflowed its box and ran under the buttons.
+     Side by side is not a sensible arrangement at this width anyway. */
+  .tds-page__head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* A caption is a block child of the now-block table, so it inherits the
+     SCROLL width — the explanatory sentence stretched to the full 540px of
+     columns and its right half sat off-screen until you scrolled the table.
+     Pinning it to the left of the scrollport and bounding it by the viewport
+     keeps it readable where it is. */
+  .tds-table > caption {
+    position: sticky;
+    left: 0;
+    max-width: calc(100vw - 3rem);
   }
 }
 

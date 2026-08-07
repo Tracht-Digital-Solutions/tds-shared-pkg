@@ -125,7 +125,11 @@ export default function ThemeToggle({
       onClick={flip}
       aria-label={label}
       title={label}
-      className="inline-flex items-center justify-center w-9 h-9 rounded-full text-[var(--color-muted)] hover:text-[var(--color-primary)] hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer"
+      // `tds-theme-toggle` carries nothing but the coarse-pointer hit area
+      // (base.css). The utilities below are 36px, which is under the touch
+      // minimum — and this button is one of the three controls the panel's
+      // mobile top bar shows at all times.
+      className="tds-theme-toggle inline-flex items-center justify-center w-9 h-9 rounded-full text-[var(--color-muted)] hover:text-[var(--color-primary)] hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer"
     >
       {/* Moon — visible in light mode (tap to enter dark). */}
       <svg

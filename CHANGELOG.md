@@ -37,6 +37,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `--tds-panel-title-size` is a `clamp()`. At a fixed 30px/700/-0.03em,
     "Nutzerverwaltung" was as wide as a 375px phone minus its padding.
 
+  Found only by rendering the panel at 375px in a real browser — none of it
+  throws, and none of it is visible in a diff:
+  - **`.tds-page__head` stacks below 40rem.** `flex-wrap` did not save it: the
+    toolbar wraps its own buttons before it moves to a new line, so it stayed
+    beside the title and squeezed it to 113px — narrower than the word
+    "Dashboard", which then overflowed its box and ran under the buttons.
+  - **The small-caps `th` treatment is now on `thead th` only.** On every `th`
+    it also hit `<th scope="row">`, so a module name and its package id
+    rendered as 11px letterspaced uppercase muted text: six wrapped lines on a
+    phone, and wrong on the desktop too. A row header labels its row.
+  - A scrolled table's `<caption>` is `position: sticky; left: 0` — as a block
+    child of a now-block table it had inherited the full scroll width, so half
+    the sentence sat off-screen.
+  - The last three sub-44px controls: `.tds-theme-toggle` (36px, and one of
+    the three things the panel's mobile top bar shows), `.cookie-notice-btn`
+    (38px), and a bare checkbox, which the browser draws at 13px. The checkbox
+    stops at **24px** — the WCAG 2.5.8 (AA) minimum — because ours sit inside a
+    `<label>`, so the effective target is the whole row.
+
 ### Fixed
 - Changelog housekeeping: **0.17.0 shipped without an entry** (below), and the
   `[Unreleased]` compare link had pointed at `v0.5.2` for eleven releases.

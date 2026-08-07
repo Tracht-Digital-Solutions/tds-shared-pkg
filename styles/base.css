@@ -677,6 +677,27 @@ body {
     height: 2.75rem;
     margin: -0.625rem -0.5rem -0.625rem 0;
   }
+  /* The other three sub-44px controls in the library, all of them chrome
+     that is on screen at all times rather than something a user seeks out:
+     the theme toggle (36px from its own utilities — it is one of the three
+     things the panel's mobile top bar shows), the cookie notice's buttons
+     (38px), and a bare checkbox, which the browser draws at 13px. The
+     checkbox stops at 24px rather than 44px: that is the WCAG 2.5.8 (AA)
+     minimum, and ours sit inside a <label>, so the effective target is the
+     whole label row. Growing the box itself to 44px would tear open every
+     settings list in the panel. */
+  .tds-theme-toggle {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  .cookie-notice-btn {
+    min-height: 44px;
+  }
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+  }
 }
 
 /* Entry animation is OPT-IN under `no-preference` rather than clamped by
