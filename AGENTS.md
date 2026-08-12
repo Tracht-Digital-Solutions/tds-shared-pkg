@@ -128,11 +128,32 @@ import this — they duplicate the small bit of validation they need, by design.
   - **`--tds-panel-accent` is the single knob.** The rail gradient, the canvas
     tint, the ambient glow and the page-head rule are all `color-mix()`es over
     it. That is what lets ONE token block re-theme a whole product.
-  - **Per-product accent.** `[data-surface="panel"][data-frontend="customer"]`
-    swaps the accent to `--color-cat-teal`; the host writes `data-frontend`
-    from `FRONTEND_TARGET`. This is the ONLY per-product styling difference —
-    admin reads navy, the portal reads teal, everything else is identical.
-    (`design.test.ts` pins the mechanism.)
+  - **Per-product accent (reversed in 0.20.0).** `[data-surface="panel"]
+    [data-frontend="admin"]` swaps the accent to `--color-management`, the
+    brand burgundy; the host writes `data-frontend` from `FRONTEND_TARGET`.
+    This is the ONLY per-product styling difference — **the management
+    frontend reads red, the customer portal reads the brand navy**, everything
+    else is identical. (`design.test.ts` pins the mechanism.)
+    - The red is a *permissions* signal, not decoration: management.
+      tracht-digital.de is where a destructive action lands, and the surface
+      itself should say so.
+    - **The override is on ADMIN, and the base block stays navy.** That is
+      load-bearing, not stylistic: `tds-tools-frontend` renders on this
+      surface and writes no `data-frontend`, so it inherits whatever the base
+      block declares. Put the management red there and the PUBLIC tools site
+      turns red. `design.test.ts` fails the build if the base accent stops
+      being `--color-primary`.
+    - **`--color-management` is its own token, not `var(--color-accent)`,**
+      even though the two share a light value. `--color-accent` flips to
+      `#ff8fab` in dark mode, which is byte-identical to `--color-cat-rose` —
+      and the accent doubles as the Verwaltung zone's `--nav-hue`, so that
+      would put two rail zones on one hex. The dark twin is `#e8536f`.
+    - **Moving the accent into the red end of the wheel moved a nav group
+      too.** The host's `panelHues.ts` had Tools on `--color-cat-rose`, free
+      while the accent was navy; against the burgundy the two closest zones
+      sat at ΔE 12 (half the next-closest pair). Tools now reads
+      `--color-info`. The `nav rail contrast` suite measures both products'
+      rails and asserts every admin zone pair stays above ΔE 15.
   - **Elevation.** `--tds-elevation-card: var(--tds-shadow-sm)` at rest,
     `--tds-elevation-raised` on hover (`@media (hover: hover)`). The panel is
     no longer the flat surface older notes describe; marketing is no longer

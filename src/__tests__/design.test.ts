@@ -210,9 +210,37 @@ describe("surface character", () => {
     // rejects a component rule here; this pins the mechanism itself so a
     // future per-target divergence has to be a deliberate edit.
     expect(surfaceCss.panel).toContain(
-      '[data-surface="panel"][data-frontend="customer"]',
+      '[data-surface="panel"][data-frontend="admin"]',
     );
     expect(surfaceCss.panel).toMatch(/--tds-panel-accent:\s*var\(--color-/);
+  });
+
+  it("leaves the BASE accent neutral, with only admin overriding it", () => {
+    // Which way round the override goes is load-bearing, not cosmetic.
+    // `tds-tools-frontend` renders on the panel surface and writes no
+    // `data-frontend`, so it inherits whatever the base block declares —
+    // put the management red there and the PUBLIC tools site turns red and
+    // starts claiming rights it does not grant. The base stays navy; the
+    // marked surface is the one that opts in.
+    const baseBlock = surfaceCss.panel.slice(
+      surfaceCss.panel.indexOf('[data-surface="panel"] {'),
+      surfaceCss.panel.indexOf('[data-surface="panel"][data-theme="dark"]'),
+    );
+    expect(baseBlock).toMatch(/--tds-panel-accent:\s*var\(--color-primary\)/);
+    expect(baseBlock).not.toContain("--color-management");
+    expect(surfaceCss.panel).not.toContain('[data-frontend="customer"]');
+  });
+
+  it("orders the dark correction BEFORE the admin block it feeds into", () => {
+    // `[data-surface][data-theme]` and `[data-surface][data-frontend]` are
+    // both two attributes, i.e. identical specificity — source order is the
+    // only thing deciding --tds-panel-rail-to for the admin panel. Flip the
+    // two and the dark correction silently wins in LIGHT mode too.
+    expect(
+      surfaceCss.panel.indexOf('[data-surface="panel"][data-theme="dark"] {'),
+    ).toBeLessThan(
+      surfaceCss.panel.indexOf('[data-surface="panel"][data-frontend="admin"] {'),
+    );
   });
 
   it("scopes panel rules on generic primitives to the panel surface", () => {
@@ -342,19 +370,81 @@ describe("nav rail contrast", () => {
 
   const HUES = ["violet", "teal", "amber", "rose", "cyan"] as const;
 
-  it.each(["light", "dark"] as const)("keeps the %s rail deepening toward its foot", (theme) => {
+  const panel = surfaceCss.panel;
+
+  /**
+   * The mix share a rail stop actually uses, read back out of
+   * surfaces/panel.css rather than restated here. `null` means the stop is
+   * a flat token (the default rail's head is bare `--color-surface-navy`).
+   */
+  const railShare = (selector: string, stop: "from" | "to"): number | null => {
+    const at = panel.indexOf(`${selector} {`);
+    if (at < 0) throw new Error(`${selector} not found in surfaces/panel.css`);
+    const block = panel.slice(at, panel.indexOf("}", at));
+    const m = block.match(
+      new RegExp(`--tds-panel-rail-${stop}:\\s*color-mix\\([\\s\\S]*?(\\d+)%`),
+    );
+    return m ? Number(m[1]) / 100 : null;
+  };
+
+  const PANEL = '[data-surface="panel"]';
+
+  /**
+   * The two rails the two products actually render, resolved from the real
+   * token chain. Measuring only ONE of them is how this file would go stale
+   * the next time a product's accent changes — which is exactly what the
+   * admin's move from navy to the management burgundy was.
+   */
+  const rails = {
+    // Customer portal + the public tools site: the base block, i.e. no
+    // `data-frontend` override at all. Flat navy head, accent-mixed foot.
+    customer: (theme: "light" | "dark") => {
+      const share =
+        (theme === "dark"
+          ? railShare(`${PANEL}[data-theme="dark"]`, "to")
+          : railShare(PANEL, "to")) ?? 0;
+      return {
+        accent: "--color-primary",
+        head: token("--color-surface-navy", theme),
+        foot: mix(
+          token("--color-primary", theme),
+          token("--color-surface-ink", theme),
+          share,
+        ),
+      };
+    },
+    // Management frontend: both stops mixed from --color-management.
+    admin: (theme: "light" | "dark") => {
+      const sel =
+        theme === "dark"
+          ? `${PANEL}[data-theme="dark"][data-frontend="admin"]`
+          : `${PANEL}[data-frontend="admin"]`;
+      const ink = token("--color-surface-ink", theme);
+      const acc = token("--color-management", theme);
+      return {
+        accent: "--color-management",
+        head: mix(acc, ink, railShare(sel, "from") ?? 0),
+        foot: mix(acc, ink, railShare(sel, "to") ?? 0),
+      };
+    },
+  } as const;
+
+  const CASES: Array<[keyof typeof rails, "light" | "dark"]> = [
+    ["customer", "light"],
+    ["customer", "dark"],
+    ["admin", "light"],
+    ["admin", "dark"],
+  ];
+
+  it.each(CASES)("keeps the %s rail deepening toward its foot in %s", (product, theme) => {
     // A rail that brightens at the foot both inverts the intended character
     // and eats the headroom every measurement below depends on.
-    const share = theme === "dark" ? 0.18 : 0.55;
-    const head = token("--color-surface-navy", theme);
-    const foot = mix(token("--color-primary", theme), token("--color-surface-ink", theme), share);
+    const { head, foot } = rails[product](theme);
     expect(luminance(foot)).toBeLessThan(luminance(head));
   });
 
-  it.each(["light", "dark"] as const)("clears AA for every nav zone in %s theme", (theme) => {
-    const share = theme === "dark" ? 0.18 : 0.55;
-    const head = token("--color-surface-navy", theme);
-    const foot = mix(token("--color-primary", theme), token("--color-surface-ink", theme), share);
+  it.each(CASES)("clears AA for every %s nav zone in %s theme", (product, theme) => {
+    const { head, foot, accent } = rails[product](theme);
 
     // Nav rows run the WHOLE height of the rail, so the worst case is its
     // LIGHTEST stop, not a fixed end. In light theme that is the head
@@ -368,20 +458,73 @@ describe("nav rail contrast", () => {
 
     expect(SCRIM, "active-row scrim not found in app.css").toBeGreaterThan(0);
 
-    // `--color-primary` is the Verwaltung zone's hue (via --tds-panel-accent),
-    // and it is the LOWEST of the six in practice — 5.06:1 measured in the
-    // browser — so leaving it out would have skipped the real worst case.
-    for (const name of [...HUES, "primary"] as const) {
-      const hue = token(name === "primary" ? "--color-primary" : `--color-cat-${name}`, theme);
+    // The panel accent is the Verwaltung zone's hue (panelHues.ts maps that
+    // group to `var(--tds-panel-accent)`), and it is the LOWEST of the six in
+    // practice — 5.06:1 measured in the browser for the navy — so leaving it
+    // out would skip the real worst case. It differs per product, which is
+    // the whole reason both rails are measured.
+    for (const name of [...HUES, accent]) {
+      const hue = token(name.startsWith("--") ? name : `--color-cat-${name}`, theme);
       // --nav-ink lifts the hue toward the rail's ink (white in there).
       const ink = mix(hue, WHITE, LIFT);
       // The active row's own scrim sits between the label and the rail.
       const bg = mix(WHITE, worst, SCRIM);
-      expect(contrast(ink, bg), `${name} label in ${theme}`).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(ink, bg), `${name} label in ${product}/${theme}`).toBeGreaterThanOrEqual(4.5);
       // Indicator bar + icon glyph are graphics: 3:1.
-      expect(contrast(ink, worst), `${name} graphic in ${theme}`).toBeGreaterThanOrEqual(3);
+      expect(contrast(ink, worst), `${name} graphic in ${product}/${theme}`).toBeGreaterThanOrEqual(3);
     }
   });
+
+  it.each(["light", "dark"] as const)(
+    "keeps every %s admin nav zone visually separable",
+    (theme) => {
+      // The admin accent moved INTO the red end of the wheel, where
+      // --color-cat-rose already lives. With the Tools group still on rose
+      // the two closest zones sat at ΔE 12 — half the next-closest pair —
+      // so the rail read as two identical reds. panelHues.ts moves Tools to
+      // --color-info; this is the guard that the accent and the categorical
+      // set stay far enough apart to wayfind by.
+      // CIELAB, because contrast() above answers "is this readable", not
+      // "are these two the same colour" — the six zones all clear AA against
+      // the rail and are still allowed to be one indistinguishable red.
+      const lab = ([r, g, b]: RGB): [number, number, number] => {
+        const f = (v: number) => {
+          const s = v / 255;
+          return s > 0.04045 ? ((s + 0.055) / 1.055) ** 2.4 : s / 12.92;
+        };
+        const [R, G, B] = [f(r), f(g), f(b)];
+        const g2 = (t: number) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+        const x = g2((R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047);
+        const y = g2(R * 0.2126 + G * 0.7152 + B * 0.0722);
+        const z = g2((R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883);
+        return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+      };
+      const deltaE = (a: RGB, b: RGB) => {
+        const [al, aa, ab] = lab(a);
+        const [bl, ba, bb] = lab(b);
+        return Math.hypot(al - bl, aa - ba, ab - bb);
+      };
+
+      // The six zones the admin rail renders today: four categorical, the
+      // accent, and Tools on --color-info (see panelHues.ts in the host).
+      const zones: Array<[string, RGB]> = [
+        ["Verwaltung", token("--color-management", theme)],
+        ["Support", token("--color-cat-cyan", theme)],
+        ["Abrechnung", token("--color-cat-amber", theme)],
+        ["Content", token("--color-cat-violet", theme)],
+        ["Arbeit", token("--color-cat-teal", theme)],
+        ["Tools", token("--color-info", theme)],
+      ];
+      for (const [i, [nameA, a]] of zones.entries()) {
+        for (const [nameB, b] of zones.slice(i + 1)) {
+          expect(
+            deltaE(a, b),
+            `${nameA} vs ${nameB} in ${theme}`,
+          ).toBeGreaterThan(15);
+        }
+      }
+    },
+  );
 });
 
 describe("primitives.css tokenisation", () => {

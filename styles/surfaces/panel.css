@@ -13,8 +13,22 @@
  * attribute the host writes onto <html>. Everything with colour in it —
  * the rail gradient, the canvas tint, the ambient glow, the page-head
  * rule — is a `color-mix()` over that single token, so the management
- * panel reads navy and the customer portal reads teal while staying the
- * same product.
+ * frontend reads burgundy and the customer portal reads navy while
+ * staying the same product.
+ *
+ * WHICH PRODUCT GETS THE OVERRIDE, AND WHY THAT WAY ROUND. The DEFAULT
+ * accent is the brand navy, and the override block is the ADMIN one.
+ * Read as "customer = the plain panel, admin = the marked one", which is
+ * the point of the colour: the reddish surface is a standing reminder
+ * that this session carries management rights. It also keeps the third
+ * panel-surface consumer honest — `tds-tools-frontend` renders on this
+ * surface and writes no `data-frontend` at all, so whichever accent sits
+ * in the base block is the one the public tools site inherits. That must
+ * be the neutral brand navy, never the management red.
+ *
+ * (Until tds-shared 0.20.0 it was the other way round: navy in the base
+ * block for admin, a `[data-frontend="customer"]` block swapping in teal.
+ * The portal's teal is gone — the portal now IS the base panel.)
  *
  * (This deliberately relaxes the older "the two must look IDENTICAL"
  * rule. The point of that rule was to stop `config/target.ts` sprouting
@@ -76,9 +90,10 @@
   --tds-panel-title-size: clamp(1.5rem, 1.1rem + 1.6vw, 1.875rem);
 
   /* --- The accent axis --------------------------------------------
-     Admin/management reads in the brand navy. Everything below derives
-     from `--tds-panel-accent`, so the customer block further down only
-     has to restate the accent + its rail. */
+     The default panel reads in the brand navy — that is the customer
+     portal and the public tools site. Everything below derives from
+     `--tds-panel-accent`, so the admin block further down only has to
+     restate the accent + its rail. */
   --tds-panel-accent: var(--color-primary);
 
   /* A tinted canvas, so cards read as objects ON a surface rather than
@@ -115,22 +130,30 @@
   --tds-panel-rail-to: color-mix(in srgb, var(--tds-panel-accent) 18%, var(--color-surface-ink));
 }
 
-/* The customer portal (app.tracht-digital.de). The ONLY per-product
-   difference in the entire design system: a teal accent instead of the
-   navy, so a user with both surfaces open knows at a glance which one
-   they are looking at. Tokens only — a component rule here would be a
-   layering violation and design.test.ts fails the build on one. */
-[data-surface="panel"][data-frontend="customer"] {
-  --tds-panel-accent: var(--color-cat-teal);
-  --tds-panel-rail-from: color-mix(in srgb, var(--color-cat-teal) 42%, var(--color-surface-ink));
-  --tds-panel-rail-to: color-mix(in srgb, var(--color-cat-teal) 18%, var(--color-surface-ink));
+/* The management frontend (management.tracht-digital.de). The ONLY
+   per-product difference in the entire design system: the brand burgundy
+   instead of the navy, so the surface itself says "this session can
+   administrate" — a user with both frontends open knows at a glance which
+   one they are looking at, and which one a destructive action would land
+   in. Tokens only — a component rule here would be a layering violation
+   and design.test.ts fails the build on one.
+
+   This block MUST come after the `[data-theme="dark"]` block above: both
+   selectors are two attributes, so they carry identical specificity and
+   source order is what decides `--tds-panel-rail-to`. */
+[data-surface="panel"][data-frontend="admin"] {
+  --tds-panel-accent: var(--color-management);
+  --tds-panel-rail-from: color-mix(in srgb, var(--color-management) 42%, var(--color-surface-ink));
+  --tds-panel-rail-to: color-mix(in srgb, var(--color-management) 18%, var(--color-surface-ink));
 }
 
-/* Same correction as the admin rail above, for the portal's teal.
-   `--color-cat-teal` flips to #5eead4 in dark mode — near-mint — so the 42%
-   head mix rendered the portal rail as a bright teal slab rather than a deep
-   one. The shares drop to keep it a dark panel that still reads teal. */
-[data-surface="panel"][data-theme="dark"][data-frontend="customer"] {
-  --tds-panel-rail-from: color-mix(in srgb, var(--color-cat-teal) 16%, var(--color-surface-ink));
-  --tds-panel-rail-to: color-mix(in srgb, var(--color-cat-teal) 7%, var(--color-surface-ink));
+/* Same correction as the default rail above, for the management burgundy.
+   `--color-management` flips to a light crimson in dark mode (it has to —
+   it doubles as the Verwaltung zone's nav ink on a rail that is dark in
+   BOTH themes), so the 42% head mix would render the rail as a bright red
+   slab rather than a deep one. The shares drop to keep it a dark panel
+   that still reads red. */
+[data-surface="panel"][data-theme="dark"][data-frontend="admin"] {
+  --tds-panel-rail-from: color-mix(in srgb, var(--color-management) 16%, var(--color-surface-ink));
+  --tds-panel-rail-to: color-mix(in srgb, var(--color-management) 7%, var(--color-surface-ink));
 }

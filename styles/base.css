@@ -92,6 +92,27 @@
   --color-cat-rose: #a4153f;
   --color-cat-cyan: #1f6f8b;
 
+  /* === Management accent ==========================================
+     The admin frontend's accent axis (`--tds-panel-accent` under
+     `[data-frontend="admin"]`). It is the brand burgundy in light mode —
+     deliberately the same value as `--color-accent`, because the point is
+     that the management surface reads in the brand's OTHER colour, not in
+     a new one.
+
+     It is a token of its own rather than `var(--color-accent)` because of
+     the dark twin: `--color-accent` flips to #ff8fab, which is the exact
+     value of `--color-cat-rose`, and the accent doubles as the Verwaltung
+     zone's `--nav-hue` — two rail zones on one hex is precisely the
+     wayfinding collision the categorical set exists to avoid. The dark
+     value below is a crimson that stays clearly red (ΔE 24 from
+     `--color-cat-rose`, 21 from `--color-danger`) while still lifting far
+     enough off the rail to clear AA (see the nav-rail contrast tests).
+
+     Like every accent that doubles as nav ink it must FLIP light in dark
+     mode: the rail is dark in both themes, so a deep burgundy there would
+     be unreadable no matter how the rail is mixed. */
+  --color-management: #820933;
+
   /* === Type families ==============================================
      Canonical as of the design-library unification: Lato display,
      Plus Jakarta Sans body, JetBrains Mono mono. This is what the blog
@@ -163,6 +184,10 @@
   --color-cat-amber: #f3bd6e;
   --color-cat-rose: #ff8fab;
   --color-cat-cyan: #6fcfe8;
+
+  /* Management accent — see the light block. NOT `--color-accent`'s
+     #ff8fab, which is byte-identical to `--color-cat-rose` above. */
+  --color-management: #e8536f;
 }
 
 /* =====================================================================
@@ -279,8 +304,9 @@
      `--tds-panel-accent` is the one knob everything else derives from:
      the rail gradient, the canvas tint, the glow and the page-head rule
      are all `color-mix()`es over it. That is what lets a single
-     `[data-surface="panel"][data-frontend="customer"]` token block
-     re-theme the whole portal to teal without a second component rule.
+     `[data-surface="panel"][data-frontend="admin"]` token block re-theme
+     the whole management frontend to the burgundy without a second
+     component rule.
 
      No dark twins are needed: every value a surface layer builds from
      these mixes an already-flipping token (`--color-paper`,
