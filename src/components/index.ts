@@ -40,6 +40,19 @@ export {
   type ToastVariant,
 } from "../toast";
 
+/* Same reasoning as the toast bus: an island gets the panel API transport from
+   the one import path it already uses, while a plain-TS module imports
+   `@tracht-digital-solutions/tds-shared/api` and stays React-free. */
+export {
+  apiBase,
+  apiFetch,
+  apiUrl,
+  resetApiBase,
+  setUnauthorizedHandler,
+  API_BASE_META,
+  DEFAULT_API_BASE,
+} from "../api";
+
 export { default as Spinner } from "./Spinner";
 export type { SpinnerProps } from "./Spinner";
 

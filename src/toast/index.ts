@@ -46,6 +46,17 @@ export interface ToastDetail {
    * collapse into one with a counter instead of stacking duplicates.
    */
   key?: string;
+  /**
+   * Optional target the message links to. Set it when the toast announces
+   * something that lives somewhere else — a new contact request the reader will
+   * want to open. The host renders the message as an `<a>`; without it the
+   * message stays a text node.
+   *
+   * Same-document paths only (`/kontakt?id=42`). A toast is raised by our own
+   * code, but it is dispatched over a public window event, so the host
+   * additionally refuses anything that isn't a path (see ToastHost).
+   */
+  href?: string;
 }
 
 /**

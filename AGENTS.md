@@ -270,6 +270,26 @@ import this — they duplicate the small bit of validation they need, by design.
   The variant vocabulary is `danger`, not `error` — same words as
   `.tds-alert--danger` / `.chip--danger`, and `design.test.ts` pins the list
   against the `.tds-toast--*` rules that actually exist.
+  A toast that announces something living **elsewhere** (a new contact request
+  that arrived while you were on another page) may carry `href` — the host then
+  renders the message as `.tds-toast__link`. **Same-document paths only**: the
+  detail travels over a public window event, so `ToastHost` refuses anything
+  that is not a leading-slash path (`//host`, `javascript:`, a bare word), the
+  same way it re-normalises the variant rather than trusting the sender.
+- **Never call the panel API with a relative path — use
+  `apiFetch` from `@tracht-digital-solutions/tds-shared/api`.** The products are
+  static sites on their own hosts and the composed API is a different origin, so
+  `fetch("/contact/messages")` resolves against `management.tracht-digital.de`.
+  That does not fail loudly: the static host answers unknown paths with
+  `try_files … /index.html`, i.e. **200 + HTML**, so `res.ok` is `true`,
+  `res.json()` throws, and the usual `.catch(() => setRows([]))` renders a calm,
+  permanent empty state. Every `tds-ext-*` island had its own relative one-liner
+  and the contact inbox showed "Keine Anfragen." for months with the rows in the
+  database. `apiBase()` reads `<meta name="tds-api-base">` (written by the
+  frontend host shell), then `PUBLIC_API_BASE`, then the production gateway;
+  `apiUrl()` leaves already-absolute URLs alone, so wrapping a call site is
+  idempotent. `apiBase()` **memoises** after its first DOM read — a test that
+  swaps the document must call `resetApiBase()`.
   **Fixed bottom chrome shares one lane.** Anything pinned to the bottom of the
   viewport publishes its height as `--tds-bottom-lane` (CookieNotice measures
   itself with a ResizeObserver) and anything else pinned there adds it to its
@@ -366,6 +386,10 @@ src/
 │                             #   showToast + toast.*). React-free on purpose:
 │                             #   plain-TS callers (the host's dashboardLayout.ts)
 │                             #   import it without pulling in the runtime.
+├── api/                      # the panel API TRANSPORT (apiBase/apiUrl/apiFetch).
+│                             #   Also React-free. Every tds-ext-* island calls
+│                             #   the composed backend through it — see the
+│                             #   "relative fetch" gotcha below.
 ├── components/               # shared React islands (ThemeToggle, FormAlert,
 │                             #   ConfirmDialog, CookieNotice, LiveChatCta, ToastHost,
 │                             #   Spinner, Skeleton, SkeletonText — their CSS lives in

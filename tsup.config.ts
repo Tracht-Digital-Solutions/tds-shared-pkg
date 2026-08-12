@@ -12,6 +12,7 @@ export default defineConfig({
     "astro/index": "src/astro/index.ts",
     "design/index": "src/design/index.ts",
     "toast/index": "src/toast/index.ts",
+    "api/index": "src/api/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,

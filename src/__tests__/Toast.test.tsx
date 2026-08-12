@@ -234,6 +234,41 @@ describe("the bus", () => {
   });
 });
 
+describe("href", () => {
+  it("renders the message as a link when a target is given", () => {
+    render(<ToastHost />);
+    raise(() => toast.info("Neue Kontaktanfrage: Max Mustermann", { href: "/kontakt?id=42" }));
+    const link = screen.getByRole("link", { name: /Neue Kontaktanfrage/ });
+    expect(link.getAttribute("href")).toBe("/kontakt?id=42");
+  });
+
+  it("stays a text node without one", () => {
+    render(<ToastHost />);
+    raise(() => toast.info("Gespeichert."));
+    expect(document.querySelector(".tds-toast__link")).toBeNull();
+  });
+
+  it("keeps the repeat counter outside the link", () => {
+    // The count is bookkeeping about the toast, not part of what the link
+    // leads to — announcing "…Mustermann ×2" as the link text would be wrong.
+    render(<ToastHost />);
+    raise(() => toast.info("Neue Kontaktanfrage", { key: "c:1", href: "/kontakt?id=42" }));
+    raise(() => toast.info("Neue Kontaktanfrage", { key: "c:1", href: "/kontakt?id=42" }));
+    expect(screen.getByRole("link").textContent).toBe("Neue Kontaktanfrage");
+    expect(document.querySelector(".tds-toast__count")?.textContent).toBe("×2");
+  });
+
+  it.each(["https://evil.example/x", "//evil.example/x", "javascript:alert(1)", "kontakt"])(
+    "refuses %s — the detail arrives over a public window event",
+    (href) => {
+      render(<ToastHost />);
+      raise(() => toast.info("Behauptung.", { href }));
+      expect(document.querySelectorAll(".tds-toast").length).toBe(1);
+      expect(document.querySelector(".tds-toast__link")).toBeNull();
+    },
+  );
+});
+
 describe("i18n", () => {
   it("names the dismiss control in the requested language", () => {
     render(<ToastHost lang="en" />);

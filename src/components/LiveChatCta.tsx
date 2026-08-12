@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Language } from "../i18n/translations";
+import { apiUrl } from "../api";
 
 /**
  * Floating bottom-right support widget (the "Live-Chat-CTA"). A launcher bubble
@@ -20,8 +21,12 @@ import type { Language } from "../i18n/translations";
 export interface LiveChatCtaProps {
   /** The frontend key this instance runs on (landingpage/blog/customer/admin/tools). */
   frontend: string;
-  /** API origin. "" (default) = same-origin (panel host); public sites pass
-   *  "https://api.tracht-digital.de". */
+  /**
+   * API origin override. Omit it and the widget resolves the panel API base
+   * itself (`<meta name="tds-api-base">`, then `PUBLIC_API_BASE`, then the
+   * production gateway) — see `../api`. The public sites pass
+   * "https://api.tracht-digital.de" explicitly and keep working unchanged.
+   */
   apiBase?: string;
   /** UI language. Defaults to German. */
   lang?: Language;
@@ -91,15 +96,21 @@ const STR = {
 const HIDDEN_KEY = "tds-live-chat-hidden";
 const POLL_MS = 4000;
 
-export default function LiveChatCta({ frontend, apiBase = "", lang = "de" }: LiveChatCtaProps) {
+export default function LiveChatCta({ frontend, apiBase, lang = "de" }: LiveChatCtaProps) {
   const t = STR[lang === "en" ? "en" : "de"];
   const [config, setConfig] = useState<Config | null>(null);
   const [hidden, setHidden] = useState(true); // hidden until we know it's enabled
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<TabKey>("chat");
 
+  // Omitting `apiBase` used to mean same-origin, which was silently wrong on
+  // the one surface that omits it: the panel is a static site on its own host,
+  // so every widget call went to `management.tracht-digital.de` and came back
+  // as the SPA fallback HTML with a 200. Unset now means "resolve it" — the
+  // public sites keep passing their own origin and are unaffected.
   const api = useCallback(
-    (path: string, init?: RequestInit) => fetch(`${apiBase}${path}`, { credentials: "include", ...init }),
+    (path: string, init?: RequestInit) =>
+      fetch(apiBase ? `${apiBase}${path}` : apiUrl(path), { credentials: "include", ...init }),
     [apiBase],
   );
 

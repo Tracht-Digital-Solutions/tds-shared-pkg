@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import LiveChatCta from "../components/LiveChatCta";
+import { API_BASE_META, resetApiBase } from "../api";
 
 /**
  * The floating support widget. It is mounted on the PUBLIC marketing site, the
@@ -38,9 +39,16 @@ function holdRequests(match: RegExp) {
   };
 }
 
+/**
+ * Path + query of a request, so route matchers below can stay anchored (`^/…`)
+ * now that the widget resolves an absolute API base. `calls[].url` keeps the
+ * full URL — which origin was called is its own assertion.
+ */
+const pathOf = (url: string) => url.replace(/^https?:\/\/[^/]+/i, "");
+
 function respond(match: RegExp, body: unknown, status = 200, method?: string) {
   handlers.unshift((url, init) => {
-    if (!match.test(url)) return undefined;
+    if (!match.test(pathOf(url))) return undefined;
     if (method && (init?.method ?? "GET") !== method) return undefined;
     return { status, body };
   });
@@ -57,6 +65,9 @@ const CONFIG = {
 beforeEach(() => {
   calls = [];
   gate = null;
+  // apiBase() memoises after the first DOM read — without this, one test that
+  // installs a meta tag would decide the base for every test after it.
+  resetApiBase();
   localStorage.clear();
   (Element.prototype as unknown as { scrollIntoView: () => void }).scrollIntoView = vi.fn();
   handlers = [() => ({ status: 200, body: {} })];
@@ -71,7 +82,7 @@ beforeEach(() => {
         headers: (init?.headers ?? {}) as Record<string, string>,
       });
       const g = gate;
-      if (g && g.match.test(url)) await g.promise;
+      if (g && g.match.test(pathOf(url))) await g.promise;
       const reply = handlers.map((h) => h(url, init)).find((r) => r !== undefined)!;
       return { ok: reply.status < 300, status: reply.status, json: async () => reply.body } as Response;
     }),
@@ -84,7 +95,8 @@ afterEach(() => {
 });
 
 const user = () => userEvent.setup({ delay: null });
-const sent = (method: string, match: RegExp) => calls.filter((c) => c.method === method && match.test(c.url));
+const sent = (method: string, match: RegExp) =>
+  calls.filter((c) => c.method === method && match.test(pathOf(c.url)));
 
 /** Mount and wait for the config call to settle. */
 async function mount(props: Partial<React.ComponentProps<typeof LiveChatCta>> = {}) {
@@ -161,9 +173,31 @@ describe("it stays OFF unless the backend enables it", () => {
     );
   });
 
-  it("defaults to same-origin when no API base is given", async () => {
+  it("RESOLVES the API base when none is passed, instead of going same-origin", async () => {
+    // This used to default to "" — relative. The one surface that omits the
+    // prop is the panel, which is a static site on its own host, so every call
+    // went to management.tracht-digital.de and came back as the SPA fallback
+    // HTML with a 200: `res.ok` true, `res.json()` throwing, the catch
+    // rendering a calm empty state. Same-origin is never the right default.
     await mount();
-    expect(calls[0]!.url.startsWith("/live-chat-cta/")).toBe(true);
+    expect(calls[0]!.url).toBe(
+      "https://api.tracht-digital.de/live-chat-cta/config?frontend=landingpage&lang=de",
+    );
+  });
+
+  it("lets the host's meta tag decide the base", async () => {
+    resetApiBase();
+    const meta = document.createElement("meta");
+    meta.setAttribute("name", API_BASE_META);
+    meta.setAttribute("content", "https://api.staging.test");
+    document.head.appendChild(meta);
+    try {
+      await mount();
+      expect(calls[0]!.url.startsWith("https://api.staging.test/live-chat-cta/")).toBe(true);
+    } finally {
+      meta.remove();
+      resetApiBase();
+    }
   });
 
   it("makes exactly ONE call on mount", async () => {

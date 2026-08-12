@@ -52,6 +52,18 @@ const ICONS: Readonly<Record<ToastVariant, string>> = {
 /** danger is announced assertively; everything else waits its turn. */
 const isUrgent = (variant: ToastVariant) => variant === "danger";
 
+/**
+ * A toast `href` may only be a same-document path.
+ *
+ * The detail arrives over a public window event, so this is the renderer's last
+ * line of defence — the same reasoning as normalising the variant below. A
+ * scheme-relative `//evil.example` and a `javascript:` URL are both rejected;
+ * so is anything that isn't a leading-slash path, which leaves no room for a
+ * cross-origin jump out of a notification the user did not ask for.
+ */
+const safeHref = (href: unknown): string | null =>
+  typeof href === "string" && /^\/(?!\/)/.test(href) ? href : null;
+
 let nextId = 1;
 
 /**
@@ -102,6 +114,7 @@ export default function ToastHost({ lang = "de" }: ToastHostProps = {}) {
     if (message === "") return;
     const dedupe = detail.key ?? `${variant}:${message}`;
     const duration = detail.duration ?? TOAST_DURATIONS[variant] ?? TOAST_DURATIONS.info;
+    const href = safeHref(detail.href) ?? undefined;
 
     setItems((prev) => {
       const existing = prev.find((item) => item.dedupe === dedupe);
@@ -109,10 +122,10 @@ export default function ToastHost({ lang = "de" }: ToastHostProps = {}) {
         // Same message again: count it instead of stacking a second copy, and
         // let the effect below restart its timer (`count` is in the deps).
         return prev.map((item) =>
-          item.id === existing.id ? { ...item, count: item.count + 1, message } : item,
+          item.id === existing.id ? { ...item, count: item.count + 1, message, href } : item,
         );
       }
-      const item: ToastItem = { variant, message, dedupe, duration, id: nextId++, count: 1 };
+      const item: ToastItem = { variant, message, dedupe, duration, href, id: nextId++, count: 1 };
       const sameRegion = prev.filter((other) => isUrgent(other.variant) === isUrgent(variant));
       if (sameRegion.length >= TOAST_MAX_VISIBLE) {
         const oldest = sameRegion[0];
@@ -212,7 +225,16 @@ export default function ToastHost({ lang = "de" }: ToastHostProps = {}) {
         <path fillRule="evenodd" clipRule="evenodd" d={ICONS[item.variant]} />
       </svg>
       <span className="tds-toast__message">
-        {item.message}
+        {item.href ? (
+          // A linked toast is the ONLY interactive part besides dismiss, so it
+          // must be reachable by keyboard on its own — an <a href> is, a
+          // click handler on the <span> would not be.
+          <a className="tds-toast__link" href={item.href}>
+            {item.message}
+          </a>
+        ) : (
+          item.message
+        )}
         {item.count > 1 ? <span className="tds-toast__count">×{item.count}</span> : null}
       </span>
       <button

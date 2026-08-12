@@ -637,6 +637,24 @@ body {
   flex: 1 1 auto;
   min-width: 0;
 }
+/* A toast that announces something living elsewhere (a new contact request)
+   links to it. Inherits the variant's ink rather than the global link colour —
+   the toast body is already a coloured surface, and a second hue on it reads as
+   a second signal. Never `outline: none`; the ring is what makes the only
+   keyboard-reachable target here visible. */
+.tds-toast__link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: from-font;
+}
+.tds-toast__link:hover {
+  text-decoration-thickness: 2px;
+}
+.tds-toast__link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
 /* Repeat counter — the same message arriving again counts up instead of
    stacking a second identical toast. */
 .tds-toast__count {

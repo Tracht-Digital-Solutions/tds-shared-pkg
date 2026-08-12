@@ -128,8 +128,36 @@ import { LanguageProvider, useLang } from "@tracht-digital-solutions/tds-shared/
 import { ease } from "@tracht-digital-solutions/tds-shared/motion";
 import { ThemeToggle, CookieNotice, LiveChatCta, ToastHost, Spinner, Skeleton, SkeletonText } from "@tracht-digital-solutions/tds-shared/components";
 import { toast } from "@tracht-digital-solutions/tds-shared/toast";
+import { apiFetch, apiUrl } from "@tracht-digital-solutions/tds-shared/api";
 import { tdsViteBuild, cssTarget } from "@tracht-digital-solutions/tds-shared/astro";
 ```
+
+## Calling the panel API
+
+Every call from a frontend product (or a `tds-ext-*` island inside one) to the
+composed backend goes through `apiFetch`:
+
+```ts
+import { apiFetch } from "@tracht-digital-solutions/tds-shared/api";
+
+const res = await apiFetch("/contact/messages?status=new");
+if (!res.ok) { /* handle it — apiFetch never throws and never redirects */ }
+```
+
+It sends the shared session cookie and resolves the path against the API base:
+`<meta name="tds-api-base">` (written by the frontend host shell) → the build's
+`PUBLIC_API_BASE` → `https://api.tracht-digital.de`.
+
+**Never call it with a bare relative path.** The products are static sites on
+their own hosts, so `fetch("/contact/messages")` targets
+`management.tracht-digital.de` — and the static host answers unknown paths with
+its SPA fallback, i.e. **200 + HTML**. `res.ok` is `true`, `res.json()` throws,
+and the usual `.catch(() => setRows([]))` shows a permanent empty state with no
+error anywhere. That is exactly how the contact inbox came to report "Keine
+Anfragen." while the rows sat in the database.
+
+`apiUrl()` passes already-absolute URLs through unchanged, so wrapping an
+existing call site is safe either way.
 
 ## Toasts
 
@@ -157,6 +185,15 @@ They travel as a `tds:toast` window event, so islands, plain modules and the
 browser console all reach the same stack without a shared React tree. Toasts
 auto-dismiss (4 s success … 10 s danger, paused while hovered) — so anything
 the user must **read or copy** belongs in an in-flow `.tds-alert`, not here.
+
+A toast about something that lives **elsewhere** can link to it:
+
+```ts
+toast.info("Neue Kontaktanfrage: Max Mustermann", {
+  key: "contact-tickets:42",   // dedup — a repeat counts up instead of stacking
+  href: "/kontakt?id=42",      // same-document paths only
+});
+```
 
 ## Design system (CSS, in each frontend)
 
