@@ -6,6 +6,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.20.1] — 2026-08-12
+
+### Changed
+- **The panel accent axis is reversed, and the colour now means _permissions_.**
+  The customer portal renders the base panel in the brand navy — exactly what the
+  admin frontend used to look like — and the **admin** frontend is the one that
+  overrides, into the brand burgundy. `management.tracht-digital.de` is where a
+  destructive action lands, so it is the surface that carries a standing marker.
+  - New `--color-management` token: `#820933` light, `#e8536f` dark. It is its own
+    token rather than `var(--color-accent)` because the accent's dark value is
+    byte-identical to `--color-cat-rose`, and the panel accent doubles as the
+    Verwaltung zone's `--nav-hue` — that would put two rail zones on one hex.
+  - The `[data-frontend="customer"]` block is **gone**; the portal has no override.
+  - **The base block must stay `--color-primary`.** `tds-tools-frontend` renders on
+    this surface and writes no `data-frontend`, so it inherits the base accent — the
+    management red there would paint the *public* tools site in the colour that
+    claims administration rights. `design.test.ts` fails the build on it.
+  - Consumers pair this with **`tds-core-frontend` 0.18.1**, which moves the `tools`
+    nav group off `--color-cat-rose` (ΔE 12 from the new accent) to `--color-info`.
+
+### Fixed
+- The nav-rail contrast suite measured only the navy rail, so it structurally could
+  not have seen a product's accent change. It now resolves and measures **both**
+  products' rails in both themes, each with its own accent as a nav zone, and adds a
+  CIELAB separation assertion — contrast answers "is this readable", not "are these
+  two the same colour", and six zones can all clear AA while reading as one red.
+
+## [0.20.0] — 2026-08-12 — **VOID, DO NOT USE**
+
+Published in error from the commit *before* the change above, so it is byte-identical
+to 0.19.0 in behaviour while carrying a higher version number. A release workflow was
+dispatched against a stale `main` (a failed `git push` was masked by a shell pipe) and
+had already published by the time it was cancelled.
+
+`npm deprecate` **cannot** be used to mark it: the GitHub Packages npm registry does
+not implement the deprecate endpoint (it answers `400 unmarshalling packument failed:
+version.ID cannot be empty`), and deleting a version needs a `delete:packages` token
+that no token here carries. Hence this entry — it is the only durable marker available.
+
+Practical exposure is nil: `@latest` is 0.20.1 and every consumer pins `^0.20.0`,
+which resolves 0.20.1. Do not pin 0.20.0 exactly.
+
 ## [0.18.0] — 2026-08-07
 
 ### Added

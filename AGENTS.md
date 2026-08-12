@@ -128,7 +128,7 @@ import this — they duplicate the small bit of validation they need, by design.
   - **`--tds-panel-accent` is the single knob.** The rail gradient, the canvas
     tint, the ambient glow and the page-head rule are all `color-mix()`es over
     it. That is what lets ONE token block re-theme a whole product.
-  - **Per-product accent (reversed in 0.20.0).** `[data-surface="panel"]
+  - **Per-product accent (reversed in 0.20.1).** `[data-surface="panel"]
     [data-frontend="admin"]` swaps the accent to `--color-management`, the
     brand burgundy; the host writes `data-frontend` from `FRONTEND_TARGET`.
     This is the ONLY per-product styling difference — **the management
