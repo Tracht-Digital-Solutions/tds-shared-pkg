@@ -523,7 +523,11 @@
   position: sticky;
   top: 0;
   z-index: 30;
-  display: flex;
+  /* NO `display` here, deliberately — same as `.portal-sidebar`. The shell
+     writes `hidden lg:flex`, and a `display: flex` in this file would WIN
+     against Tailwind's `.hidden` (equal specificity, and app.css lands after
+     the utilities), so the bar rendered a second time under the mobile
+     header. Nothing errors; you just get two bars. Layout owns display. */
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;

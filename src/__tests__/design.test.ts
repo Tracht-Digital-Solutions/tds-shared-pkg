@@ -1135,4 +1135,17 @@ describe("profile chrome", () => {
     // slice the top off it.
     expect(rule).toMatch(/color-mix\(/);
   });
+
+  it("leaves `display` on the top bar to the shell, like .portal-sidebar", () => {
+    // The shell writes `hidden lg:flex`. A `display: flex` here has equal
+    // specificity to Tailwind's `.hidden` and app.css lands AFTER the
+    // utilities, so it wins — and the bar renders a second time under the
+    // mobile header. Nothing errors; you just get two bars, which is only
+    // visible in a browser at a narrow width.
+    const rule = app.match(/\.panel-topbar \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).not.toMatch(/^\s*display:/m);
+    // Same rule for the rail, which is where the pattern comes from.
+    const rail = app.match(/\.portal-sidebar \{([^}]*)\}/)?.[1] ?? "";
+    expect(rail).not.toMatch(/^\s*display:/m);
+  });
 });
