@@ -1189,6 +1189,188 @@ button.tds-row:focus-visible {
   top: auto;
 }
 
+/* === Avatar ========================================================
+   The one place a person is represented as a person. Used by the frontend
+   host's profile menu and profile page, and available to any list that
+   shows a user.
+
+   Colour for the initials fallback comes from the CATEGORICAL palette via
+   `data-avatar-variant`, written by components/Avatar.tsx from a stable
+   hash of the user id — so one person keeps one tint across the menu, the
+   profile page and a user table. Same ink/tint idea as `.chip--cat-*`
+   above, deliberately: those hues are tuned for dark text on a light
+   canvas and flip in dark mode, so a mix against `--color-card` tracks the
+   theme in both directions without a second rule. */
+.tds-avatar {
+  --tds-avatar-size: 2.25rem;
+  --tds-avatar-hue: var(--color-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--tds-avatar-size);
+  height: var(--tds-avatar-size);
+  border-radius: var(--tds-radius-pill);
+  overflow: hidden;
+  /* An <img> and the initials <span> must be the same circle. Without this
+     an image whose aspect ratio is not 1:1 stretches instead of cropping,
+     which is what a portrait upload usually is. */
+  object-fit: cover;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: calc(var(--tds-avatar-size) * 0.4);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  user-select: none;
+  color: var(--tds-avatar-hue);
+  background: color-mix(in srgb, var(--tds-avatar-hue) 14%, var(--color-card));
+  border: 1px solid color-mix(in srgb, var(--tds-avatar-hue) 30%, transparent);
+}
+.tds-avatar--sm {
+  --tds-avatar-size: 1.75rem;
+}
+.tds-avatar--lg {
+  --tds-avatar-size: 4.5rem;
+}
+.tds-avatar[data-avatar-variant="cat-violet"] {
+  --tds-avatar-hue: var(--color-cat-violet);
+}
+.tds-avatar[data-avatar-variant="cat-teal"] {
+  --tds-avatar-hue: var(--color-cat-teal);
+}
+.tds-avatar[data-avatar-variant="cat-amber"] {
+  --tds-avatar-hue: var(--color-cat-amber);
+}
+.tds-avatar[data-avatar-variant="cat-rose"] {
+  --tds-avatar-hue: var(--color-cat-rose);
+}
+.tds-avatar[data-avatar-variant="cat-cyan"] {
+  --tds-avatar-hue: var(--color-cat-cyan);
+}
+
+/* === Dropdown menu =================================================
+   A button that opens a small panel of actions — the frontend host's
+   profile menu is the first consumer. Named `dropdown`, not `menu`,
+   because `.tds-menu-bar` is already the hamburger's three bars and the
+   two would read as one family.
+
+   Visibility is driven by `[hidden]` on the panel: the owning island keeps
+   the open state, and a hidden panel must stay unfocusable — which
+   `display: none` gives for free and an opacity/visibility fade does not. */
+.tds-dropdown {
+  position: relative;
+  display: inline-flex;
+}
+.tds-dropdown__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 14rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--tds-radius-card);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--tds-dur-fast) var(--tds-ease-out),
+    border-color var(--tds-dur-fast) var(--tds-ease-out);
+}
+.tds-dropdown__trigger:hover,
+.tds-dropdown__trigger[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  border-color: var(--color-line);
+}
+.tds-dropdown__panel {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  right: 0;
+  z-index: 50;
+  min-width: 14rem;
+  max-width: min(20rem, calc(100vw - 2rem));
+  padding: 0.375rem;
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--tds-radius-card);
+  box-shadow: var(--tds-shadow-md);
+}
+.tds-dropdown__panel[hidden] {
+  display: none;
+}
+/* Non-interactive header block (avatar + name + email). */
+.tds-dropdown__head {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.625rem 0.625rem;
+  min-width: 0;
+}
+.tds-dropdown__sep {
+  height: 1px;
+  margin: 0.25rem 0.375rem;
+  background: var(--color-line);
+  border: 0;
+}
+.tds-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  /* 44px at EVERY pointer type, not just coarse: this is a menu row, and a
+     mouse user with a tremor deserves the same target a thumb gets. */
+  min-height: 44px;
+  padding: 0.5rem 0.625rem;
+  border: 0;
+  border-radius: var(--tds-radius-alert);
+  background: transparent;
+  color: var(--color-black);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--tds-dur-fast) var(--tds-ease-out);
+}
+.tds-dropdown__item:hover,
+.tds-dropdown__item:focus-visible {
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+}
+.tds-dropdown__item[aria-current="true"] {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+.tds-dropdown__item--danger {
+  color: var(--color-danger);
+}
+.tds-dropdown__item--danger:hover,
+.tds-dropdown__item--danger:focus-visible {
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+}
+.tds-dropdown__icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--color-muted);
+}
+.tds-dropdown__item--danger .tds-dropdown__icon {
+  color: inherit;
+}
+/* One-line truncation for a name/email too long for the panel. */
+.tds-dropdown__label {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tds-dropdown__trigger,
+  .tds-dropdown__item {
+    transition: none;
+  }
+}
+
 /* === Touch / small-screen ergonomics ============================== */
 
 /* On touch devices give the interactive chrome a comfortable hit area
@@ -1199,6 +1381,12 @@ button.tds-row:focus-visible {
    compact — they're labels, not tap targets). The `.nav-item` rule lives
    in app.css alongside the rest of the sidebar chrome. */
 @media (pointer: coarse) {
+  /* The avatar trigger in the shell's top bar. `.tds-dropdown__item` is
+     already 44px at every pointer type (it is a menu row, not a badge), so
+     only the trigger needs lifting here. */
+  .tds-dropdown__trigger {
+    min-height: 44px;
+  }
   .btn {
     min-height: 44px;
   }

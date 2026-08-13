@@ -1081,3 +1081,58 @@ describe("mobile contracts", () => {
     expect(coarse).toMatch(/input\[type="checkbox"\][\s\S]{0,80}min-height:\s*1\.5rem/);
   });
 });
+
+describe("profile chrome", () => {
+  it("defines the avatar and every categorical fallback tint", () => {
+    expect(primitives).toContain(".tds-avatar {");
+    for (const variant of CATEGORICAL_CHIP_VARIANTS) {
+      expect(
+        primitives,
+        `.tds-avatar has no tint for ${variant} — Avatar.tsx can emit it`,
+      ).toContain(`.tds-avatar[data-avatar-variant="${variant}"]`);
+    }
+  });
+
+  it("crops the avatar image instead of stretching it", () => {
+    // A portrait upload in a circle without object-fit is squashed, which is
+    // exactly what a phone camera produces.
+    const rule = primitives.match(/\.tds-avatar \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toMatch(/object-fit:\s*cover/);
+    expect(rule).toMatch(/overflow:\s*hidden/);
+    expect(rule).toMatch(/border-radius:\s*var\(--tds-radius-pill\)/);
+  });
+
+  it("gives every dropdown row a 44px target at ANY pointer type", () => {
+    // A menu row is not a badge: the coarse-pointer block would leave a
+    // mouse user with a tremor a 32px target on the same control.
+    const rule = primitives.match(/\.tds-dropdown__item \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toMatch(/min-height:\s*44px/);
+  });
+
+  it("hides the dropdown panel with display, not opacity", () => {
+    // A panel faded to opacity 0 is still focusable — tabbing would walk
+    // into a menu the user cannot see.
+    const rule = primitives.match(/\.tds-dropdown__panel\[hidden\] \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toMatch(/display:\s*none/);
+  });
+
+  it("pairs the dropdown row's :hover with :focus-within or :focus-visible", () => {
+    expect(primitives).toContain(".tds-dropdown__item:focus-visible");
+    expect(primitives).toContain(".tds-dropdown__item--danger:focus-visible");
+  });
+
+  it("keeps the top bar in app.css and out of primitives.css", () => {
+    // Panel-only-by-name chrome, same class of thing as .portal-sidebar.
+    expect(app).toContain(".panel-topbar {");
+    expect(primitives).not.toContain(".panel-topbar {");
+  });
+
+  it("makes the top bar sticky and separated by a hairline", () => {
+    const rule = app.match(/\.panel-topbar \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toMatch(/position:\s*sticky/);
+    expect(rule).toMatch(/border-bottom:\s*1px solid var\(--color-line\)/);
+    // It sits over `.panel-main`'s top-right glow; a solid paper fill would
+    // slice the top off it.
+    expect(rule).toMatch(/color-mix\(/);
+  });
+});

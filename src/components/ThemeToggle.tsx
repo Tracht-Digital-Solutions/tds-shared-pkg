@@ -1,13 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
-import { THEME_ATTRIBUTE, THEME_STORAGE_KEY, type Theme } from "../design/index.js";
+import { THEME_ATTRIBUTE, type Theme } from "../design/index.js";
+import { applyThemePreference } from "../theme/index.js";
 import { cssEase } from "../motion/index.js";
-
-// Shared with the no-flash <head> bootstrap (tds-shared/astro
-// `themeBootstrapScript`), which READS this key before paint while this
-// component WRITES it. Don't re-inline the literal — they must move together.
-const STORAGE_KEY = THEME_STORAGE_KEY;
 
 export interface ThemeToggleProps {
   /** aria-label / title shown in light mode (tap to go dark). */
@@ -52,14 +48,15 @@ export default function ThemeToggle({
 
     // Commit the theme change. Kept as one closure so it can run either
     // immediately or inside a View Transition snapshot callback.
+    //
+    // Storage + attribute + the `tds:theme-change` announcement all happen in
+    // `applyThemePreference` (tds-shared/theme), the single write path — that
+    // is what lets the frontend host persist the choice per USER without this
+    // component knowing a server exists. The toggle only ever writes an
+    // explicit theme; "System" is chosen on the profile page.
     const apply = () => {
       setTheme(next);
-      document.documentElement.setAttribute(THEME_ATTRIBUTE, next);
-      try {
-        localStorage.setItem(STORAGE_KEY, next);
-      } catch {
-        // Safari private mode / disabled storage — soft fail.
-      }
+      applyThemePreference(next);
     };
 
     const startViewTransition = (

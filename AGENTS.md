@@ -54,6 +54,24 @@ import this — they duplicate the small bit of validation they need, by design.
     between the bootstrap (reads), `ThemeToggle` (writes) and `base.css`
     (selects). All three used to hardcode the literals independently. Import
     them; don't retype `"tds-theme"`.
+- **`applyThemePreference` (src/theme) is the ONLY write path for the theme.**
+  `ThemeToggle` and the frontend host's profile page both go through it, and it
+  is what raises `tds:theme-change`. Writing `localStorage` + the attribute by
+  hand at a call site still *works* — which is the trap: the host's
+  `/me/preferences` sync listens to that event, so a hand-rolled write leaves
+  the choice per-browser and it silently fails to follow the user to another
+  device. Three things follow from that:
+  - **`"system"` is the ABSENCE of a stored value, never the string.** The
+    bootstrap already falls through to `prefers-color-scheme` when the key is
+    missing, so `applyThemePreference("system")` *removes* it. Writing the word
+    would make the bootstrap treat it as corrupt and land on the OS theme by
+    accident rather than by design.
+  - **Pass `{ announce: false }` when applying a value that came FROM the
+    server**, or the sync listener echoes it straight back as a save.
+  - **`startSystemThemeSync()` is not optional if you offer "System".** The
+    bootstrap runs once, so without it the setting means "whatever the OS said
+    at page load" and reads as broken the first time someone flips their OS
+    theme with the panel open.
 - **No runtime side-effects in any JS module.** `sideEffects: ["*.css"]`
   in package.json — only the stylesheets carry side effects (so bundlers
   keep them); keep the JS modules pure so consumers tree-shake correctly.
@@ -411,6 +429,13 @@ src/
 │                             #   Also React-free. Every tds-ext-* island calls
 │                             #   the composed backend through it — see the
 │                             #   "relative fetch" gotcha below.
+├── theme/                    # the theme RUNTIME (read/apply/observe the
+│                             #   preference, incl. "system"). React-free, and
+│                             #   separate from design/ because that file is
+│                             #   documented as pure functions and these touch
+│                             #   localStorage + document. applyThemePreference
+│                             #   is the SINGLE write path and announces
+│                             #   tds:theme-change — see the note below.
 ├── markdown/                 # escape-first renderMarkdown → HTML. React-free.
 │                             #   The panel's XSS BOUNDARY: its output goes into
 │                             #   dangerouslySetInnerHTML in the blog-CMS preview
@@ -418,11 +443,13 @@ src/
 │                             #   BEFORE any md transform, which is what lets the
 │                             #   panel skip dompurify. Change it only with its
 │                             #   test suite in front of you.
-├── components/               # shared React islands (ThemeToggle, FormAlert,
+├── components/               # shared React islands (ThemeToggle, Avatar, FormAlert,
 │                             #   ConfirmDialog, CookieNotice, LiveChatCta, ToastHost,
 │                             #   Spinner, Skeleton, SkeletonText — their CSS lives in
 │                             #   base.css, not app.css, so the landingpage (base-only)
-│                             #   gets it too)
+│                             #   gets it too. Avatar is the exception: `.tds-avatar`
+│                             #   is in primitives.css, because only the panel
+│                             #   surfaces show people)
 └── astro/                    # build presets (cssTarget / tdsViteBuild) +
                               #   themeBootstrapScript (the no-flash <head> script)
 ```

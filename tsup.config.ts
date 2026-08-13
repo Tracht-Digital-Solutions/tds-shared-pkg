@@ -11,6 +11,7 @@ export default defineConfig({
     "components/index": "src/components/index.ts",
     "astro/index": "src/astro/index.ts",
     "design/index": "src/design/index.ts",
+    "theme/index": "src/theme/index.ts",
     "toast/index": "src/toast/index.ts",
     "api/index": "src/api/index.ts",
     "markdown/index": "src/markdown/index.ts",

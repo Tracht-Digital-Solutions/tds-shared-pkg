@@ -6,6 +6,9 @@
 export { default as ThemeToggle } from "./ThemeToggle";
 export type { ThemeToggleProps } from "./ThemeToggle";
 
+export { default as Avatar } from "./Avatar";
+export type { AvatarProps } from "./Avatar";
+
 export { default as FormAlert } from "./FormAlert";
 export type { FormAlertProps } from "./FormAlert";
 
@@ -52,6 +55,19 @@ export {
   API_BASE_META,
   DEFAULT_API_BASE,
 } from "../api";
+
+/* Same reasoning again for the theme runtime: the profile page's Darstellung
+   tab is an island and gets it from here, while the host's plain-TS
+   preferences sync imports `@tracht-digital-solutions/tds-shared/theme`. */
+export {
+  applyThemePreference,
+  currentTheme,
+  onThemeChange,
+  readThemePreference,
+  resolveTheme,
+  startSystemThemeSync,
+  systemTheme,
+} from "../theme";
 
 export { default as Spinner } from "./Spinner";
 export type { SpinnerProps } from "./Spinner";

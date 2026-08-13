@@ -156,3 +156,38 @@ export const THEME_ATTRIBUTE = "data-theme";
 /** The two theme values. Anything else in storage is ignored as corrupt. */
 export const THEMES = ["light", "dark"] as const;
 export type Theme = (typeof THEMES)[number];
+
+/**
+ * What a USER chooses, as opposed to what the document ends up rendering.
+ *
+ * `"system"` is deliberately **not** a stored value: it is the absence of one.
+ * The no-flash bootstrap already falls through to `prefers-color-scheme` when
+ * the key is missing, so "follow the OS" costs no bootstrap change and cannot
+ * drift from it — writing a literal `"system"` into storage would make the
+ * bootstrap treat it as corrupt and land on the OS theme anyway, by accident
+ * rather than by design.
+ */
+export const THEME_PREFERENCES = ["light", "dark", "system"] as const;
+export type ThemePreference = (typeof THEME_PREFERENCES)[number];
+
+/**
+ * Raised on `window` whenever the theme preference changes, with
+ * `detail: { preference, theme }`.
+ *
+ * A window `CustomEvent` for the same reason the toast bus is one: Astro
+ * mounts every `client:*` island as its own React root (up to 17 on the panel
+ * dashboard), so there is no common tree to hang a provider on — and the
+ * listener here is the frontend host's plain-TS preferences module, not React.
+ * `ThemeToggle` and the profile page both write through
+ * `applyThemePreference` (tds-shared/theme), so whoever persists the choice
+ * server-side subscribes once and hears both.
+ */
+export const THEME_CHANGE_EVENT = "tds:theme-change";
+
+/** `detail` of a {@link THEME_CHANGE_EVENT}. */
+export interface ThemeChangeDetail {
+  /** What the user chose — `"system"` included. */
+  preference: ThemePreference;
+  /** What that resolves to right now, i.e. what `data-theme` was set to. */
+  theme: Theme;
+}

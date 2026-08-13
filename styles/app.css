@@ -504,6 +504,44 @@
   }
 }
 
+/* === Panel top bar ================================================
+   The desktop header above the page canvas — the panel had none at all
+   until the profile menu needed somewhere to live, so `<main>` started
+   straight at the page content and nothing in the shell ever said who
+   was logged in.
+
+   Panel-only-by-name chrome like `.portal-sidebar`, so it needs no
+   `[data-surface="panel"]` scope; the tools site imports this file for
+   the card elevation and simply never renders this element.
+
+   Transparent on purpose. `[data-surface="panel"] .panel-main` paints a
+   radial glow anchored top-RIGHT — exactly where this bar sits — and a
+   solid `--color-paper` band would slice the top off it. The hairline
+   alone is enough separation, and `backdrop-filter` on scroll would only
+   blur a background this element does not own. */
+.panel-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  min-height: 3.25rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--color-line);
+  /* Semi-opaque rather than transparent: content scrolling underneath a
+     fully see-through sticky bar collides with the avatar. This keeps the
+     canvas glow visible while still reading as a surface. */
+  background: color-mix(in srgb, var(--color-paper) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+@media (min-width: 40rem) {
+  .panel-topbar {
+    padding-inline: 1.5rem;
+  }
+}
+
 /* === Panel canvas ================================================= */
 
 /* The page area next to the rail. Everything from here down is scoped to

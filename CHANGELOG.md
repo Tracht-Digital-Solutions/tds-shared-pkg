@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **`Avatar`, `.tds-avatar` and `.tds-dropdown*` — the profile menu's parts.**
+  The frontend host had no desktop header at all, so nothing in the panel ever
+  said who was logged in and `logout()` sat in `lib/auth.ts` imported by
+  nothing. `Avatar` renders an image when there is one and a tinted circle of
+  initials otherwise, picking its hue from the categorical palette through a
+  stable hash of the user id — so one person keeps one colour across the menu,
+  the profile page and a user list. A broken `src` falls back to initials
+  rather than the browser's broken-image glyph: avatars point at a service
+  that may not be deployed yet, and an empty grey box in the shell's
+  top-right reads as a bug.
+
+  `.tds-dropdown__item` is 44px at **every** pointer type, not just coarse —
+  it is a menu row, and a mouse user with a tremor deserves the target a
+  thumb gets. The panel is hidden with `display: none` (via `[hidden]`), never
+  an opacity fade, so a closed menu cannot be tabbed into.
+
+- **`.panel-topbar` (app.css) — the panel's first desktop header.** Sticky,
+  right-aligned, separated by a hairline. Deliberately semi-opaque rather than
+  a solid `--color-paper` band: `[data-surface="panel"] .panel-main` paints a
+  radial glow anchored top-**right**, exactly where this bar sits, and an
+  opaque fill would slice the top off it. Panel-only-by-name chrome like
+  `.portal-sidebar`, so it carries no `[data-surface]` scope; the tools site
+  imports app.css and simply never renders it.
+
+- **`./theme` — the theme runtime, and a third preference: `system`.** The
+  theme was a per-BROWSER localStorage value with no way to say "follow the
+  OS" and no way for anything to observe a change. `applyThemePreference` is
+  now the single write path (`ThemeToggle` and the host's profile page both
+  go through it) and announces itself on `tds:theme-change`, which is what
+  lets the frontend host persist the choice per **user** without this library
+  learning that a server exists — the same window-`CustomEvent` bus, for the
+  same reason, as the toast host.
+
+  `"system"` is deliberately **not a stored value**: it is the absence of one.
+  The no-flash bootstrap already falls through to `prefers-color-scheme` when
+  the key is missing, so "follow the OS" needs no bootstrap change and cannot
+  drift from it. `startSystemThemeSync()` keeps that honest while the page is
+  open — without it, "System" only ever meant "whatever the OS said at load",
+  which reads as the setting being broken.
+
+  Its own entry point rather than `./design`, which is documented as pure
+  functions: same split as `./toast` and `./api`, so the host's plain-TS
+  preferences sync can import it without pulling React into that chunk.
+
+  > **Released as a PATCH, deliberately** — same reasoning as `./markdown`
+  > below. Every item here is additive (two new exports, new CSS classes, no
+  > existing export changed), and the host plus both products pin `^0.20.0`,
+  > which for a `0.x` caret is minor-locked. A minor would force a repin in
+  > three repos for a change nothing can break on.
+
 - **`./markdown` — the escape-first `renderMarkdown`,** lifted out of
   `tds-ext-blog-cms-pkg/islands/BlogsList.tsx` together with its test suite. The
   customer wiki renders handbook articles with it and the blog-CMS editor renders

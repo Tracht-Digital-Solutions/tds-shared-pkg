@@ -61,6 +61,11 @@
       "import": "./dist/design/index.js",
       "require": "./dist/design/index.cjs"
     },
+    "./theme": {
+      "types": "./dist/theme/index.d.ts",
+      "import": "./dist/theme/index.js",
+      "require": "./dist/theme/index.cjs"
+    },
     "./toast": {
       "types": "./dist/toast/index.d.ts",
       "import": "./dist/toast/index.js",
