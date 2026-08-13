@@ -53,6 +53,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dead. Provider headers sit under the caller's, and a throwing provider is
   ignored rather than breaking the request.
 
+- **`.tds-dropdown__caption`, and a selected row that answers to `aria-checked`.**
+  The company switcher lives inside the profile menu, so the menu needed a
+  section heading and a row that can read as *selected*. The caption carries no
+  role and is never focusable — arrow-key roving must walk past a label, not
+  stop on it. The selected style now matches `aria-current="true"` **and**
+  `aria-checked="true"`, because the switcher's rows are `menuitemradio`:
+  styling only the link spelling would have left the active company looking
+  exactly like the inactive one.
+
 - **`Avatar`, `.tds-avatar` and `.tds-dropdown*` — the profile menu's parts.**
   The frontend host had no desktop header at all, so nothing in the panel ever
   said who was logged in and `logout()` sat in `lib/auth.ts` imported by

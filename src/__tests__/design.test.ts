@@ -1121,6 +1121,23 @@ describe("profile chrome", () => {
     expect(primitives).toContain(".tds-dropdown__item--danger:focus-visible");
   });
 
+  it("marks a selected row for BOTH aria-current and aria-checked", () => {
+    // The company switcher's rows are `menuitemradio`, which carries
+    // `aria-checked` — styling only `aria-current` would leave the active
+    // company looking exactly like the other one.
+    expect(primitives).toContain('.tds-dropdown__item[aria-current="true"]');
+    expect(primitives).toContain('.tds-dropdown__item[aria-checked="true"]');
+  });
+
+  it("keeps the dropdown caption out of the roving focus order", () => {
+    // A section heading inside the menu is not a row: it must not be
+    // focusable, or arrow-key roving stops on a label.
+    const rule = primitives.match(/\.tds-dropdown__caption \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).not.toBe("");
+    expect(rule).not.toMatch(/min-height:\s*44px/);
+    expect(rule).toMatch(/color:\s*var\(--color-muted\)/);
+  });
+
   it("keeps the top bar in app.css and out of primitives.css", () => {
     // Panel-only-by-name chrome, same class of thing as .portal-sidebar.
     expect(app).toContain(".panel-topbar {");
