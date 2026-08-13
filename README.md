@@ -129,8 +129,23 @@ import { ease } from "@tracht-digital-solutions/tds-shared/motion";
 import { ThemeToggle, CookieNotice, LiveChatCta, ToastHost, Spinner, Skeleton, SkeletonText } from "@tracht-digital-solutions/tds-shared/components";
 import { toast } from "@tracht-digital-solutions/tds-shared/toast";
 import { apiFetch, apiUrl } from "@tracht-digital-solutions/tds-shared/api";
+import { renderMarkdown } from "@tracht-digital-solutions/tds-shared/markdown";
 import { tdsViteBuild, cssTarget } from "@tracht-digital-solutions/tds-shared/astro";
 ```
+
+## Rendering markdown
+
+`renderMarkdown` turns a markdown string into HTML that is safe to hand to
+`dangerouslySetInnerHTML`. It is **escape-first**: every text run is HTML-escaped
+before any markdown transform, so raw HTML and `<script>` in the source become
+inert text. That is the entire security model — there is no sanitizer to
+configure, which is why the panel carries no `dompurify` dependency.
+
+It covers the common subset (fenced and inline code, headings, bold, italic,
+links limited to `http`/`https`/`mailto`/relative, unordered lists, paragraphs)
+and is used by the blog-CMS editor's preview pane and the customer wiki's
+handbook articles. It is **not** the public blog's renderer — that content goes
+through the full build-time pipeline.
 
 ## Calling the panel API
 

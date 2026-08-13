@@ -411,6 +411,13 @@ src/
 │                             #   Also React-free. Every tds-ext-* island calls
 │                             #   the composed backend through it — see the
 │                             #   "relative fetch" gotcha below.
+├── markdown/                 # escape-first renderMarkdown → HTML. React-free.
+│                             #   The panel's XSS BOUNDARY: its output goes into
+│                             #   dangerouslySetInnerHTML in the blog-CMS preview
+│                             #   AND the customer wiki's handbooks. Escaping runs
+│                             #   BEFORE any md transform, which is what lets the
+│                             #   panel skip dompurify. Change it only with its
+│                             #   test suite in front of you.
 ├── components/               # shared React islands (ThemeToggle, FormAlert,
 │                             #   ConfirmDialog, CookieNotice, LiveChatCta, ToastHost,
 │                             #   Spinner, Skeleton, SkeletonText — their CSS lives in

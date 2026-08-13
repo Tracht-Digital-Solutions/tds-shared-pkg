@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`./markdown` — the escape-first `renderMarkdown`,** lifted out of
+  `tds-ext-blog-cms-pkg/islands/BlogsList.tsx` together with its test suite. The
+  customer wiki renders handbook articles with it and the blog-CMS editor renders
+  its preview pane with it; an XSS boundary must not exist in two copies.
+  Escape-first means every text run is HTML-escaped *before* any markdown
+  transform, so raw HTML and `<script>` become inert text — that is what lets the
+  panel skip `dompurify` entirely.
+
+  > **Released as a PATCH, deliberately.** This is additive (a new subpath, no
+  > existing export touched), and both products plus the host pin `^0.20.0`,
+  > which for a `0.x` caret is minor-locked. A `0.21.0` would force repins in the
+  > host, both products and every extension that later wants the renderer, for a
+  > change nothing can break on. Same convention the extensions follow inside
+  > their pinned minor (root `CLAUDE.md`).
+
 ## [0.20.1] — 2026-08-12
 
 ### Changed
