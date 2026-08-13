@@ -1,13 +1,20 @@
 /**
- * Portal permission catalog — the fine-grained capabilities a customer-portal
- * account can hold *within its company* (tenant). Admin-panel access is a
+ * The **portal seed set** — the fine-grained capabilities a portal account
+ * could hold before the panel grew composable extensions. Admin access is a
  * separate boolean (`isAdmin` on the user), NOT a permission key.
  *
- * This file is the single source of truth for the JS/TS side. The PHP services
- * hand-duplicate this key list — `tds-auth-api` bakes them into the JWT
- * `permissions` claim, `tds-customer-api` enforces them per endpoint. Keep the
- * PHP key list in sync when this changes (same convention as the Zod ↔ PHP
- * validator duplication).
+ * ### This is no longer the definition of a valid permission
+ *
+ * It used to be: `tds-auth-api`'s `Permissions::sanitize()` INTERSECTED every
+ * write (and every read) with this list, so a module permission —
+ * `companies:read`, `time:read`, `wiki:write` — was silently dropped on its way
+ * into the database. The authoritative catalog is the composed one the
+ * enforcing service publishes at `GET /admin/permissions`; auth-api now
+ * validates the *shape* of a key ({@link isPermissionKey}) and leaves the
+ * meaning to whoever enforces it.
+ *
+ * What this list is still for: **seeding the four system groups**, and acting
+ * as the admin editor's fallback catalog when the composed API is unreachable.
  */
 export const PORTAL_PERMISSIONS = [
   "projects:read",
@@ -28,6 +35,34 @@ export function isPortalPermission(value: string): value is PortalPermission {
 }
 
 /**
+ * The SHAPE of a permission key: `resource:action`, lowercase, hyphens allowed
+ * inside each half, 1–32 characters each.
+ *
+ * Hand-duplicated as `Permissions::KEY_PATTERN` in tds-auth-api — the same
+ * convention as every other Zod ↔ PHP validator pair here. Keep them identical.
+ *
+ * A format check rather than a catalog check, because the catalog lives in the
+ * service that *enforces* it: a key nobody recognises grants nothing anywhere
+ * (`UserContext::has()` is an exact string match), so the failure mode is inert
+ * data rather than the silent data loss the old intersection produced.
+ */
+export const PERMISSION_KEY_PATTERN = /^[a-z0-9][a-z0-9-]{0,31}:[a-z0-9][a-z0-9-]{0,31}$/;
+
+/** True when `value` is a syntactically valid permission key. */
+export function isPermissionKey(value: string): boolean {
+  return PERMISSION_KEY_PATTERN.test(value);
+}
+
+/**
+ * Upper bound on how many keys one grant may carry.
+ *
+ * The resolved set rides in the JWT, which rides in a cookie; an unbounded
+ * array there is a request-header size limit waiting to be hit in production.
+ * Mirrored as `Permissions::MAX_KEYS`.
+ */
+export const MAX_PERMISSION_KEYS = 128;
+
+/**
  * German labels for each permission, shown in the admin user editor.
  * Editable copy lives here (tds-shared), not inlined in a frontend.
  */
@@ -46,9 +81,15 @@ export const PORTAL_PERMISSION_LABELS: Record<PortalPermission, string> = {
 export type PortalRolePreset = "full" | "accounting" | "project_team" | "read_only";
 
 /**
- * Role presets — UI convenience in the admin user editor. Each expands to a
- * concrete permission set; "Individuell" (custom toggles) is handled in the UI
- * and is not a preset here.
+ * @deprecated Superseded by real, persisted **groups** in `tds-auth-api`
+ * (`auth_group`, seeded from exactly these four with matching slugs).
+ *
+ * These were never more than UI sugar: the editor expanded one into a flat
+ * array on click and nothing recorded which preset had been used, so editing a
+ * "role" later changed nothing for anyone already carrying it. Kept exported
+ * for semver, and still the source the seeding migration was written from —
+ * but the migration hard-codes its own copy, because a migration must never
+ * import a moving constant.
  */
 export const PORTAL_ROLE_PRESETS: Record<
   PortalRolePreset,

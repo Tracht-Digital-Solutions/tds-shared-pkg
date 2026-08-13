@@ -119,6 +119,30 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): voi
   onUnauthorized = handler;
 }
 
+type HeadersProvider = (url: string) => Record<string, string>;
+
+let headersProvider: HeadersProvider | null = null;
+
+/**
+ * Register headers to add to every {@link apiFetch}.
+ *
+ * The twin of {@link setUnauthorizedHandler}, and registered from the same
+ * place: the frontend host's shell. Its first consumer is the company
+ * switcher, which has to put `X-Act-As-Company` on every extension call — and
+ * an extension cannot reach into the host to do that itself.
+ *
+ * **Generic headers, not `setActiveCompany(id)`**, deliberately. This is a
+ * design/i18n/transport library; it must not learn what a company is. It also
+ * solves the next "every call needs header X" the same way.
+ *
+ * The provider receives the resolved absolute URL, because *which* headers are
+ * safe depends on where the call is going — see the note in `apiFetch`.
+ * A provider must not throw; one that does is ignored for that request.
+ */
+export function setRequestHeadersProvider(provider: HeadersProvider | null): void {
+  headersProvider = provider;
+}
+
 /**
  * `fetch` for the composed panel API.
  *
@@ -130,7 +154,26 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): voi
  */
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const url = apiUrl(path);
-  const res = await fetch(url, { credentials: "include", ...init });
+
+  // Provider headers sit UNDER the caller's, so an explicit header at the call
+  // site always wins. The provider decides per URL what is safe to send: the
+  // auth API's CORS allow-list is narrower than the composed API's, and a
+  // header it does not allow fails the PREFLIGHT — which means the request is
+  // never sent at all and the button just looks dead.
+  let extra: Record<string, string> = {};
+  if (headersProvider !== null) {
+    try {
+      extra = headersProvider(url);
+    } catch {
+      /* a header provider must never be able to break the request */
+    }
+  }
+
+  const res = await fetch(url, {
+    credentials: "include",
+    ...init,
+    headers: { ...extra, ...(init.headers as Record<string, string> | undefined) },
+  });
   if (res.status === 401 && onUnauthorized !== null) {
     try {
       await onUnauthorized(url);

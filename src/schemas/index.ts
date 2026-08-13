@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import { PORTAL_PERMISSIONS } from "../permissions";
+import {
+  MAX_PERMISSION_KEYS,
+  PERMISSION_KEY_PATTERN,
+  PORTAL_PERMISSIONS,
+} from "../permissions";
 
 export * from "./blogBlocks";
 
@@ -93,20 +97,62 @@ export const LoginSchema = z.object({
 export type LoginInput = z.infer<typeof LoginSchema>;
 
 /**
- * Portal permission key — mirrors `PORTAL_PERMISSIONS` from
- * `@tracht-digital-solutions/tds-shared/permissions`. Used to validate the
- * `permissions` array in the user-management payloads below.
+ * One of the nine ORIGINAL portal keys.
+ *
+ * Kept for code that genuinely means that set — the seed groups, the editor's
+ * offline fallback. It is **not** what validates a grant any more: the panel
+ * composes thirteen extensions, each contributing its own permissions, and an
+ * enum here would reject every one of them.
  */
-export const PermissionSchema = z.enum(PORTAL_PERMISSIONS);
+export const PortalPermissionSchema = z.enum(PORTAL_PERMISSIONS);
 
 /**
- * One company membership: the company id + the permissions the account holds
- * within it. A login can carry several. The PHP side hand-duplicates this.
+ * @deprecated Renamed to {@link PortalPermissionSchema}; use
+ * {@link PermissionKeySchema} to validate a grant.
  */
-export const MembershipSchema = z.object({
-  customerId: z.number().int().positive(),
-  permissions: z.array(PermissionSchema).default([]),
-});
+export const PermissionSchema = PortalPermissionSchema;
+
+/**
+ * Any syntactically valid permission key, `resource:action`.
+ *
+ * Validates the SHAPE, not membership of a catalog — the catalog belongs to the
+ * service that enforces it (`GET /admin/permissions` on the composed API). An
+ * unrecognised key grants nothing anywhere, so accepting it stores inert data;
+ * rejecting it silently dropped legitimate grants, which is what actually
+ * happened for a year. Mirrors `Permissions::KEY_PATTERN` in tds-auth-api.
+ */
+export const PermissionKeySchema = z
+  .string()
+  .regex(PERMISSION_KEY_PATTERN, "expected <resource>:<action>");
+
+/**
+ * One company membership: the company id, the permissions held within it, the
+ * groups assigned there, and whether this membership administers the company.
+ *
+ * `companyId` is the field name; `customerId` is accepted as a deprecated alias
+ * for one release so an older client keeps working (see the dual-accept note in
+ * tds-auth-api's AGENTS.md). Exactly one of the two must be present.
+ */
+export const MembershipSchema = z
+  .object({
+    companyId: z.number().int().positive().optional(),
+    /** @deprecated legacy name for `companyId`; removed in the follow-up release. */
+    customerId: z.number().int().positive().optional(),
+    permissions: z.array(PermissionKeySchema).max(MAX_PERMISSION_KEYS).default([]),
+    /** Ids of the groups assigned to this user IN this company. */
+    groupIds: z.array(z.number().int().positive()).default([]),
+    /** Whether this membership may manage the company's own users. */
+    isCompanyAdmin: z.boolean().default(false),
+    /**
+     * The most this membership may ever be granted, `null` = inherit the
+     * company policy. Platform-admin only — a company admin cannot raise it.
+     */
+    permissionCeiling: z.array(PermissionKeySchema).nullish(),
+  })
+  .refine((m) => m.companyId !== undefined || m.customerId !== undefined, {
+    message: "companyId is required",
+  })
+  .transform((m) => ({ ...m, companyId: m.companyId ?? m.customerId! }));
 
 export type MembershipInput = z.infer<typeof MembershipSchema>;
 
@@ -135,7 +181,7 @@ export const UserCreateSchema = z.object({
   /** @deprecated use `memberships` — kept as a single-company fallback. */
   customerId: z.number().int().positive().optional().nullable(),
   /** @deprecated use `memberships`. */
-  permissions: z.array(PermissionSchema).default([]),
+  permissions: z.array(PermissionKeySchema).max(MAX_PERMISSION_KEYS).default([]),
   status: z.enum(["active", "disabled"]).default("active"),
 });
 
@@ -159,7 +205,7 @@ export const UserUpdateSchema = z.object({
   /** @deprecated use `memberships`. */
   customerId: z.number().int().positive().optional().nullable(),
   /** @deprecated use `memberships`. */
-  permissions: z.array(PermissionSchema).optional(),
+  permissions: z.array(PermissionKeySchema).max(MAX_PERMISSION_KEYS).optional(),
   status: z.enum(["active", "disabled"]).optional(),
 });
 

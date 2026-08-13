@@ -7,6 +7,7 @@ import {
   apiFetch,
   apiUrl,
   resetApiBase,
+  setRequestHeadersProvider,
   setUnauthorizedHandler,
 } from "../api";
 
@@ -140,5 +141,77 @@ describe("apiFetch", () => {
       throw new Error("boom");
     });
     await expect(apiFetch("/contact/messages")).resolves.toMatchObject({ status: 401 });
+  });
+});
+
+describe("setRequestHeadersProvider", () => {
+  // The company switcher's transport seam. Its whole reason for existing is
+  // that an extension island cannot reach into the host to add a header.
+  afterEach(() => setRequestHeadersProvider(null));
+
+  it("adds the provider's headers to every call", async () => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    setRequestHeadersProvider(() => ({ "X-Act-As-Company": "7" }));
+
+    await apiFetch("/tickets");
+
+    const init = fetchMock.mock.calls[0]?.[1] as unknown as RequestInit;
+    expect((init.headers as Record<string, string>)["X-Act-As-Company"]).toBe("7");
+    expect(init.credentials).toBe("include");
+  });
+
+  it("lets the CALLER's header win", async () => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    setRequestHeadersProvider(() => ({ "X-Act-As-Company": "7", "X-Keep": "yes" }));
+
+    await apiFetch("/tickets", { headers: { "X-Act-As-Company": "9" } });
+
+    const headers = (fetchMock.mock.calls[0]?.[1] as unknown as RequestInit)
+      .headers as Record<string, string>;
+    expect(headers["X-Act-As-Company"]).toBe("9");
+    expect(headers["X-Keep"]).toBe("yes");
+  });
+
+  it("hands the provider the RESOLVED absolute url", async () => {
+    // Which headers are safe depends on where the call is going: the auth API
+    // allows a narrower set than the composed API, and a disallowed header
+    // fails the preflight — so the request is never sent and the control just
+    // looks dead. The provider cannot make that call without the target.
+    const seen: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, _init?: RequestInit) => new Response("{}", { status: 200 })));
+    setRequestHeadersProvider((url) => {
+      seen.push(url);
+      return {};
+    });
+
+    await apiFetch("/tickets");
+
+    expect(seen[0]).toMatch(/^https?:\/\/.+\/tickets$/);
+  });
+
+  it("survives a throwing provider", async () => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    setRequestHeadersProvider(() => {
+      throw new Error("boom");
+    });
+
+    await expect(apiFetch("/tickets")).resolves.toBeDefined();
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("is a no-op once unregistered", async () => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    setRequestHeadersProvider(() => ({ "X-Act-As-Company": "7" }));
+    setRequestHeadersProvider(null);
+
+    await apiFetch("/tickets");
+
+    const headers = (fetchMock.mock.calls[0]?.[1] as unknown as RequestInit)
+      .headers as Record<string, string>;
+    expect(headers["X-Act-As-Company"]).toBeUndefined();
   });
 });

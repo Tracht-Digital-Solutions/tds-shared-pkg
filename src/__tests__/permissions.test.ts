@@ -4,6 +4,7 @@ import {
   PORTAL_PERMISSION_LABELS,
   PORTAL_ROLE_PRESETS,
   hasPermission,
+  isPermissionKey,
   isPortalPermission,
 } from "../permissions";
 
@@ -50,5 +51,58 @@ describe("hasPermission", () => {
     );
     expect(hasPermission(["invoices:read"], "invoices:pay")).toBe(false);
     expect(hasPermission([], "projects:read")).toBe(false);
+  });
+});
+
+describe("permission key shape", () => {
+  // The rule that replaced the catalog intersection. Hand-duplicated as
+  // `Permissions::KEY_PATTERN` in tds-auth-api — if these drift, a key the
+  // panel accepts is dropped by the API, which is the exact silent data loss
+  // the change was made to end.
+  it("accepts every key the shared seed set defines", () => {
+    for (const key of PORTAL_PERMISSIONS) {
+      expect(isPermissionKey(key), key).toBe(true);
+    }
+  });
+
+  it("accepts the composed extensions' keys", () => {
+    for (const key of ["companies:read", "time:read", "wiki:write", "live-chat:read"]) {
+      expect(isPermissionKey(key), key).toBe(true);
+    }
+  });
+
+  it("rejects anything that is not resource:action", () => {
+    for (const bad of [
+      "invoices",
+      "invoices:",
+      ":read",
+      "Invoices:read",
+      "invoices:Read",
+      "invoices read",
+      "invoices:read:write",
+      "-lead:read",
+      "invoices:-lead",
+      "",
+      "*",
+    ]) {
+      expect(isPermissionKey(bad), `"${bad}" should be rejected`).toBe(false);
+    }
+  });
+
+  it("rejects a wildcard, deliberately", () => {
+    // A `*` would silently grant every FUTURE extension's permission — exactly
+    // the escalation the per-company ceilings exist to prevent.
+    expect(isPermissionKey("*")).toBe(false);
+    expect(isPermissionKey("tickets:*")).toBe(false);
+  });
+
+  it("keeps the seed presets inside the seed set", () => {
+    // The groups migration seeds from these; a key here that no longer exists
+    // would create a group granting nothing.
+    for (const preset of Object.values(PORTAL_ROLE_PRESETS)) {
+      for (const key of preset.permissions) {
+        expect(PORTAL_PERMISSIONS).toContain(key);
+      }
+    }
   });
 });

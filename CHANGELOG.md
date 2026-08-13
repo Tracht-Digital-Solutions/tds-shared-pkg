@@ -6,7 +6,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **A permission key is now validated by SHAPE, not by catalog membership.**
+  `PermissionKeySchema` (`^[a-z0-9][a-z0-9-]{0,31}:[a-z0-9][a-z0-9-]{0,31}$`)
+  replaces the `z.enum(PORTAL_PERMISSIONS)` that guarded the user-management
+  payloads. `PORTAL_PERMISSIONS` was never the catalog the panel actually runs
+  on — thirteen composed extensions each contribute their own keys — and
+  `tds-auth-api` intersected every write **and every read** with those nine, so
+  `companies:read` or `wiki:write` was accepted by the UI, written to the
+  database, and silently dropped again on the way out. The authoritative
+  catalog belongs to the service that enforces it (`GET /admin/permissions`);
+  an unrecognised key grants nothing anywhere (`UserContext::has()` is an exact
+  string match), so the failure mode moves from **silent data loss** to
+  **inert data**. `PermissionSchema` stays as an alias of the new
+  `PortalPermissionSchema` for code that genuinely means the seed set.
+
+  A wildcard is deliberately NOT a valid key: `*` would grant every *future*
+  extension's permission, which is exactly the escalation the per-company
+  ceilings exist to prevent. `MAX_PERMISSION_KEYS` caps a grant at 128 — the
+  resolved set rides in the JWT, which rides in a cookie.
+
+- **`MembershipSchema` speaks `companyId`, carries groups, and knows about
+  company admins.** New fields `groupIds`, `isCompanyAdmin`, `permissionCeiling`;
+  `customerId` is accepted as a deprecated alias and normalised to `companyId`
+  by the schema itself, so an older client keeps working for one release.
+
+- **`PORTAL_ROLE_PRESETS` is `@deprecated`** — superseded by real, persisted
+  groups in `tds-auth-api` (seeded from exactly these four, with matching
+  slugs). They were only ever UI sugar: the editor expanded one into a flat
+  array on click and nothing recorded which preset was used, so editing a
+  "role" later changed nothing for anyone already carrying it.
+
 ### Added
+- **`setRequestHeadersProvider` (`./api`) — the twin of
+  `setUnauthorizedHandler`.** Headers to add to every `apiFetch`, registered by
+  the frontend host's shell. Its first consumer is the company switcher, which
+  has to put `X-Act-As-Company` on every extension call — and an extension
+  cannot reach into the host to do it. Generic headers rather than
+  `setActiveCompany(id)` on purpose: this is a design/i18n/transport library
+  and must not learn what a company is.
+
+  The provider receives the **resolved absolute URL**, because which headers
+  are safe depends on the target: the auth API's CORS allow-list is narrower
+  than the composed API's, and a header it does not allow fails the
+  *preflight* — the request is then never sent and the control simply looks
+  dead. Provider headers sit under the caller's, and a throwing provider is
+  ignored rather than breaking the request.
+
 - **`Avatar`, `.tds-avatar` and `.tds-dropdown*` — the profile menu's parts.**
   The frontend host had no desktop header at all, so nothing in the panel ever
   said who was logged in and `logout()` sat in `lib/auth.ts` imported by

@@ -254,12 +254,35 @@ describe("UserCreateSchema", () => {
     expect(res.success).toBe(true);
   });
 
-  it("rejects an unknown permission key", () => {
+  it("ACCEPTS a well-formed key the shared catalog does not know", () => {
+    // Deliberately reversed. The panel composes thirteen extensions, each
+    // contributing its own permissions (`companies:read`, `time:read`,
+    // `wiki:write`), and an enum here rejected every one of them — which is
+    // how legitimate grants were silently dropped on the way into the
+    // database for a year. Validation is now the SHAPE; the catalog belongs
+    // to the service that enforces it, where an unknown key grants nothing.
     const res = UserCreateSchema.safeParse({
       email: "x@example.de",
-      permissions: ["invoices:delete"],
+      permissions: ["invoices:delete", "companies:read", "wiki:write"],
     });
-    expect(res.success).toBe(false);
+    expect(res.success).toBe(true);
+  });
+
+  it("still rejects a MALFORMED permission key", () => {
+    for (const bad of ["invoices", "Invoices:Read", "invoices:", ":read", "a b:c"]) {
+      expect(
+        UserCreateSchema.safeParse({ email: "x@example.de", permissions: [bad] }).success,
+        `"${bad}" should not parse`,
+      ).toBe(false);
+    }
+  });
+
+  it("caps how many keys one grant may carry", () => {
+    // The resolved set rides in the JWT, which rides in a cookie.
+    const many = Array.from({ length: 200 }, (_, i) => `mod${i}:read`);
+    expect(
+      UserCreateSchema.safeParse({ email: "x@example.de", permissions: many }).success,
+    ).toBe(false);
   });
 
   it("rejects a too-short password", () => {
@@ -312,10 +335,49 @@ describe("UserUpdateSchema", () => {
     ).toBe(false);
   });
 
-  it("rejects a membership with an unknown permission", () => {
+  it("accepts a membership carrying an extension's permission", () => {
     expect(
-      UserUpdateSchema.safeParse({ memberships: [{ customerId: 1, permissions: ["invoices:delete"] }] }).success,
+      UserUpdateSchema.safeParse({
+        memberships: [{ companyId: 1, permissions: ["companies:read"] }],
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects a membership with a malformed permission", () => {
+    expect(
+      UserUpdateSchema.safeParse({ memberships: [{ companyId: 1, permissions: ["nope"] }] })
+        .success,
     ).toBe(false);
+  });
+
+  it("still accepts the legacy customerId and normalises it to companyId", () => {
+    // Dual-accept: an older client keeps working for one release.
+    const res = UserUpdateSchema.safeParse({
+      memberships: [{ customerId: 7, permissions: [] }],
+    });
+    expect(res.success).toBe(true);
+    expect(res.success && res.data.memberships?.[0]?.companyId).toBe(7);
+  });
+
+  it("requires one of companyId / customerId", () => {
+    expect(UserUpdateSchema.safeParse({ memberships: [{ permissions: [] }] }).success).toBe(
+      false,
+    );
+  });
+
+  it("carries the group + company-admin fields through", () => {
+    const res = UserUpdateSchema.safeParse({
+      memberships: [
+        { companyId: 3, groupIds: [1, 2], isCompanyAdmin: true, permissionCeiling: ["a:b"] },
+      ],
+    });
+    expect(res.success).toBe(true);
+    expect(res.success && res.data.memberships?.[0]).toMatchObject({
+      companyId: 3,
+      groupIds: [1, 2],
+      isCompanyAdmin: true,
+      permissionCeiling: ["a:b"],
+    });
   });
 });
 
