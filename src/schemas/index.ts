@@ -148,6 +148,21 @@ export const MembershipSchema = z
      * company policy. Platform-admin only — a company admin cannot raise it.
      */
     permissionCeiling: z.array(PermissionKeySchema).nullish(),
+    /**
+     * Rights withheld from THIS person even where an assigned group grants
+     * them — the per-person override of the group's decision.
+     *
+     * Not the same field as `permissionCeiling`, and the difference is easy to
+     * lose: the ceiling is the platform admin's limit on what a company admin
+     * may ever hand out; this is the ordinary decision about one person, which
+     * a company admin owns. A right can be inside the ceiling and denied; it
+     * cannot be outside the ceiling and granted.
+     *
+     * Unlike the ceiling there is no null/empty distinction — an empty deny
+     * list and no deny list say the same thing — so this defaults to `[]`
+     * rather than being nullish.
+     */
+    permissionDenies: z.array(PermissionKeySchema).max(MAX_PERMISSION_KEYS).default([]),
   })
   .refine((m) => m.companyId !== undefined || m.customerId !== undefined, {
     message: "companyId is required",

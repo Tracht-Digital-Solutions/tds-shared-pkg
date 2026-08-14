@@ -379,6 +379,30 @@ describe("UserUpdateSchema", () => {
       permissionCeiling: ["a:b"],
     });
   });
+
+  it("carries per-person denies through and defaults them to empty", () => {
+    // The override that lets one member of a shared group lose one of its
+    // rights without the group being cloned for them.
+    const withDenies = UserUpdateSchema.safeParse({
+      memberships: [{ companyId: 3, permissionDenies: ["invoices:pay"] }],
+    });
+    expect(withDenies.success && withDenies.data.memberships?.[0]?.permissionDenies).toEqual([
+      "invoices:pay",
+    ]);
+
+    // Absent means "nothing withheld" — there is no third state here, which is
+    // why this defaults to [] while permissionCeiling is nullish.
+    const without = UserUpdateSchema.safeParse({ memberships: [{ companyId: 3 }] });
+    expect(without.success && without.data.memberships?.[0]?.permissionDenies).toEqual([]);
+  });
+
+  it("validates a denied key by the same shape rule as a granted one", () => {
+    expect(
+      UserUpdateSchema.safeParse({
+        memberships: [{ companyId: 3, permissionDenies: ["nope"] }],
+      }).success,
+    ).toBe(false);
+  });
 });
 
 describe("TicketCreateSchema", () => {

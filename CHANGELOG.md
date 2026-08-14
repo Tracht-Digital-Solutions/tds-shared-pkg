@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`MembershipSchema.permissionDenies` — rights withheld from one person even
+  where a group grants them.** The resolution rule in `tds-auth-api` becomes
+  `(direct ∪ groups) minus denies, then ∩ ceiling`. It exists because the
+  alternative, once one member of a shared group must not have one of its
+  rights, is to clone the group for that person — after which the clone stops
+  tracking the original and nobody notices for months.
+
+  It is **not** `permissionCeiling` under another name, and conflating the two
+  is the easy mistake: the ceiling is the platform admin's limit on what a
+  company admin may ever hand out; the denies are the ordinary decision about
+  one person, which a company admin owns. A right can be inside the ceiling and
+  denied; it cannot be outside the ceiling and granted. Unlike the ceiling there
+  is no null/empty distinction — an empty deny list and no deny list say the
+  same thing — so it defaults to `[]` rather than being nullish.
+
 ### Changed
 - **A permission key is now validated by SHAPE, not by catalog membership.**
   `PermissionKeySchema` (`^[a-z0-9][a-z0-9-]{0,31}:[a-z0-9][a-z0-9-]{0,31}$`)
