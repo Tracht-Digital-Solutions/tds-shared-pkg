@@ -128,6 +128,44 @@ import this — they duplicate the small bit of validation they need, by design.
   cascade — a `[data-surface]` layer would never be seen. Colours and fonts
   stay in `@theme inline` (so `text-primary` / `font-display` keep working);
   anything a surface must flip goes in the ordinary `:root` block.
+- **Decoration is a shared layer, not per-app markup ("Digitale
+  Maßarbeit").** Before this existed, every app that wanted a background
+  invented one: the landingpage had a three-blob aurora that spring-followed
+  the cursor and parallaxed on scroll, the About portrait sat on a blurred
+  pink radial, two callouts shared a 135° navy→bordeaux gradient with a glow
+  bleeding out of the corner. None of it was shared, all of it was slightly
+  different, and it read as generic SaaS. Four primitives replace it — see
+  the block at the top of `styles/primitives.css` for the rules they encode:
+  - **`.tds-wash`** — soft brand fields at a section's OUTER edges. On a
+    section, never on `body`: the fields are positioned relative to the
+    element, so on the body they stretch over the whole document and flatten
+    into one tint.
+  - **`.tds-decor`** — the click-through, clipping canvas the shapes live in.
+    Its following siblings get `z-index: 1` automatically, so a call site
+    does not have to remember `relative z-10` on its own content.
+  - **`.tds-shape`** — constructed geometry (capsule, half, quarter, strongly
+    rounded rectangle, diagonal, outline). **The `--quarter-*` suffix names
+    the ROUNDED corner**, and getting it wrong is not subtle: a quarter
+    anchored to a panel's top-right corner must round its BOTTOM-LEFT, or the
+    arc faces off-canvas and what renders is a plain rectangle covering a
+    third of the panel. Only visible in a browser.
+  - **`.tds-circuit`** — the conduit lines. Wraps a decorative
+    `<svg aria-hidden="true">`; animated elements need `pathLength="1"` plus
+    `data-circuit-line` / `data-circuit-node`.
+  - **`.tds-brandbar`** — the three-part bordeaux · coral · gold accent.
+    Deliberately NOT in every section: it is punctuation, and punctuation
+    everywhere is wallpaper.
+  - **`.tds-tone-*`** — the four grounds. The dark ones re-map the page tokens
+    like `.portal-sidebar` does, which is why a `.field` or a hairline inside
+    the landingpage's contact block needs no override.
+
+  Two invariants: **alphas go through the `--tds-decor-*` tokens** (they are
+  what the phone and dark-mode reductions act on — a hard-coded alpha silently
+  opts that layer out), and **decoration never takes a click or a focus**.
+- **Small geometry does not read as geometry.** A 6rem quarter-circle behind
+  the About portrait was tried and removed: it rendered as a stray grey block,
+  because an arc needs enough length to be legible as an arc. If a shape is
+  small, make it a dot or drop it.
 - **Surface layers are scoped to the bare `[data-surface="…"]` attribute,
   never `:root[data-surface="…"]`,** because one surface must nest inside
   another: the blog-CMS markdown preview in the admin panel renders a blog

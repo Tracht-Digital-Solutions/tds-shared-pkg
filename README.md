@@ -220,7 +220,7 @@ then **exactly one** surface layer — and sets the matching `data-surface` on
 | Layer | Holds | Imported by |
 |---|---|---|
 | `styles/base.css` | tokens (`@theme inline` colours/fonts + a plain `:root` geometry scale), dark theme, resets, type primitives, the floating shell components (`.cookie-notice`, `.live-chat-cta`, `.tds-toast*`) | every app |
-| `styles/primitives.css` | cross-surface components — `.btn*`, `.chip*`, `.field`, `.tds-card`, `.tds-page`, `.tds-widget`, `.tds-list`, `.tds-table`, `.tds-alert`, `.tds-modal`, `.tds-thread`, … | every app |
+| `styles/primitives.css` | cross-surface components — `.btn*`, `.chip*`, `.field`, `.tds-card`, `.tds-page`, `.tds-widget`, `.tds-list`, `.tds-table`, `.tds-alert`, `.tds-modal`, `.tds-thread`, … **plus the decoration layer** (`.tds-wash`, `.tds-decor`, `.tds-shape*`, `.tds-circuit`, `.tds-brandbar`, `.tds-tone-*`) | every app |
 | `styles/prose.css` | `.tds-prose` long-form typography | blog + blog-CMS |
 | `styles/app.css` | dashboard chrome (`.portal-sidebar`, `.nav-item*`, `.nav-drawer*`, `.stat-tile*`, `.dashboard-grid`); it `@import`s primitives.css | panel + blog |
 | `styles/surfaces/{marketing,blog,panel}.css` | **custom properties only** — geometry, elevation, motion, display voice | exactly one per app |
@@ -261,6 +261,22 @@ Canonical type stack: **Lato** (display) / **Plus Jakarta Sans** (body) /
 (`--color-success`/`-warning`/`-danger`/`-info`) and categorical wayfinding
 (`--color-cat-*`) — each with light + navy-tinted dark values. Use those rather
 than re-declaring status colours in a frontend.
+
+**Backgrounds and decoration are handled here too ("Digitale Maßarbeit").**
+Do not invent a page background in a frontend. The vocabulary is:
+
+| Class | Use |
+|---|---|
+| `.tds-tone-{paper,sand,white,navy,ink}` | the ground a section sits on; the two dark tones re-map ink/muted/line/card for their children |
+| `.tds-wash` (`--calm`, `--mirror`) | soft brand fields at a section's **outer** edges — put it on the section, never on `body` |
+| `.tds-decor` | the click-through, clipping canvas the shapes live in; its following siblings are lifted above it automatically |
+| `.tds-shape` + `--capsule` / `--half` / `--quarter-{tl,tr,br,bl}` / `--rect` / `--diagonal` / `--outline` + `--navy` / `--bordeaux` / `--coral` / `--gold` | constructed geometry; position and size are the call site's, form and tint are the library's |
+| `.tds-circuit` (`--draw`) | the conduit lines; wraps a decorative `<svg aria-hidden="true">` whose animated parts carry `pathLength="1"` + `data-circuit-line` / `data-circuit-node` |
+| `.tds-brandbar` (`--sm`, `--on-dark`) | the three-part bordeaux · coral · gold accent — punctuation, not wallpaper |
+
+Intensity is one dial: `--tds-decor-field-strength`, turned down on phones and
+in dark mode. Scale an individual shape with `--tds-decor-shape-alpha` /
+`--tds-decor-line-opacity` at the call site rather than writing a raw `rgba()`.
 
 **Mobile is handled here, not per page** (0.18.0). `.tds-table` turns itself
 into a horizontal scroller below 40rem, `.tds-page__head` stacks, interactive

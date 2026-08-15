@@ -1034,13 +1034,369 @@ button.tds-row:focus-visible {
   margin-bottom: 0.25rem;
 }
 
+/* =====================================================================
+   BRAND DECORATION LAYER — "Digitale Maßarbeit"
+   =====================================================================
+
+   Four reusable pieces that together replace the sterile white/black
+   sheets the frontends used to paint, and the aurora-blob gradients the
+   landingpage used to paint over them:
+
+     .tds-wash      soft, wide brand fields at the EDGES of a section
+     .tds-shape     constructed geometry (capsules, quarter circles,
+                    strongly-rounded rectangles) that bleeds off-canvas
+     .tds-circuit   the fine conduit lines with their nodes
+     .tds-brandbar  the three-part bordeaux / coral / gold accent
+
+   THE RULES THESE ENCODE, so a future edit does not quietly undo them:
+
+   1. Decoration NEVER takes a click and never takes focus. Every one of
+      these is `pointer-events: none`, and the SVG a `.tds-circuit`
+      wraps must carry `aria-hidden="true"` at the call site — a
+      decorative graphic announced to a screen reader is worse than no
+      graphic.
+   2. Decoration sits BEHIND content, never over it. `.tds-wash` paints
+      into a `::before` at `z-index: -1` under an `isolation: isolate`,
+      so it layers over the section's own background-color but under
+      everything in the flow, and the isolation stops the -1 escaping to
+      an ancestor's backdrop.
+   3. It is geometry, not organic blobs. Radii here are the pill / hard
+      quarter-circle / large-rectangle family; nothing is a random
+      squashed ellipse, because that is what reads as a generic SaaS
+      gradient.
+   4. It is quiet. Alphas run through `--tds-decor-*` tokens (base.css)
+      which drop on phones and in dark mode; nothing pulses, nothing
+      parallaxes, and the one animation (the conduit build-up) is a
+      one-shot with no reverse. */
+
+/* --- Soft brand fields --------------------------------------------
+   The warm ground. Put it on a SECTION, not on `body`: the fields are
+   positioned relative to the element, so on the body they would stretch
+   over the whole document and read as one flat tint. */
+.tds-wash {
+  position: relative;
+  /* Contains the -1 pseudo-element. Without it the ::before drops behind
+     an ancestor's background instead of the section's own. */
+  isolation: isolate;
+}
+.tds-wash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 8% 38%,
+      rgb(var(--tds-decor-navy) / calc(0.12 * var(--tds-decor-field-strength))),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 92% 62%,
+      rgb(var(--tds-decor-bordeaux) / calc(0.11 * var(--tds-decor-field-strength))),
+      transparent 32%
+    ),
+    /* The third field is placed LOW and off-centre (62% 88%), not at the
+       48% 58% of the original sketch: that position is the middle of a
+       section, i.e. directly under the body copy, and a tint behind a
+       paragraph is the one thing this layer must not do. */
+    radial-gradient(
+      circle at 62% 88%,
+      rgb(var(--tds-decor-coral) / calc(0.09 * var(--tds-decor-field-strength))),
+      transparent 24%
+    );
+}
+/* A single navy field on the left edge — for sections that sit next to a
+   fully washed one and would otherwise read as a second colour event. */
+.tds-wash--calm::before {
+  background: radial-gradient(
+    circle at 4% 30%,
+    rgb(var(--tds-decor-navy) / calc(0.1 * var(--tds-decor-field-strength))),
+    transparent 34%
+  );
+}
+/* The mirrored placement, so two consecutive washed sections do not read
+   as the same image repeated. */
+.tds-wash--mirror::before {
+  background:
+    radial-gradient(
+      circle at 94% 26%,
+      rgb(var(--tds-decor-navy) / calc(0.11 * var(--tds-decor-field-strength))),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 6% 74%,
+      rgb(var(--tds-decor-bordeaux) / calc(0.1 * var(--tds-decor-field-strength))),
+      transparent 32%
+    );
+}
+
+/* --- Decoration canvas --------------------------------------------
+   The absolutely-positioned box a section's shapes and conduits live in.
+   `overflow: hidden` is what lets a shape be authored oversized and
+   deliberately CUT by the section edge ("angeschnittene Formen") without
+   ever producing a horizontal scrollbar. */
+.tds-decor {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+/* Content inside a section that carries a `.tds-decor` needs to sit above
+   it; this saves every call site a `relative z-10`. */
+.tds-decor ~ * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Constructed shapes -------------------------------------------
+   Position + size come from the call site (they are compositional); the
+   FORM and the tint come from here. */
+.tds-shape {
+  position: absolute;
+  pointer-events: none;
+  background: rgb(var(--tds-shape-tint) / var(--tds-decor-shape-alpha));
+  --tds-shape-tint: var(--tds-decor-navy);
+}
+.tds-shape--navy {
+  --tds-shape-tint: var(--tds-decor-navy);
+}
+.tds-shape--bordeaux {
+  --tds-shape-tint: var(--tds-decor-bordeaux);
+}
+.tds-shape--coral {
+  --tds-shape-tint: var(--tds-decor-coral);
+}
+.tds-shape--gold {
+  --tds-shape-tint: var(--tds-decor-gold);
+}
+/* Große Kapsel */
+.tds-shape--capsule {
+  border-radius: var(--tds-radius-pill);
+}
+/* Halb- und Viertelkreise. The quarter is a hard constructed corner —
+   one round edge, three straight — which is the shape that most clearly
+   is NOT a blob.
+
+   THE SUFFIX NAMES THE ROUNDED CORNER, and picking the right one is the
+   whole composition: a quarter anchored to a panel's top-right corner
+   has to round its BOTTOM-LEFT, or the arc faces off-canvas and what
+   actually renders is a plain rectangle covering a third of the panel.
+   That is not a subtle miss — it is the difference between a cut corner
+   and a colour block, and it is only visible in a browser. */
+.tds-shape--half {
+  border-radius: var(--tds-radius-pill) var(--tds-radius-pill) 0 0;
+}
+.tds-shape--quarter-tl {
+  border-radius: 100% 0 0 0;
+}
+.tds-shape--quarter-tr {
+  border-radius: 0 100% 0 0;
+}
+.tds-shape--quarter-br {
+  border-radius: 0 0 100% 0;
+}
+.tds-shape--quarter-bl {
+  border-radius: 0 0 0 100%;
+}
+/* Stark gerundetes Rechteck */
+.tds-shape--rect {
+  border-radius: 2.5rem;
+}
+/* Der diagonale Anschnitt — the one reference to the TDS logomark. A
+   single precise 90°-cut wedge, never a decorative slash across content. */
+.tds-shape--diagonal {
+  background: none;
+  border-right: 1px solid rgb(var(--tds-shape-tint) / 0.35);
+  transform: skewX(-18deg);
+}
+/* Outline instead of fill: the same construction reading as a drawn
+   line. Uses the line opacity, not the fill alpha — a 1px stroke at the
+   fill's alpha is invisible. */
+.tds-shape--outline {
+  background: none;
+  border: 1px solid rgb(var(--tds-shape-tint) / var(--tds-decor-line-opacity));
+}
+
+/* --- Digitale Leitungsbahnen --------------------------------------
+   Wraps an inline, DECORATIVE `<svg aria-hidden="true">` whose paths are
+   authored with rounded 90° corners and whose nodes are `<circle>`s.
+   Stroke colour and node fill both come from `currentColor`, so a call
+   site re-tints the whole run with one `color`. */
+.tds-circuit {
+  position: absolute;
+  pointer-events: none;
+  color: var(--color-primary);
+  opacity: var(--tds-decor-line-opacity);
+}
+.tds-circuit--bordeaux {
+  color: var(--color-accent);
+}
+.tds-circuit--gold {
+  color: var(--color-gold);
+}
+.tds-circuit svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.tds-circuit path,
+.tds-circuit line,
+.tds-circuit polyline {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.tds-circuit circle {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* The build-up. Opt-in under `no-preference` rather than clamped by the
+   reduce block, because the animation's END state is the resting state
+   (the drawn line) — there is nothing to reset, and a clamped 0.01ms
+   version would just be the line appearing, which is what a reduced
+   motion user should get anyway.
+
+   Every animated element must carry `pathLength="1"` in the markup so a
+   dash of 1 is the whole path regardless of its real length. */
+@media (prefers-reduced-motion: no-preference) {
+  .tds-circuit--draw [data-circuit-line] {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: tds-circuit-draw var(--tds-dur-draw) var(--tds-ease-out) forwards;
+  }
+  .tds-circuit--draw [data-circuit-node] {
+    opacity: 0;
+    animation: tds-circuit-node var(--tds-dur-base) var(--tds-ease-out)
+      var(--tds-dur-draw) forwards;
+  }
+  /* Where the browser has scroll-driven animations, the run builds as the
+     section enters instead of firing once on load — which is the only way
+     a conduit six screens down is ever actually seen being drawn. The
+     `@supports` guard is doing real work: without a `view()` timeline the
+     declarations above are already a complete, correct animation. */
+  @supports (animation-timeline: view()) {
+    .tds-circuit--draw [data-circuit-line],
+    .tds-circuit--draw [data-circuit-node] {
+      animation-timeline: view();
+      animation-range: entry 15% cover 45%;
+      animation-delay: 0s;
+    }
+  }
+}
+@keyframes tds-circuit-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes tds-circuit-node {
+  to {
+    opacity: 1;
+  }
+}
+
+/* --- Dreiteiliger Markenakzent ------------------------------------
+   Bordeaux (longest) · coral · gold (shortest), 42 : 20 : 12 with a 6px
+   gap. ONE element, three background layers — a three-span version would
+   put decoration into every call site's markup, and this has to be
+   cheap enough to drop under a heading. Deliberately NOT used in every
+   section: it is a punctuation mark, and punctuation everywhere is
+   wallpaper. */
+.tds-brandbar {
+  display: block;
+  flex: none;
+  width: calc(
+    var(--tds-brandbar-1) + var(--tds-brandbar-2) + var(--tds-brandbar-3) + 2 *
+      var(--tds-brandbar-gap)
+  );
+  height: var(--tds-brandbar-height);
+  border-radius: var(--tds-radius-bar);
+  background-image:
+    linear-gradient(var(--color-accent), var(--color-accent)),
+    linear-gradient(var(--color-accent-pink), var(--color-accent-pink)),
+    linear-gradient(var(--color-gold), var(--color-gold));
+  background-size:
+    var(--tds-brandbar-1) 100%,
+    var(--tds-brandbar-2) 100%,
+    var(--tds-brandbar-3) 100%;
+  background-position:
+    0 0,
+    calc(var(--tds-brandbar-1) + var(--tds-brandbar-gap)) 0,
+    calc(
+        var(--tds-brandbar-1) + var(--tds-brandbar-2) + 2 *
+          var(--tds-brandbar-gap)
+      )
+      0;
+  background-repeat: no-repeat;
+}
+/* Smaller punctuation — under a card heading or in a footer column. */
+.tds-brandbar--sm {
+  --tds-brandbar-height: 3px;
+  --tds-brandbar-1: 28px;
+  --tds-brandbar-2: 14px;
+  --tds-brandbar-3: 8px;
+  --tds-brandbar-gap: 5px;
+}
+/* On a fixed dark surface (contact block, footer) the bordeaux segment
+   sinks into the ground, so the run shifts to its lifted twins. */
+.tds-brandbar--on-dark {
+  background-image:
+    linear-gradient(var(--color-cranberry), var(--color-cranberry)),
+    linear-gradient(var(--color-accent-pink), var(--color-accent-pink)),
+    linear-gradient(#e9b455, #e9b455);
+}
+
+/* --- Section tones -------------------------------------------------
+   The four grounds a page alternates between, so a section says WHICH
+   ground it is rather than each app hand-writing `bg-[var(--color-soft)]`
+   and drifting. The two dark tones re-map the page tokens the way
+   `.portal-sidebar` does, so a shared primitive rendered inside them
+   (a `.field`, a `.tds-card`, a hairline) reads correctly without the
+   call site overriding anything. */
+.tds-tone-paper {
+  background-color: var(--color-paper);
+}
+.tds-tone-sand {
+  background-color: var(--color-soft);
+}
+.tds-tone-white {
+  background-color: var(--color-card);
+}
+.tds-tone-navy,
+.tds-tone-ink {
+  color: #fff;
+  --color-ink: #ffffff;
+  --color-black: #ffffff;
+  --color-muted: rgb(255 255 255 / 0.72);
+  --color-line: rgb(255 255 255 / 0.16);
+  --color-border: rgb(255 255 255 / 0.16);
+  --color-card: rgb(255 255 255 / 0.08);
+  --color-soft: rgb(255 255 255 / 0.06);
+}
+.tds-tone-navy {
+  background-color: var(--color-surface-navy);
+}
+.tds-tone-ink {
+  background-color: var(--color-surface-ink);
+}
+
 /* === Header shell ================================================= */
 
 .brand-header {
   position: sticky;
   top: 0;
   z-index: 30;
-  background: color-mix(in oklab, var(--color-paper) 85%, transparent);
+  /* 92%, not the old 85%: "keine starke Glasoptik". The bar is meant to
+     read as a light floating surface with the page merely SUGGESTED
+     underneath it, not as a smoked-glass slab — at 85% the decoration
+     layer scrolling past was legible through the header and competed
+     with the nav labels. */
+  background: color-mix(in oklab, var(--color-paper) 92%, transparent);
   /* CONTRACT: author `backdrop-filter` UNPREFIXED only — do not add
      `-webkit-backdrop-filter` here. Consuming frontends minify with
      lightningcss, which collapses a hand-authored pair down to the
@@ -1052,9 +1408,12 @@ button.tds-row:focus-visible {
      Without that pin the prefix is never added and the blur breaks in
      Safari <=17. See tds-landingpage commit e328ead and tds-shared#10. */
   backdrop-filter: blur(14px);
-  /* A hue-tinted bottom rule gives the sticky top bar a touch of brand
-     colour without a fill. */
-  border-bottom: 2px solid color-mix(in srgb, var(--color-primary) 30%, var(--color-line));
+  /* A warm hairline rather than the old 2px navy-tinted rule: "sehr
+     dezente warme Kontur", and a 2px band under a translucent bar is the
+     heaviest thing on the page the moment the content behind it is
+     light. The brand colour now enters the header through the active
+     nav item and the wordmark, which is where it means something. */
+  border-bottom: 1px solid color-mix(in srgb, var(--color-primary) 14%, var(--color-line));
 }
 .brand-wordmark {
   font-family: var(--font-display);

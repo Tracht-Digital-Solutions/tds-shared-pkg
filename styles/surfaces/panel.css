@@ -97,10 +97,24 @@
   --tds-panel-accent: var(--color-primary);
 
   /* A tinted canvas, so cards read as objects ON a surface rather than
-     as slightly-different-white patches of the same sheet. 4% keeps it
-     a suggestion; it is still `--color-paper` underneath and it flips
-     with the theme for free. */
-  --tds-panel-canvas: color-mix(in srgb, var(--tds-panel-accent) 4%, var(--color-paper));
+     as slightly-different-white patches of the same sheet. 3% keeps it
+     a suggestion, and the ground it tints is now a paper/sand blend
+     rather than bare paper.
+
+     WHY THE NESTED MIX: at 4% over plain `--color-paper` the accent's
+     blue pulled the canvas slightly COOL, which is the one direction
+     this design must not go — a dashboard is the surface a user stares
+     at for hours, and "Wärme statt steriler Tech-Optik" applies to it
+     more than to any marketing page. Blending 40% of the warm sand back
+     in first restores the warmth without touching the card/canvas
+     contrast the tint exists to create. Both operands are theme tokens,
+     so dark mode still follows for free (there the blend is simply a
+     slightly lifted navy). */
+  --tds-panel-canvas: color-mix(
+    in srgb,
+    var(--tds-panel-accent) 3%,
+    color-mix(in srgb, var(--color-soft) 40%, var(--color-paper))
+  );
 
   /* Ambient glow behind the page content (top-right), the one soft
      gradient in an otherwise flat-tinted UI. */

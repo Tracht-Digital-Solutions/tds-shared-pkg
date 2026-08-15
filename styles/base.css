@@ -40,7 +40,14 @@
   --color-primary: #050f68;
   --color-accent: #820933;
   --color-paper: #fafaf7;
-  --color-line: #e8e6df;
+  /* Warmed one step (#e8e6df → #e3e0d8) with the "Digitale Maßarbeit"
+     pass: hairlines are the single most repeated surface in the library
+     (every card, table row, field and list separator), so a border that
+     reads grey is what made a warm-white page still feel like a cold SaaS
+     sheet. Contrast against paper is unchanged for practical purposes —
+     a 1px line is a graphic, and it sits at 1.10:1 either way, i.e. it is
+     a separator, never an information carrier. */
+  --color-line: #e3e0d8;
   --color-muted: #6b6b66;
   --color-soft: #f1efe8;
   --color-accent-pink: #ff7a9c;
@@ -188,6 +195,24 @@
   /* Management accent — see the light block. NOT `--color-accent`'s
      #ff8fab, which is byte-identical to `--color-cat-rose` above. */
   --color-management: #e8536f;
+
+  /* Decoration in dark mode. The triplets lift to the dark twins of the
+     four brand hues (a #050f68 field over a #070a14 ground is invisible),
+     and the field strength drops: the same alpha that reads as a soft
+     wash on warm white reads as a glow on a dark ground, and a glow is
+     exactly the "kalte Tech-Optik" this pass exists to remove.
+
+     Declared here rather than in a second plain `:root` because
+     `:root[data-theme="dark"]` out-specifies `:root` regardless of
+     source order — this block sits ABOVE the geometry scale in the file
+     and still wins. */
+  --tds-decor-navy: 147 167 255;
+  --tds-decor-bordeaux: 255 143 171;
+  --tds-decor-coral: 255 166 192;
+  --tds-decor-gold: 233 180 85;
+  --tds-decor-field-strength: 0.55;
+  --tds-decor-line-opacity: 0.2;
+  --tds-decor-shape-alpha: 0.06;
 }
 
 /* =====================================================================
@@ -265,6 +290,11 @@
   --tds-dur-spin: 700ms;
   --tds-dur-pulse: 1400ms;
 
+  /* The conduit lines' one-shot build-up. Longer than any response time
+     in the scale on purpose — it is a drawing, not feedback — but it
+     runs ONCE and has no reverse, so it never becomes ambient motion. */
+  --tds-dur-draw: 1200ms;
+
   /* --- Display type -------------------------------------------------
      The landingpage renders `.display` at 700 and the blog at 800; both
      used to fork the class locally. It is a surface token now. */
@@ -291,6 +321,60 @@
      needs no dark value of its own. Prefer `--color-line` in new code;
      do not "clean up" this alias without fixing all 27 sites first. */
   --color-border: var(--color-line);
+
+  /* === Brand palette aliases ("Digitale Maßarbeit") =================
+     Non-semantic names for the two brand hues that only ever existed
+     here under a SEMANTIC name: cranberry was `--color-cat-rose` (a
+     wayfinding hue) and gold was `--color-warning` (an operational
+     state). Decoration reaching for either of those reads as "this is a
+     warning" to the next person editing it, and worse, pins the
+     decoration to a token whose job is to change when the status palette
+     is retuned.
+
+     They are `var()` references in a PLAIN `:root`, not literals in
+     `@theme inline`, for two reasons: a var() alias re-resolves under
+     `:root[data-theme="dark"]` for free (same trick as --color-border
+     above), and nothing generates `bg-gold` utilities from them — the
+     decoration layer consumes them through var() only. */
+  --color-cranberry: var(--color-cat-rose);
+  --color-gold: var(--color-warning);
+
+  /* === Decoration layer ============================================
+     The "Digitale Maßarbeit" background language: soft brand fields,
+     constructed geometric shapes and the fine conduit lines. See the
+     `.tds-wash` / `.tds-shape` / `.tds-circuit` / `.tds-brandbar` block
+     in primitives.css.
+
+     WHY RGB TRIPLETS AND NOT THE COLOUR TOKENS: every one of these is
+     used at a low alpha over an arbitrary background, and
+     `color-mix(… X%, transparent)` is not the same thing as an alpha —
+     it also mixes toward transparent BLACK in some engines' sRGB path,
+     which greys a warm field. `rgb(var(--tds-decor-navy) / 0.12)` is an
+     honest alpha, and keeping the triplet as a token is what lets the
+     dark block below swap the whole decoration to its lifted values in
+     one place.
+
+     `--tds-decor-field-strength` is the single dial for how present the
+     radial fields are; the mobile media query at the foot of this file
+     and the dark block both turn it down. */
+  --tds-decor-navy: 5 15 104;
+  --tds-decor-bordeaux: 130 9 51;
+  --tds-decor-coral: 255 122 156;
+  --tds-decor-gold: 185 121 28;
+  --tds-decor-field-strength: 1;
+  /* Conduit lines are a whisper by design — "nur wenige Linien pro
+     Abschnitt", and they must never compete with body copy. */
+  --tds-decor-line-opacity: 0.16;
+  --tds-decor-shape-alpha: 0.07;
+
+  /* The three-part brand accent (bordeaux : coral : gold ≈ 42 : 20 : 12
+     with a 6px gap). Tokenised so a surface or a single call site can
+     scale it without re-deriving the five background-position values. */
+  --tds-brandbar-height: 4px;
+  --tds-brandbar-gap: 6px;
+  --tds-brandbar-1: 42px;
+  --tds-brandbar-2: 20px;
+  --tds-brandbar-3: 12px;
 
   /* --- Panel surface family ----------------------------------------
      The dashboard chrome (app.css) reads these; only surfaces/panel.css
@@ -337,6 +421,22 @@
   --tds-page-card: var(--color-card);
   --tds-page-line: var(--color-line);
   --tds-page-muted: var(--color-muted);
+}
+
+/* Decoration is turned down on phones. The radial fields are placed at
+   the OUTER EDGES of a wide viewport, where they never come near a line
+   of text; at 375px those same percentage positions land underneath the
+   copy, and the shapes that bleed off a desktop edge cover half a phone.
+   Reducing the dial rather than removing the fields keeps the warmth.
+
+   `:root` inside a media query is (0,1,0) and deliberately does NOT beat
+   `:root[data-theme="dark"]` (0,2,0) — dark mode is already at 0.55, and
+   an even fainter field there would be nothing at all. */
+@media (max-width: 48rem) {
+  :root {
+    --tds-decor-field-strength: 0.55;
+    --tds-decor-shape-alpha: 0.05;
+  }
 }
 
 html {

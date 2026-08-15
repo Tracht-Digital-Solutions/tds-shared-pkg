@@ -7,6 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **The "Digitale Maßarbeit" decoration layer** (`styles/primitives.css`), the
+  shared vocabulary that replaces per-app aurora gradients and blurred glows:
+  - `.tds-wash` (+ `--calm` / `--mirror`) — soft brand fields at a section's
+    OUTER edges, painted into a `z-index:-1` pseudo-element under an
+    `isolation: isolate`.
+  - `.tds-decor` — the click-through, clipping canvas a section's shapes live
+    in, so a shape can be authored oversized and cut by the viewport edge
+    without ever producing horizontal overflow. Its following siblings are
+    lifted to `z-index: 1` automatically.
+  - `.tds-shape` — constructed geometry: `--capsule`, `--half`,
+    `--quarter-{tl,tr,br,bl}`, `--rect`, `--diagonal`, `--outline`, tinted
+    `--navy` / `--bordeaux` / `--coral` / `--gold`. **The quarter suffix names
+    the ROUNDED corner**; picking the wrong one renders a plain rectangle, and
+    that is only visible in a browser.
+  - `.tds-circuit` (+ `--draw`) — the fine conduit lines with rounded 90°
+    corners and nodes. Wraps a decorative `<svg aria-hidden="true">` whose
+    animated elements carry `pathLength="1"` and `data-circuit-line` /
+    `data-circuit-node`. One-shot build-up, gated on `no-preference`, upgraded
+    to a `view()` timeline where the browser has one.
+  - `.tds-brandbar` (+ `--sm`, `--on-dark`) — the three-part bordeaux · coral ·
+    gold accent at 42 : 20 : 12 with a 6px gap, as ONE element with three
+    background layers.
+  - `.tds-tone-{paper,sand,white,navy,ink}` — the four grounds a page
+    alternates between. The two dark tones re-map the page tokens
+    (ink/muted/line/card) the way `.portal-sidebar` does, so a shared
+    primitive rendered inside them reads correctly with no call-site override.
+- **Decoration tokens** in `base.css`: `--tds-decor-{navy,bordeaux,coral,gold}`
+  (rgb triplets, so a low alpha is an honest alpha rather than a `color-mix`
+  toward transparent black), `--tds-decor-field-strength` (one dial, turned
+  down on phones and in dark mode), `--tds-decor-line-opacity`,
+  `--tds-decor-shape-alpha`, the `--tds-brandbar-*` proportions and
+  `--tds-dur-draw`. All have dark twins.
+- **Brand palette aliases** `--color-cranberry` and `--color-gold`. Decoration
+  had to reach for `--color-cat-rose` (a wayfinding hue) and `--color-warning`
+  (an operational state) to get those two colours, which both misreads at the
+  call site and pins decoration to tokens whose job is to change when the
+  status palette is retuned.
+
+### Changed
+- **`--color-line` warmed one step, `#e8e6df` → `#e3e0d8`.** The hairline is the
+  most repeated surface in the library, so a border that reads grey is what
+  kept a warm-white page feeling like a cold SaaS sheet. Contrast is unchanged
+  for practical purposes (a 1px rule is a graphic, ~1.10:1 either way).
+- **The marketing surface dropped from `--tds-shadow-lg` to `--tds-shadow-sm`.**
+  A 32px-blur drop shadow on every card is grey haze on a warm paper ground,
+  and when everything is lifted nothing is. Separation comes from the hairline,
+  the sand/white tone change and the spacing. It is still the only surface with
+  any resting elevation.
+- **The panel canvas is warm.** `--tds-panel-canvas` tints 3% of the accent
+  (was 4%) into a 40 % sand / 60 % paper blend instead of bare paper: at 4%
+  over plain paper the accent's blue pulled the canvas slightly COOL, which is
+  the one direction a surface someone stares at for hours must not go.
+  `[data-surface="panel"] .panel-main` also gained two very soft brand fields
+  at its outer edges, at roughly half the alpha of the marketing `.tds-wash`.
+- **The panel's page-head accent is the three-part bar**, with
+  `--tds-panel-accent` as its first and longest segment — so the management
+  frontend's rule still reads red and the portal's still reads navy while both
+  pick up the brand's coral/gold rhythm. Proportions come from the shared
+  `--tds-brandbar-*` tokens, so this and `.tds-brandbar` cannot drift.
+- **`.brand-header` is paper, not glass.** Fill 85% → 92%, and the 2px
+  navy-tinted bottom rule is a warm hairline: "keine starke Glasoptik, keine
+  ausgeprägten Schatten". The brand colour enters the header through the active
+  nav item and the wordmark, where it means something.
+
+### Added (earlier, unreleased)
 - **`MembershipSchema.permissionDenies` — rights withheld from one person even
   where a group grants them.** The resolution rule in `tds-auth-api` becomes
   `(direct ∪ groups) minus denies, then ∩ ceiling`. It exists because the

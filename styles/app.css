@@ -559,12 +559,34 @@
    radial glow anchored top-right. Cards then sit on it as real objects.
    Before this, page and card were both near-white and the dashboard read
    as one flat sheet. */
+/* The canvas: the accent glow it always had, plus two very soft brand
+   fields pinned to the OUTER edges. The panel used to be a single flat
+   tint with one glow in the corner, which is exactly the sterile
+   product-UI sheet the "Digitale Maßarbeit" pass replaces — but a
+   dashboard is read for hours, so the fields here run at roughly half
+   the alpha of the marketing `.tds-wash` and stay hard against the left
+   and bottom edges, well away from the content column. */
 [data-surface="panel"] .panel-main {
   background:
     radial-gradient(
       60rem 32rem at 100% 0%,
       var(--tds-panel-glow) 0%,
       transparent 70%
+    ),
+    radial-gradient(
+      42rem 30rem at 0% 22%,
+      rgb(var(--tds-decor-navy) / calc(0.06 * var(--tds-decor-field-strength)))
+        0%,
+      transparent 68%
+    ),
+    radial-gradient(
+      38rem 26rem at 88% 100%,
+      rgb(
+          var(--tds-decor-bordeaux) /
+            calc(0.05 * var(--tds-decor-field-strength))
+        )
+        0%,
+      transparent 66%
     ),
     var(--tds-panel-canvas);
 }
@@ -581,15 +603,41 @@
   position: relative;
   padding-top: 0.875rem;
 }
+/* The three-part brand accent, in the panel's own voice. The FIRST (and
+   longest) segment is `--tds-panel-accent`, not the brand bordeaux, so
+   the per-product colour axis survives — the management frontend's rule
+   still reads red and the portal's still reads navy — while segments two
+   and three add the coral/gold rhythm that punctuates the rest of the
+   brand. The proportions are the shared 42 : 20 : 12 tokens, so this and
+   `.tds-brandbar` cannot drift apart. */
 [data-surface="panel"] .tds-page__head::before {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
-  width: 2.5rem;
+  width: calc(
+    var(--tds-brandbar-1) + var(--tds-brandbar-2) + var(--tds-brandbar-3) + 2 *
+      var(--tds-brandbar-gap)
+  );
   height: 3px;
   border-radius: var(--tds-radius-bar);
-  background: var(--tds-panel-accent);
+  background-image:
+    linear-gradient(var(--tds-panel-accent), var(--tds-panel-accent)),
+    linear-gradient(var(--color-accent-pink), var(--color-accent-pink)),
+    linear-gradient(var(--color-gold), var(--color-gold));
+  background-size:
+    var(--tds-brandbar-1) 100%,
+    var(--tds-brandbar-2) 100%,
+    var(--tds-brandbar-3) 100%;
+  background-position:
+    0 0,
+    calc(var(--tds-brandbar-1) + var(--tds-brandbar-gap)) 0,
+    calc(
+        var(--tds-brandbar-1) + var(--tds-brandbar-2) + 2 *
+          var(--tds-brandbar-gap)
+      )
+      0;
+  background-repeat: no-repeat;
 }
 /* Small uppercase kicker above the title, in the accent. Uses the shared
    eyebrow tokens so it tracks the surface's type voice. */

@@ -1082,6 +1082,163 @@ describe("mobile contracts", () => {
   });
 });
 
+/**
+ * The "Digitale Maßarbeit" decoration layer. Every failure guarded here
+ * is invisible in review and silent in the browser: a decoration that
+ * swallows clicks looks like a dead button somewhere else on the page, a
+ * field that never dims on a phone looks like a design choice, and a
+ * conduit animation that ignores reduced motion looks like nothing at
+ * all to the person writing the code.
+ */
+describe("decoration layer", () => {
+  /** Body of the rule that starts exactly at `<selector> {`. */
+  const ruleBody = (css: string, selector: string) => {
+    const start = css.indexOf(`${selector} {`);
+    return start === -1 ? "" : css.slice(start, css.indexOf("}", start));
+  };
+
+  it("declares every decor token in base.css with a dark twin", () => {
+    // A missing token is silent: `rgb(var(--tds-decor-navy) / 0.12)` with
+    // an undefined triplet is an invalid colour, i.e. no field at all.
+    for (const token of [
+      "--tds-decor-navy",
+      "--tds-decor-bordeaux",
+      "--tds-decor-coral",
+      "--tds-decor-gold",
+      "--tds-decor-field-strength",
+      "--tds-decor-line-opacity",
+      "--tds-decor-shape-alpha",
+    ]) {
+      expect(base, `${token} missing from base.css`).toContain(`${token}:`);
+      // The light values are the deep brand hues; on the #070a14 dark
+      // ground a #050f68 field is literally invisible.
+      const dark = base.slice(base.indexOf('[data-theme="dark"]'));
+      expect(dark, `${token} has no dark value`).toContain(`${token}:`);
+    }
+  });
+
+  it("names the brand hues without borrowing a semantic token", () => {
+    // Decoration used to have to reach for --color-warning (an
+    // operational state) to get the gold. Aliasing keeps the decoration
+    // from pinning itself to a token whose job is to change when the
+    // status palette is retuned.
+    expect(base).toMatch(/--color-gold:\s*var\(--color-warning\)/);
+    expect(base).toMatch(/--color-cranberry:\s*var\(--color-cat-rose\)/);
+  });
+
+  it("turns the fields down on phones", () => {
+    // The fields are placed at the edges of a WIDE viewport; at 375px the
+    // same percentages land under the copy.
+    const narrow = base.slice(base.indexOf("@media (max-width: 48rem)"));
+    expect(narrow, "no phone reduction for the decor fields").toMatch(
+      /--tds-decor-field-strength:\s*0?\.\d+/,
+    );
+  });
+
+  it("never lets decoration take a click", () => {
+    for (const sel of [".tds-wash::before", ".tds-decor", ".tds-shape", ".tds-circuit"]) {
+      expect(ruleBody(primitives, sel), `${sel} can swallow clicks`).toMatch(
+        /pointer-events:\s*none/,
+      );
+    }
+  });
+
+  it("keeps the wash behind content and inside its own section", () => {
+    // z-index:-1 without an `isolation: isolate` on the parent escapes to
+    // the nearest ancestor stacking context — i.e. the field disappears
+    // behind the page background instead of sitting on the section's.
+    expect(ruleBody(primitives, ".tds-wash")).toMatch(/isolation:\s*isolate/);
+    expect(ruleBody(primitives, ".tds-wash::before")).toMatch(/z-index:\s*-1/);
+  });
+
+  it("scales every field alpha through the strength dial", () => {
+    // A hard-coded alpha in one of the gradients is how the phone and
+    // dark-mode reductions silently stop applying to that layer.
+    const wash = primitives.slice(
+      primitives.indexOf(".tds-wash::before"),
+      primitives.indexOf(".tds-decor {"),
+    );
+    for (const layer of wash.matchAll(/rgb\(var\(--tds-decor-[a-z]+\)\s*\/([^)]*)\)/g)) {
+      expect(layer[1], `un-dialled alpha: ${layer[0]}`).toContain(
+        "--tds-decor-field-strength",
+      );
+    }
+  });
+
+  it("builds the brand bar from the shared proportion tokens", () => {
+    // 42 : 20 : 12 with a 6px gap, in TWO places — this bar and the
+    // panel's page head (app.css). Restating the five background-position
+    // values in either would let them drift.
+    for (const token of [
+      "--tds-brandbar-height",
+      "--tds-brandbar-gap",
+      "--tds-brandbar-1",
+      "--tds-brandbar-2",
+      "--tds-brandbar-3",
+    ]) {
+      expect(base, `${token} missing from base.css`).toContain(`${token}:`);
+    }
+    const bar = ruleBody(primitives, ".tds-brandbar");
+    expect(bar).toContain("var(--tds-brandbar-1)");
+    expect(bar).toContain("var(--tds-brandbar-gap)");
+    expect(app, "the panel page head re-derives the bar geometry").toContain(
+      "var(--tds-brandbar-1)",
+    );
+  });
+
+  it("keeps the panel's page-head bar on the per-product accent", () => {
+    // The bar's first and longest segment must stay `--tds-panel-accent`
+    // or the management frontend loses the red that says "this session
+    // can administrate" — the one per-product difference in the system.
+    const head = app.slice(
+      app.indexOf('[data-surface="panel"] .tds-page__head::before'),
+      app.indexOf('[data-surface="panel"] .tds-page__eyebrow'),
+    );
+    expect(head).toMatch(
+      /background-image:\s*\n?\s*linear-gradient\(var\(--tds-panel-accent\)/,
+    );
+  });
+
+  it("gates the conduit build-up on no-preference and never loops it", () => {
+    // The end state IS the resting state (a drawn line), so this belongs
+    // under `no-preference` rather than in the reduce clamp — and a
+    // decoration that repeats is the "dauerhaftes Pulsieren" the brief
+    // rules out.
+    expect(primitives).toMatch(
+      /@media \(prefers-reduced-motion: no-preference\) \{\s*\.tds-circuit--draw/,
+    );
+    const draw = primitives.slice(
+      primitives.indexOf(".tds-circuit--draw"),
+      primitives.indexOf("@keyframes tds-circuit-draw"),
+    );
+    expect(draw).not.toMatch(/infinite|alternate/);
+    expect(draw).toContain("forwards");
+  });
+
+  it("re-maps the page tokens inside a dark tone", () => {
+    // Same mechanism as `.portal-sidebar`: without it a `.field` or a
+    // hairline rendered inside the contact block keeps its light-ground
+    // colours and disappears.
+    const tone = primitives.slice(
+      primitives.indexOf(".tds-tone-navy,"),
+      primitives.indexOf(".tds-tone-navy {"),
+    );
+    for (const token of ["--color-ink", "--color-muted", "--color-line", "--color-card"]) {
+      expect(tone, `${token} not re-mapped inside the dark tones`).toContain(
+        `${token}:`,
+      );
+    }
+  });
+
+  it("drops the marketing surface off the large shadow", () => {
+    // A 32px-blur drop shadow on every card is grey haze on a warm paper
+    // ground, and when everything is lifted nothing is.
+    expect(surfaceCss.marketing).toMatch(
+      /--tds-elevation-card:\s*var\(--tds-shadow-sm\)/,
+    );
+  });
+});
+
 describe("profile chrome", () => {
   it("defines the avatar and every categorical fallback tint", () => {
     expect(primitives).toContain(".tds-avatar {");

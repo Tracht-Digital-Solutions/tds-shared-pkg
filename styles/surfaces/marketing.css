@@ -32,10 +32,20 @@
   --tds-radius-chip: var(--tds-radius-pill);
   --tds-radius-input: var(--tds-radius-sm);
 
-  /* Marketing cards are gently rounded and lifted. 6px matches the
-     landingpage's existing `md:rounded-[6px]` teaser/callout cards. */
+  /* Marketing cards are gently rounded and only just lifted. 6px matches
+     the landingpage's existing `md:rounded-[6px]` teaser/callout cards.
+
+     The elevation dropped from `--tds-shadow-lg` to `--tds-shadow-sm`
+     with the "Digitale Maßarbeit" pass. The large shadow was the last
+     piece of the floating-SaaS-card look: on a warm paper ground a
+     32px-blur drop shadow reads as grey haze around every card, which
+     both dirties the warmth and flattens the real hierarchy, because
+     when everything is lifted nothing is. Separation now comes from the
+     1px warm hairline, the sand/white tone change and the spacing —
+     "feine 1-px-Kontur, sehr dezenter oder kein Schatten". This is still
+     the only surface with ANY resting elevation. */
   --tds-radius-card: 6px;
-  --tds-elevation-card: var(--tds-shadow-lg);
+  --tds-elevation-card: var(--tds-shadow-sm);
 
   /* Display voice: 700. */
   --tds-weight-display: 700;
