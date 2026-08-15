@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Checkboxes and radios take the brand accent** (`accent-color:
+  var(--tds-panel-accent)`). They were the last unbranded control in the
+  system: every settings form in the panel — dozens across thirteen extensions
+  — drew the operating system's blue tick next to carefully styled `.field`
+  inputs. `accent-color` rather than `appearance: none` on purpose:
+  re-implementing the control means re-implementing its indeterminate state,
+  focus ring, disabled rendering and high-contrast behaviour in a library
+  thirteen repos consume blind. This tints the native control and changes
+  nothing else — no layout risk, no size change, no markup at any call site.
+  Visible when a box is *checked*; an unchecked box is unchanged.
+
 ### Added
 - **`--tds-right-lane` — the bottom-RIGHT corner's occupancy, published by
   `LiveChatCta`.** The widget measures its closed launcher and publishes the

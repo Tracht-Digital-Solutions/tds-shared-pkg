@@ -526,6 +526,27 @@ body {
   outline-offset: 4px;
 }
 
+/* Checkboxes and radios were the last unbranded control in the system: every
+   settings form in the panel — and there are dozens across the thirteen
+   extensions — rendered the operating system's blue tick next to carefully
+   styled `.field` inputs.
+
+   `accent-color` rather than `appearance: none` + a hand-drawn box, and that
+   is a deliberate limit: re-implementing the control means re-implementing its
+   indeterminate state, its focus ring, its disabled rendering and its
+   high-contrast-mode behaviour, in a library thirteen repos consume blind.
+   This tints the native control and changes nothing else — no layout risk, no
+   size change, no new markup at any call site.
+
+   It follows `--tds-panel-accent` (declared in the `:root` scale below as
+   `--color-primary`, so it resolves to the brand navy on the marketing and
+   blog surfaces too) — which means a tick in the management frontend is
+   burgundy, matching the surface it sits on. */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--tds-panel-accent);
+}
+
 /* === Theme switch animation ======================================= */
 
 /* Circular-reveal theme switch (see the shared ThemeToggle component).
