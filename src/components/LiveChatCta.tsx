@@ -102,6 +102,7 @@ export default function LiveChatCta({ frontend, apiBase, lang = "de" }: LiveChat
   const [hidden, setHidden] = useState(true); // hidden until we know it's enabled
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<TabKey>("chat");
+  const launcherRef = useRef<HTMLDivElement | null>(null);
 
   // Omitting `apiBase` used to mean same-origin, which was silently wrong on
   // the one surface that omits it: the panel is a static site on its own host,
@@ -140,6 +141,54 @@ export default function LiveChatCta({ frontend, apiBase, lang = "de" }: LiveChat
     };
   }, [api, frontend, lang]);
 
+  /**
+   * Publish the vertical space this widget occupies in the BOTTOM-RIGHT corner,
+   * so a host page's own fixed chrome can stack above it instead of underneath
+   * it. Same mechanism as the cookie notice's `--tds-bottom-lane` (see
+   * CookieNotice.tsx) — measured rather than guessed, because the launcher's
+   * height follows its admin-configured label and the font that renders it.
+   *
+   * WHY THIS EXISTS: the widget is `position: fixed; right: 1.25rem; bottom:
+   * 1.25rem; z-index: 95`, and the landingpage's own "book a call" control sits
+   * in exactly that corner at `z-index: 35`. With the widget switched on for a
+   * frontend, it covered that control completely — two persistent CTAs in one
+   * corner, one of them invisible. It is not visible today only because the
+   * widget renders nothing until an admin enables it per frontend.
+   *
+   * ONLY WHILE CLOSED. An open panel is up to 34rem tall and already owns the
+   * corner; lifting a host's CTA above it would park that CTA in the middle of
+   * the screen. Open, the panel simply covers it — that is a panel the user
+   * deliberately opened, not a competing call to action.
+   *
+   * Cleared on unmount, on hide and on open, so the lane exists only while
+   * something is actually in it. A stale lane would push a host's chrome up
+   * the page forever, which is the failure mode that makes this worth a test.
+   */
+  useEffect(() => {
+    const el = launcherRef.current;
+    const root = typeof document === "undefined" ? null : document.documentElement;
+    if (!root) return;
+    if (!el || open || hidden || !config) {
+      root.style.removeProperty("--tds-right-lane");
+      return;
+    }
+    const publish = () => {
+      root.style.setProperty(
+        "--tds-right-lane",
+        `${Math.ceil(el.getBoundingClientRect().height)}px`,
+      );
+    };
+    publish();
+    const ro = typeof ResizeObserver === "function" ? new ResizeObserver(publish) : null;
+    ro?.observe(el);
+    window.addEventListener("resize", publish);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", publish);
+      root.style.removeProperty("--tds-right-lane");
+    };
+  }, [config, hidden, open]);
+
   const hide = () => {
     setHidden(true);
     setOpen(false);
@@ -159,7 +208,11 @@ export default function LiveChatCta({ frontend, apiBase, lang = "de" }: LiveChat
 
   if (!open) {
     return (
-      <div className="live-chat-cta live-chat-cta--closed" style={{ "--lc-accent": accent } as CSSProperties}>
+      <div
+        ref={launcherRef}
+        className="live-chat-cta live-chat-cta--closed"
+        style={{ "--lc-accent": accent } as CSSProperties}
+      >
         <button type="button" className="live-chat-cta__launcher" onClick={() => setOpen(true)}>
           <span className="live-chat-cta__launcher-icon" aria-hidden="true">💬</span>
           <span className="live-chat-cta__launcher-label">{config.cta.label}</span>

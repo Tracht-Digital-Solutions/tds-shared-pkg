@@ -984,10 +984,19 @@ body {
 .live-chat-cta {
   position: fixed;
   right: 1.25rem;
-  /* Clear the home indicator / gesture bar on a notched phone. `env()`
-     resolves to 0px everywhere else, so this is the plain 1.25rem on a
-     desktop. */
-  bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  /* Two offsets, then the home indicator:
+     - `--tds-bottom-lane` is the height of whatever else currently occupies the
+       bottom of the viewport — today the cookie notice, which measures itself
+       and publishes it. That notice spans the FULL width on a phone
+       (`inset-inline: 1rem`), so without this the launcher sat on top of it;
+       the toast stack has always read the lane and this element never did.
+     - `env(safe-area-inset-bottom)` clears the gesture bar on a notched phone
+       and resolves to 0px everywhere else.
+     The lane is named FIRST inside the calc on purpose — design.test.ts matches
+     `bottom:\s*calc\([^)]*--tds-bottom-lane`, and an `env()` ahead of it would
+     put a `)` inside that span and fail the assertion for a reason that looks
+     nothing like the change being made. */
+  bottom: calc(var(--tds-bottom-lane, 0px) + 1.25rem + env(safe-area-inset-bottom, 0px));
   z-index: 95;
   font-family: var(--font-body);
   --lc-accent: var(--color-surface-navy);

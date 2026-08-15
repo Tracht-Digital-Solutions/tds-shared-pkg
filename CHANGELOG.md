@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **`--tds-right-lane` — the bottom-RIGHT corner's occupancy, published by
+  `LiveChatCta`.** The widget measures its closed launcher and publishes the
+  height on `document.documentElement`, so a host page's own fixed chrome can
+  stack above it. Same mechanism as the cookie notice's `--tds-bottom-lane`,
+  and the same discipline: cleared on unmount, on hide and on open, because a
+  stale lane pushes a host's chrome up the page forever with nothing pointing
+  back here.
+
+  It exists because the landingpage's "book a call" control is fixed in exactly
+  that corner at `z-index: 35`, twelve layers under the launcher — with the
+  widget enabled for that frontend it covered the control completely. Not
+  visible today only because the widget renders nothing until an admin turns it
+  on per frontend.
+
+  Published only while the launcher is CLOSED. An open panel is up to 34rem
+  tall and already owns the corner; lifting a host's CTA above that would park
+  it mid-screen. Open, the panel simply covers it — that is a panel the user
+  deliberately opened, not a competing call to action.
+
+### Fixed
+- **`.live-chat-cta` now reads `--tds-bottom-lane`.** The cookie notice spans
+  the FULL width on a phone (`inset-inline: 1rem`), so it occupies the
+  launcher's corner as much as the toast stack's. The toast stack has read the
+  lane since it existed; the launcher never did and sat on top of the notice at
+  every narrow width.
+
+### Added
 - **The "Digitale Maßarbeit" decoration layer** (`styles/primitives.css`), the
   shared vocabulary that replaces per-app aurora gradients and blurred glows:
   - `.tds-wash` (+ `--calm` / `--mirror`) — soft brand fields at a section's

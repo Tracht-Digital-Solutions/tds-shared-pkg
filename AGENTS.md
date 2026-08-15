@@ -367,12 +367,26 @@ import this — they duplicate the small bit of validation they need, by design.
   `apiUrl()` leaves already-absolute URLs alone, so wrapping a call site is
   idempotent. `apiBase()` **memoises** after its first DOM read — a test that
   swaps the document must call `resetApiBase()`.
-  **Fixed bottom chrome shares one lane.** Anything pinned to the bottom of the
-  viewport publishes its height as `--tds-bottom-lane` (CookieNotice measures
-  itself with a ResizeObserver) and anything else pinned there adds it to its
-  own `bottom`. Do not hard-code an offset instead: the notice is one line wide
-  and four narrow, so a literal is wrong on one of them — it shipped on top of
-  the notice on BOTH until a browser test caught it.
+  **Fixed bottom chrome shares TWO lanes.** Anything pinned to the bottom of
+  the viewport publishes its measured height and anything else pinned there
+  adds it to its own `bottom`. Do not hard-code an offset instead: the notice
+  is one line wide and four narrow, so a literal is wrong on one of them — it
+  shipped on top of the notice on BOTH until a browser test caught it.
+  - **`--tds-bottom-lane`** — full-width chrome. Published by `CookieNotice`
+    (ResizeObserver), read by `.tds-toast-host` **and `.live-chat-cta`**. The
+    launcher was the one that did not read it, and the notice spans the whole
+    width on a phone, so the two overlapped at every narrow width.
+  - **`--tds-right-lane`** — the bottom-RIGHT corner. Published by
+    `LiveChatCta` from its CLOSED launcher, read today by the landingpage's
+    `.floating-cta-group`. That control sits in the same corner at `z-index:
+    35` against the launcher's 95, i.e. it was covered outright wherever the
+    widget is switched on.
+
+  **The publisher must CLEAR its lane** — on unmount, and on any state where it
+  stops occupying the space (`LiveChatCta` clears on hide and on open). A lane
+  left standing pushes unrelated chrome up the page forever, and nothing about
+  that symptom points back at the component that caused it. `design.test.ts`
+  asserts both `setProperty` and `removeProperty` are present.
 - **Reach for the generic layout primitives before inventing a name.**
   `.tds-stack` (+`--tight`/`--loose`) for a vertical stack, `.tds-row`
   (+`--between`) for a wrapping horizontal row, `.tds-compose` (+`__actions`) for

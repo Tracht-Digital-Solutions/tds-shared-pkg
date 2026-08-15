@@ -247,6 +247,75 @@ describe("the hide control", () => {
   });
 });
 
+/**
+ * The widget is `position: fixed` in the bottom-right corner at `z-index: 95`.
+ * The landingpage's own "book a call" control is fixed in the SAME corner at
+ * `z-index: 35`, so with the widget enabled for that frontend it covered the
+ * control completely — two persistent CTAs, one of them invisible. The lane is
+ * how a host page stacks its chrome above the launcher instead; it is the same
+ * mechanism the cookie notice uses for the toast stack.
+ */
+describe("the bottom-right lane", () => {
+  const lane = () => document.documentElement.style.getPropertyValue("--tds-right-lane");
+
+  /** jsdom lays nothing out, so every rect is 0×0 — give the launcher a height. */
+  const withMeasuredHeight = (px: number) => {
+    const original = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function () {
+      return { ...original.call(this), height: px } as DOMRect;
+    };
+    return () => {
+      Element.prototype.getBoundingClientRect = original;
+    };
+  };
+
+  it("publishes the launcher's measured height while closed", async () => {
+    const restore = withMeasuredHeight(56);
+    try {
+      await mount();
+      await screen.findByRole("button", { name: /Fragen\? Schreib uns/ });
+      await waitFor(() => expect(lane()).toBe("56px"));
+    } finally {
+      restore();
+    }
+  });
+
+  it("clears the lane when the widget is hidden", async () => {
+    // A lane left standing after the widget is gone pushes the host's own
+    // chrome up the page forever, with nothing pointing back at this component.
+    const restore = withMeasuredHeight(56);
+    try {
+      const u = await mount();
+      await screen.findByRole("button", { name: /Fragen\? Schreib uns/ });
+      await waitFor(() => expect(lane()).toBe("56px"));
+      await u.click(screen.getByRole("button", { name: "Ausblenden" }));
+      await waitFor(() => expect(lane()).toBe(""));
+    } finally {
+      restore();
+    }
+  });
+
+  it("clears the lane while the panel is open", async () => {
+    // An open panel is up to 34rem tall and already owns the corner. Lifting a
+    // host's CTA above THAT would park it in the middle of the screen; the
+    // panel simply covers it instead.
+    const restore = withMeasuredHeight(56);
+    try {
+      await open();
+      await waitFor(() => expect(lane()).toBe(""));
+    } finally {
+      restore();
+    }
+  });
+
+  it("never publishes a lane while the backend keeps it disabled", async () => {
+    respond(/config\?/, { ...CONFIG, enabled: false });
+    await mount();
+    await waitFor(() => expect(calls.length).toBeGreaterThan(0));
+    expect(lane()).toBe("");
+  });
+});
+
 describe("the panel", () => {
   it("opens on the launcher and closes again", async () => {
     const u = await open();

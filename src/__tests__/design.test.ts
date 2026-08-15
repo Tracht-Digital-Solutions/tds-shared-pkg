@@ -1030,6 +1030,35 @@ describe("mobile contracts", () => {
     }
   });
 
+  it("keeps every corner-anchored element out of the cookie notice's lane", () => {
+    // The notice spans the FULL width on a phone (`inset-inline: 1rem`), so it
+    // occupies the chat launcher's bottom-RIGHT corner as much as the toast
+    // stack's bottom-left one. The toast stack has read `--tds-bottom-lane`
+    // since the lane existed; the launcher never did and sat on top of the
+    // notice at every narrow width. Nothing reports that — the launcher is
+    // opaque, so it just looks like a notice with a bite taken out of it.
+    for (const sel of [".tds-toast-host", ".live-chat-cta"]) {
+      expect(ruleBody(base, sel), `${sel} ignores --tds-bottom-lane`).toMatch(
+        /bottom:\s*calc\([^)]*--tds-bottom-lane/,
+      );
+    }
+  });
+
+  it("publishes AND clears the right-hand lane in LiveChatCta", () => {
+    // The widget publishes the space it occupies in the bottom-right corner so
+    // a host's own fixed chrome can stack above it (the landingpage's "book a
+    // call" control sits in exactly that corner, two z-index layers below).
+    // `removeProperty` is the half that matters: a lane left standing after the
+    // widget is hidden pushes that host chrome up the page forever, and there
+    // is no symptom pointing back here.
+    const src = readFileSync(
+      join(__dirname, "..", "components", "LiveChatCta.tsx"),
+      "utf8",
+    );
+    expect(src).toMatch(/setProperty\(\s*\n?\s*"--tds-right-lane"/);
+    expect(src).toMatch(/removeProperty\("--tds-right-lane"\)/);
+  });
+
   it("names the bottom lane before env() in the toast offset", () => {
     // Not style policing: design.test.ts matches `calc([^)]*--tds-bottom-lane`,
     // so an `env()` placed first puts a `)` in that span and fails the lane
