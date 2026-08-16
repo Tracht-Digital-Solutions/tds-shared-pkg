@@ -547,9 +547,79 @@ src/
 │                             #   surfaces show people)
 └── astro/                    # build presets (cssTarget / tdsViteBuild) +
                               #   themeBootstrapScript (the no-flash <head> script)
+install/                      # host-side setup wizard for the PUBLIC sites —
+├── install.php               #   PHP, shipped verbatim, never built. See below.
+├── proxy.php
+└── profiles/{landingpage,blog,tools}.php
 ```
 
 `src/__tests__/` holds the vitest suite (`npm run test` / `test:run`).
+
+## `install/` — the host-side setup wizard
+
+**This is PHP inside an npm package, and that is deliberate.** The three public
+sites (`tds-landingpage-frontend`, `tds-blog-frontend`, `tds-tools-frontend`)
+already depend on this package, so shipping the wizard here gives all three one
+source instead of three copies that drift — the lesson the gateway's three `.env`
+writers taught the hard way. Nothing here is compiled or exported; `install` is
+listed in `package.json` `files` so npm publishes it, and each site's
+`prebuild` step (`scripts/sync-installer.mjs`) copies `install.php`, `proxy.php`
+and its own profile into `public/_setup/`. Astro copies `public/` into `dist/`,
+the build workflow pushes `dist/` to the `release` branch, Plesk pulls it.
+
+**Why the sites need it at all.** They are static: Vite inlines every `PUBLIC_*`
+at build time, so a deployed `dist/` cannot be re-pointed at another API without
+a CI rebuild — and a site that cannot reach the API fails *silently*, because
+every content fetch is fail-soft by design and simply renders the baked
+fallbacks. The wizard verifies the connection with real assertions ("12 Blöcke",
+not "HTTP 200"), runs a CORS preflight per origin, and writes
+`tds-runtime.json`, which `src/api/` prefers over the baked value.
+
+Four things to keep true when touching it:
+
+- **It is admin-gated, not lock-gated.** The gateway's installer guards itself
+  with "not yet installed" plus a self-delete button. Neither works here: these
+  domains are public and indexable, and the file is part of `dist/`, so the next
+  release restores it. Step 2 therefore authenticates against `tds-auth-api` and
+  requires `isAdmin`, with an on-disk attempt limiter. The lock file only
+  demotes the wizard to read-only diagnosis.
+- **The proxy's allowlist is its security boundary.** `[method, pattern]` pairs
+  from the profile, anchored at both ends, never a prefix match — a proxy that
+  forwarded `/admin/*` would be an open door into the management API from the
+  marketing site. `installer.test.ts` asserts every pattern is anchored and that
+  none matches `/admin/*`, `/me`, `/tools/registry` or the Stripe webhook.
+- **Secrets never land in a web-readable `.env`.** Verified against a real
+  server: a `.env` under the docroot is served as plain text, a `.php` answers
+  with zero bytes. The wizard writes outside the docroot when it can, and falls
+  back to a `.php` whose first line is `<?php exit; ?>` when it cannot. Both
+  readers skip that line because it has no `=`.
+- **Three writers, one contract.** `install.php` builds the values,
+  `profiles/*.php` choose which a site gets, `src/api/index.ts` reads them back.
+  `src/__tests__/installer.test.ts` compares all three. Without it, a profile
+  saying `contactURL` instead of `contactUrl` produces valid JSON, a green
+  build, and a form that quietly ignores everything the operator configured.
+
+## `src/api/` — runtime config
+
+`apiBase()` resolves in this order: **`tds-runtime.json`** (written by the
+wizard) → `<meta name="tds-api-base">` → `import.meta.env.PUBLIC_API_BASE` →
+`DEFAULT_API_BASE`. `apiFetch` awaits `runtimeConfig()` before resolving a URL,
+so every existing call site follows a reconfigured host without being edited.
+
+- **A missing or broken file is not an error.** 404, HTML from the SPA fallback,
+  malformed JSON, offline, a timeout — all resolve to `null` and the caller keeps
+  its build-time value. A site nobody ran the installer on behaves exactly as it
+  did before this existed.
+- **The meta tag short-circuits the lookup.** Its presence means "a product
+  build that already knows its API" (the host shell writes it), so the admin
+  panel and customer portal never request a file only the public sites have.
+- **The request has a 3s deadline.** Everything downstream waits on this promise;
+  a hung request for a static file would otherwise leave the tools access gate
+  spinning forever. That is not hypothetical — it is exactly how the `ToolGate`
+  suite failed when the timeout was missing.
+- **`primeRuntimeConfig(null)` in a test's `beforeEach`** keeps assertions about
+  the one request the test is making. Any suite that mocks `fetch` and inspects
+  `mock.calls[0]` needs it.
 
 ## Publishing
 

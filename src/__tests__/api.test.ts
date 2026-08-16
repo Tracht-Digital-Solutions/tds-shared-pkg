@@ -3,10 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   API_BASE_META,
   DEFAULT_API_BASE,
+  RUNTIME_CONFIG_PATH,
+  RUNTIME_KEYS,
   apiBase,
   apiFetch,
   apiUrl,
+  primeRuntimeConfig,
   resetApiBase,
+  resetRuntimeConfig,
+  runtimeConfig,
+  runtimeConfigSync,
+  runtimeSetting,
   setRequestHeadersProvider,
   setUnauthorizedHandler,
 } from "../api";
@@ -24,11 +31,16 @@ beforeEach(() => {
   resetApiBase();
   setUnauthorizedHandler(null);
   document.head.innerHTML = "";
+  // apiFetch consults the host-side runtime config before resolving its URL.
+  // Priming it to "absent" keeps every assertion below about the ONE request
+  // the test is actually making; the runtime config has its own describe block.
+  primeRuntimeConfig(null);
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
   resetApiBase();
+  resetRuntimeConfig();
   setUnauthorizedHandler(null);
 });
 
@@ -213,5 +225,134 @@ describe("setRequestHeadersProvider", () => {
     const headers = (fetchMock.mock.calls[0]?.[1] as unknown as RequestInit)
       .headers as Record<string, string>;
     expect(headers["X-Act-As-Company"]).toBeUndefined();
+  });
+});
+
+describe("runtimeConfig", () => {
+  const jsonResponse = (body: unknown, status = 200) =>
+    new Response(typeof body === "string" ? body : JSON.stringify(body), {
+      status,
+      headers: { "Content-Type": "application/json" },
+    });
+
+  beforeEach(() => {
+    // The suite-wide beforeEach primes it to "absent"; these tests are about
+    // the discovery itself, so they start from a clean slate.
+    resetRuntimeConfig();
+    resetApiBase();
+  });
+
+  it("reads the file the host installer writes and takes over the api base", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(jsonResponse({ version: 1, site: "blog", mode: "proxy", apiBase: "/api" }));
+
+    const config = await runtimeConfig();
+
+    expect(fetchMock).toHaveBeenCalledWith(RUNTIME_CONFIG_PATH, expect.anything());
+    expect(config?.mode).toBe("proxy");
+    expect(apiBase()).toBe("/api");
+    expect(apiUrl("/contact")).toBe("/api/contact");
+  });
+
+  it("falls back to the baked build value when the file is missing", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("", { status: 404 }));
+
+    expect(await runtimeConfig()).toBeNull();
+    expect(apiBase()).toBe(DEFAULT_API_BASE);
+  });
+
+  it("ignores the SPA fallback, which answers 200 with HTML", async () => {
+    // The static host answers unknown paths with index.html and HTTP 200, so
+    // res.ok proves nothing. Treating that page as config would repoint every
+    // call at a parse error.
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("<!doctype html><html></html>", {
+        status: 200,
+        headers: { "Content-Type": "text/html" },
+      }),
+    );
+
+    expect(await runtimeConfig()).toBeNull();
+    expect(apiBase()).toBe(DEFAULT_API_BASE);
+  });
+
+  it("survives malformed JSON rather than breaking every call on the page", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse("{ not json", 200));
+
+    expect(await runtimeConfig()).toBeNull();
+    expect(apiBase()).toBe(DEFAULT_API_BASE);
+  });
+
+  it("survives a rejected request", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("offline"));
+    expect(await runtimeConfig()).toBeNull();
+  });
+
+  it("does not look for the file when the page declares a meta base", async () => {
+    // The frontend host's shell writes that tag. Without this the admin panel
+    // and the customer portal would 404 on every navigation for a file only
+    // the public sites ever have.
+    const meta = document.createElement("meta");
+    meta.setAttribute("name", API_BASE_META);
+    meta.setAttribute("content", "https://api.example.test");
+    document.head.appendChild(meta);
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse({}));
+
+    expect(await runtimeConfig()).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("fetches exactly once however many callers ask", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(jsonResponse({ version: 1, site: "tools", mode: "direct" }));
+
+    await Promise.all([runtimeConfig(), runtimeConfig(), runtimeConfig()]);
+    await runtimeConfig();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("exposes what is already resolved without waiting", async () => {
+    expect(runtimeConfigSync()).toBeNull();
+    primeRuntimeConfig({ version: 1, site: "blog", mode: "direct", contactUrl: "/api/contact" });
+    expect(runtimeConfigSync()?.contactUrl).toBe("/api/contact");
+  });
+
+  it("runtimeSetting prefers the configured value and falls back otherwise", async () => {
+    primeRuntimeConfig({ version: 1, site: "blog", mode: "direct", contactUrl: "/api/contact" });
+    expect(await runtimeSetting("contactUrl", "https://baked.test/contact")).toBe("/api/contact");
+    expect(await runtimeSetting("loginUrl", "https://baked.test/login")).toBe(
+      "https://baked.test/login",
+    );
+  });
+
+  it("treats an empty configured value as absent", async () => {
+    // An installer writing a key it has no value for must not blank the call
+    // site — the build-time default is still better than "".
+    primeRuntimeConfig({ version: 1, site: "blog", mode: "direct", contactUrl: "" });
+    expect(await runtimeSetting("contactUrl", "https://baked.test/contact")).toBe(
+      "https://baked.test/contact",
+    );
+  });
+
+  it("apiFetch follows the runtime config with no call-site change", async () => {
+    primeRuntimeConfig({ version: 1, site: "blog", mode: "proxy", apiBase: "/api" });
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse({}));
+
+    await apiFetch("/contact");
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/contact", expect.objectContaining({
+      credentials: "include",
+    }));
+  });
+
+  it("RUNTIME_KEYS covers every optional key of the type", () => {
+    // The PHP profiles pick from this list; installer.test.ts asserts the two
+    // agree. Pinning the list itself keeps that comparison meaningful.
+    expect([...RUNTIME_KEYS].sort()).toEqual(
+      ["apiBase", "authBase", "contactUrl", "liveChatFrontend", "loginUrl"].sort(),
+    );
   });
 });

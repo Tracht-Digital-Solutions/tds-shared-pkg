@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Language } from "../i18n/translations";
-import { apiUrl } from "../api";
+import { apiFetch } from "../api";
 
 /**
  * Floating bottom-right support widget (the "Live-Chat-CTA"). A launcher bubble
@@ -107,11 +107,15 @@ export default function LiveChatCta({ frontend, apiBase, lang = "de" }: LiveChat
   // Omitting `apiBase` used to mean same-origin, which was silently wrong on
   // the one surface that omits it: the panel is a static site on its own host,
   // so every widget call went to `management.tracht-digital.de` and came back
-  // as the SPA fallback HTML with a 200. Unset now means "resolve it" — the
-  // public sites keep passing their own origin and are unaffected.
+  // as the SPA fallback HTML with a 200. Unset now means "resolve it" — through
+  // `apiFetch`, so a host reconfigured with `/_setup/install.php` is followed
+  // too. An explicit `apiBase` still wins and skips that resolution entirely,
+  // which is what keeps a caller that really does mean one fixed origin honest.
   const api = useCallback(
     (path: string, init?: RequestInit) =>
-      fetch(apiBase ? `${apiBase}${path}` : apiUrl(path), { credentials: "include", ...init }),
+      apiBase
+        ? fetch(`${apiBase}${path}`, { credentials: "include", ...init })
+        : apiFetch(path, init),
     [apiBase],
   );
 
