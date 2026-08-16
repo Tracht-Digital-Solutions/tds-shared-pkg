@@ -261,6 +261,25 @@
   --tds-radius-alert: 0.5rem; /* .form-alert     was 0.5rem  */
   --tds-radius-bar: var(--tds-radius-xs); /* .tds-menu-bar   was 2px     */
 
+  /* --- Outline width -------------------------------------------------
+     The width of the 1px hairline that primitives draw AROUND themselves
+     — cards, widgets, chips, status pills, boxed fields, buttons. A
+     surface sets this to `0` to become borderless, which is a decision
+     only a surface layer can express: those rules hard-wired
+     `border: 1px solid var(--color-line)`, so "no outline here" used to
+     mean overriding the component in the app, which is exactly what the
+     geometry split exists to prevent.
+
+     SCOPE — outlines only, never a SEPARATOR. `.hairline*`, `.rule`,
+     `.tds-list__row`, `.tds-table` and `.tds-toggle-row` draw a line
+     BETWEEN two things and keep their literal 1px: a borderless surface
+     still needs its table rows told apart. Same for the semantic
+     `.form-alert`/`.tds-alert` outline, the dashed `.tds-empty` and the
+     decoration shapes, which are graphics rather than chrome.
+
+     Default 1px = byte-identical to before, per the note above. */
+  --tds-border-hairline: 1px;
+
   /* --- Elevation ---------------------------------------------------
      Brand-tinted (navy) and layered, per the design-system handoff. The
      dashboard tint convention is deliberately FLAT, so the default card

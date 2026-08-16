@@ -1,13 +1,15 @@
 /**
  * SURFACE: marketing (Variation 1)
  *
- * The public marketing voice: tracht-digital.de (`tds-landingpage-frontend`)
- * and tools.tracht-digital.de (`tds-tools-frontend`).
+ * The public marketing voice: tracht-digital.de (`tds-landingpage-frontend`),
+ * which is the only consumer. tools.tracht-digital.de moved to the `panel`
+ * surface on 2026-08-05 — a tool site reads as a piece of software, not a
+ * brochure — so nothing here reaches it any more.
  *
- * Character — fully round pill buttons, softly rounded cards WITH a
- * brand-tinted drop shadow, and the 700-weight display voice. This is the
- * only surface allowed to use elevation: the dashboard tint convention in
- * base.css is deliberately flat, and the blog is flat by design.
+ * Character — fully round pill buttons, BORDERLESS chrome, softly rounded
+ * cards, and the 700-weight display voice. This is the only surface allowed
+ * to use elevation: the dashboard tint convention in base.css is
+ * deliberately flat, and the blog is flat by design.
  *
  * Usage — in the app's Layout.astro put `data-surface="marketing"` on
  * <html>, and in its global.css:
@@ -32,6 +34,17 @@
   --tds-radius-chip: var(--tds-radius-pill);
   --tds-radius-input: var(--tds-radius-sm);
 
+  /* No outlines. The marketing voice separates with FILL, spacing and the
+     sand/paper tone change instead of drawing a box around things: on a
+     warm paper ground a page full of 1px boxes is what made the brochure
+     read like a dashboard. Cards, chips, status pills, boxed fields and
+     buttons all lose their hairline here.
+
+     This only governs an outline a primitive draws around ITSELF. The
+     separators keep their line (see the token's note in base.css) —
+     borderless is a look, not an excuse to run table rows together. */
+  --tds-border-hairline: 0;
+
   /* Marketing cards are gently rounded and only just lifted. 6px matches
      the landingpage's existing `md:rounded-[6px]` teaser/callout cards.
 
@@ -40,10 +53,12 @@
      piece of the floating-SaaS-card look: on a warm paper ground a
      32px-blur drop shadow reads as grey haze around every card, which
      both dirties the warmth and flattens the real hierarchy, because
-     when everything is lifted nothing is. Separation now comes from the
-     1px warm hairline, the sand/white tone change and the spacing —
-     "feine 1-px-Kontur, sehr dezenter oder kein Schatten". This is still
-     the only surface with ANY resting elevation. */
+     when everything is lifted nothing is. Separation came from the 1px
+     warm hairline, the sand/white tone change and the spacing — and since
+     the borderless pass above the hairline is gone too, leaving tone and
+     spacing to carry it. This is still the only surface with ANY resting
+     elevation, which is why the shadow stays: it is now the ONLY thing
+     besides the fill that lifts a card off the paper. */
   --tds-radius-card: 6px;
   --tds-elevation-card: var(--tds-shadow-sm);
 

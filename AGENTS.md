@@ -139,6 +139,22 @@ import this — they duplicate the small bit of validation they need, by design.
   `.display`/`.display-tight`/`.eyebrow` forks and `--flat-tint`/`--flat-hover`;
   the landingpage's duplicate `.display`/`.display-tight`; three separate
   `--font-display` re-declarations.
+- **Outline width is a surface token too: `--tds-border-hairline`.** A
+  surface sets it to `0` to become borderless — `marketing` does, so the
+  landingpage's cards, chips, status pills, boxed fields and buttons draw no
+  hairline around themselves; panel and blog keep the default `1px`, where
+  the hairline is load-bearing structure. It exists because the primitives
+  hard-wired `border: 1px solid var(--color-line)`, so "no outline on this
+  surface" previously meant overriding a shared component in the app, which
+  is the drift the geometry split exists to prevent.
+  **The split that matters is outline vs. separator.** The token governs only
+  the border a primitive draws around *itself*. A line drawn *between* two
+  things — `.hairline*`, `.rule`, `.tds-list__row`, `.tds-table`,
+  `.tds-toggle-row` — keeps its literal `1px`, as do the semantic
+  `.form-alert`/`.tds-alert` outline, the dashed `.tds-empty` and the
+  decoration shapes. Borderless is a look; running table rows together is a
+  legibility bug. `design.test.ts` pins both halves, so routing a separator
+  through the token fails the suite.
 - **The geometry scale is a plain `:root` block, NOT `@theme inline`.**
   `@theme inline` substitutes each token's literal value into Tailwind's
   generated utilities, making it impossible to override further down the

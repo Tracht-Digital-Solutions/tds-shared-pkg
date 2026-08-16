@@ -25,6 +25,21 @@ const read = (p: string) => readFileSync(join(STYLES, p), "utf8");
 /** Strip CSS comments so prose in a docblock never counts as a match. */
 const stripComments = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "");
 
+/**
+ * The declaration body of a rule, located by its selector.
+ *
+ * Anchored to the START of a line on purpose: `.chip`, `.btn`,
+ * `.field-boxed` and `.tds-table td` each open several rules in
+ * primitives.css (`button.chip`, `a.chip`, …), and a plain `indexOf` would
+ * silently return whichever qualified variant happens to come first — a
+ * passing assertion about the wrong rule.
+ */
+const ruleBlock = (css: string, selector: string): string | undefined => {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const at = css.search(new RegExp(`^${escaped}\\s*\\{`, "m"));
+  return at === -1 ? undefined : css.slice(at, css.indexOf("}", at));
+};
+
 const base = stripComments(read("base.css"));
 const primitives = stripComments(read("primitives.css"));
 const prose = stripComments(read("prose.css"));
@@ -43,6 +58,12 @@ const GEOMETRY_TOKENS = [
   "--tds-radius-alert",
   "--tds-radius-bar",
 ] as const;
+
+/* Deliberately NOT in GEOMETRY_TOKENS above: that list doubles as "every
+   token the BLOG must flatten", and the blog is angular-and-flat, not
+   borderless — its hairlines are what separate an article list. Outline
+   width gets its own checks below. */
+const BORDER_TOKEN = "--tds-border-hairline";
 
 describe("surface token scale", () => {
   it("declares every component-geometry token in base.css", () => {
@@ -82,12 +103,20 @@ describe("surface token scale", () => {
       base.indexOf("@theme inline"),
       base.indexOf("}", base.indexOf("--font-mono")),
     );
-    for (const token of GEOMETRY_TOKENS) {
+    for (const token of [...GEOMETRY_TOKENS, BORDER_TOKEN]) {
       expect(
         themeBlock.includes(`${token}:`),
         `${token} must not be declared inside @theme inline`,
       ).toBe(false);
     }
+  });
+
+  it("declares the outline-width token, defaulting to a no-op 1px", () => {
+    // Every primitive that draws an outline around itself reads this, so a
+    // missing declaration is silent and total: `border: var(--undefined)
+    // solid …` is an invalid declaration the browser drops, and every card,
+    // chip and boxed field on EVERY surface loses its hairline at once.
+    expect(base).toMatch(/--tds-border-hairline:\s*1px/);
   });
 
   it("keeps --font-mono the last declaration in `@theme inline`", () => {
@@ -167,6 +196,19 @@ describe("surface character", () => {
       /--tds-radius-btn:\s*var\(--tds-radius-pill\)/,
     );
     expect(surfaceCss.marketing).toMatch(/--tds-elevation-card:\s*var\(--tds-shadow/);
+  });
+
+  it("makes marketing the borderless surface", () => {
+    // The public site separates with fill, tone and spacing rather than by
+    // drawing a box around everything. Panel and blog must NOT inherit this:
+    // their hairline is load-bearing structure.
+    expect(surfaceCss.marketing).toMatch(/--tds-border-hairline:\s*0/);
+    for (const surface of ["panel", "blog"] as const) {
+      expect(
+        surfaceCss[surface],
+        `${surface} must keep its hairline outlines`,
+      ).not.toContain("--tds-border-hairline");
+    }
   });
 
   it("gives the panel the 0.75rem chip AGENTS.md always specified", () => {
@@ -548,6 +590,41 @@ describe("primitives.css tokenisation", () => {
     // 999px is now only legitimate as the *value* of --tds-radius-pill in
     // base.css; a component must reference the token.
     expect(primitives).not.toContain("999px");
+  });
+
+  it("routes self-outlines through --tds-border-hairline", () => {
+    // A borderless surface sets the token to 0; a primitive that keeps a
+    // literal 1px around itself simply ignores that and stays outlined.
+    for (const selector of [
+      ".chip",
+      ".status-pill",
+      ".btn",
+      ".field-boxed",
+      ".tds-card",
+      ".tds-widget",
+      ".tds-modal__panel",
+      ".tds-dropdown__panel",
+    ]) {
+      const block = ruleBlock(primitives, selector);
+      expect(block, `no rule for ${selector}`).toBeTruthy();
+      expect(block, `${selector} outlines itself with a literal width`).toMatch(
+        /border:\s*var\(--tds-border-hairline\)/,
+      );
+    }
+  });
+
+  it("leaves SEPARATORS on a literal 1px", () => {
+    // The counterpart to the rule above, and the more important half: these
+    // draw a line BETWEEN two things. Routing them through the same token
+    // would make "borderless" run every table row and list item together,
+    // which is a legibility bug rather than a style choice.
+    for (const selector of [".tds-list__row", ".tds-table td", ".hairline"]) {
+      const block = ruleBlock(primitives, selector);
+      expect(block, `no rule for ${selector}`).toBeTruthy();
+      expect(block, `${selector} must not be borderless-able`).not.toContain(
+        "--tds-border-hairline",
+      );
+    }
   });
 
   it("still requires .btn for geometry and .btn-* only for colour", () => {
