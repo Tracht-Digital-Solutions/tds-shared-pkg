@@ -12,6 +12,23 @@ import this — they duplicate the small bit of validation they need, by design.
 
 ## Rules of thumb
 
+- **The landingpage copy in `i18n/translations.ts` carries two standing
+  constraints (set 2026-08-16).** The site addresses freelancers, small
+  businesses and local trades — the audience the Kleinanzeigen speak to — so
+  Framework names stay out of `services.items[].tags` (they belong in the
+  `tech` section) and "Mittelstand"/"SaaS" stay out entirely. And:
+  - **No free or time-boxed initial consultation.** The classified ads offer
+    one; the website deliberately does not. Nothing in `hero.cta1`,
+    `consulting.*`, `about.stat*` or the landingpage's `lib/faq.ts` may promise
+    "kostenlos"/"kostenfrei"/"30 Minuten". (`pricing.items[0].includes` still
+    names one — that is a separate, pre-existing commercial decision on the
+    rates page, not a licence to reintroduce it elsewhere.)
+  - **No customer references.** Capabilities are described, clients are not
+    named — not even anonymised as a "case study". `portfolio.*` exists in the
+    bundle but the section is not mounted.
+- **`services.items` has FIVE entries and the fifth renders full-width.**
+  `Services.astro` spans the last card across both columns on an odd count.
+  Adding or removing one silently changes that layout.
 - **Don't promote a component or util here until at least two
   consumers actually need it.** Duplication is cheaper than the wrong
   abstraction.
