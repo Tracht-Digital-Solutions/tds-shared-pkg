@@ -166,6 +166,32 @@ import this — they duplicate the small bit of validation they need, by design.
   the About portrait was tried and removed: it rendered as a stray grey block,
   because an arc needs enough length to be legible as an arc. If a shape is
   small, make it a dot or drop it.
+- **Every brand hue has an INTERFACE role, not only a decorative one.** Three
+  of the five were once decoration-only — cranberry had a single call site in
+  the whole library while `--color-muted` had 29 — which is how a five-colour
+  palette ends up reading as navy, bordeaux and grey. The roles:
+
+  | Hue | Role | Where |
+  |---|---|---|
+  | Navy | headlines, links, primary actions | throughout |
+  | Bordeaux | chapter marks, accented headline words | `.section-num`, `.accent-italic`, `.chip-active` |
+  | Cranberry | small labels | `.eyebrow` via `--tds-eyebrow-color` |
+  | Coral | hover states, decorative fills | `--tds-hover-wash`, `.tds-shape--coral` |
+  | Gold | short rules, single nodes | `.section-num::before`, circuit nodes, the brand bar |
+
+  - **A colour moved into a TEXT role needs its contrast measured, not
+    eyeballed.** `design.test.ts` resolves the real token chain (through
+    `--tds-eyebrow-color`, not the hue name — otherwise repointing the token
+    sails past) and asserts 4.5:1 for text, 3:1 for the rules. Cranberry sits
+    at 7.29:1 on paper but only **2.16:1 on the navy tone**, which is why
+    `.tds-tone-navy`/`-ink` re-point the eyebrow to coral.
+  - **Gold and coral stay out of small body text** — the brand direction is
+    explicit, and gold measures 3.45:1, i.e. fine as a rule, short of AA as
+    text. The counter-check for that is in the suite.
+  - **Dose is part of the design.** `.chip` was deliberately left grey: four to
+    five sit on every landingpage service card, so colouring them would put
+    twenty coloured labels on one screen. Colour that is everywhere signals
+    nothing.
 - **Surface layers are scoped to the bare `[data-surface="…"]` attribute,
   never `:root[data-surface="…"]`,** because one surface must nest inside
   another: the blog-CMS markdown preview in the admin panel renders a blog

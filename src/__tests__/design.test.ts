@@ -1119,6 +1119,134 @@ describe("mobile contracts", () => {
  * conduit animation that ignores reduced motion looks like nothing at
  * all to the person writing the code.
  */
+/**
+ * The brand hues in their assigned INTERFACE roles, not just in decoration.
+ *
+ * Cranberry, coral and gold each have a job in the brand direction — small
+ * labels, hover states, short rules — and for a while none of them had a call
+ * site outside the decoration layer: cranberry had exactly ONE in the whole
+ * library. These pin the roles, and — the part that actually matters —
+ * measure the contrast they land at. Moving a colour into a TEXT role is
+ * precisely where contrast quietly fails, and no screenshot shows it.
+ */
+describe("brand hues in interface roles", () => {
+  type RGB = [number, number, number];
+  const hexOf = (h: string): RGB => [
+    parseInt(h.slice(1, 3), 16),
+    parseInt(h.slice(3, 5), 16),
+    parseInt(h.slice(5, 7), 16),
+  ];
+  const luminance = ([r, g, b]: RGB) => {
+    const f = (v: number) => {
+      const s = v / 255;
+      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+  };
+  const contrast = (a: RGB, b: RGB) => {
+    const la = luminance(a);
+    const lb = luminance(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  };
+  /**
+   * A token's literal, resolved through any number of `var()` aliases.
+   *
+   * Two lookups, and the order matters: the themed blocks first, then the
+   * whole file. The brand aliases (`--color-cranberry`, `--color-gold`) are
+   * declared ONCE in the plain `:root` scale — which sits *after* the dark
+   * block in the file — precisely because a `var()` alias re-resolves per
+   * theme on its own. A theme-scoped search alone therefore misses them.
+   */
+  const token = (name: string, theme: "light" | "dark"): RGB => {
+    const darkAt = base.indexOf('[data-theme="dark"]');
+    const themed = theme === "dark" ? base.slice(darkAt) : base.slice(0, darkAt);
+    const find = (scope: string) =>
+      scope.match(new RegExp(`${name}:\\s*([^;]+);`))?.[1]?.trim();
+    const raw = find(themed) ?? find(base);
+    if (!raw) throw new Error(`${name} (${theme}) not found in base.css`);
+    if (raw.startsWith("#")) return hexOf(raw);
+    const alias = raw.match(/var\((--[a-z-]+)\)/)?.[1];
+    if (!alias) throw new Error(`${name} (${theme}) is neither a hex nor an alias: ${raw}`);
+    return token(alias, theme);
+  };
+
+  it("gives the eyebrow cranberry through a surface-overridable token", () => {
+    expect(base).toMatch(/--tds-eyebrow-color:\s*var\(--color-cranberry\)/);
+    const rule = base.slice(base.indexOf(".eyebrow {"), base.indexOf("}", base.indexOf(".eyebrow {")));
+    expect(rule).toContain("color: var(--tds-eyebrow-color)");
+    expect(rule, "the eyebrow fell back to the neutral grey").not.toContain("--color-muted");
+  });
+
+  it("gives the chapter mark bordeaux and its rule solid gold", () => {
+    const num = primitives.slice(
+      primitives.indexOf(".section-num {"),
+      primitives.indexOf(".section-num::before"),
+    );
+    expect(num).toContain("color: var(--color-accent)");
+    const rule = primitives.slice(
+      primitives.indexOf(".section-num::before {"),
+      primitives.indexOf("}", primitives.indexOf(".section-num::before {")),
+    );
+    expect(rule).toContain("background: var(--color-gold)");
+    // Half-opacity gold lands near 1.8:1 — below the 3:1 a graphic needs.
+    expect(rule, "the gold rule must stay solid").not.toMatch(/opacity/);
+  });
+
+  it("routes every row hover through the coral wash token", () => {
+    expect(base).toMatch(/--tds-hover-wash:\s*color-mix\([^;]*--color-accent-pink/);
+    for (const sel of [
+      ".tds-list__row:focus-within",
+      ".tds-table tbody tr:focus-within td",
+      ".entry-row:hover",
+    ]) {
+      const at = primitives.indexOf(`${sel} {`);
+      expect(at, `${sel} not found`).toBeGreaterThan(-1);
+      const body = primitives.slice(at, primitives.indexOf("}", at));
+      expect(body, `${sel} still uses the neutral sand`).toContain("var(--tds-hover-wash)");
+    }
+  });
+
+  it.each([
+    // Resolved from `--tds-eyebrow-color`, not from `--color-cranberry`
+    // directly: this has to measure whatever the eyebrow ACTUALLY renders in,
+    // or repointing the token at a hue that fails contrast would sail past.
+    ["--tds-eyebrow-color", "--color-paper", 4.5, "eyebrow label on paper"],
+    ["--color-accent", "--color-paper", 4.5, "chapter mark on paper"],
+    ["--color-gold", "--color-paper", 3, "gold rule on paper (graphic)"],
+    ["--color-gold", "--color-surface-navy", 3, "gold rule on a dark section"],
+  ] as const)("clears contrast: %s on %s", (fg, bg, min, _what) => {
+    // `--color-surface-navy` is a FIXED dark surface, so the light-theme value
+    // is the one a dark toned section actually paints in both themes.
+    expect(contrast(token(fg, "light"), token(bg, "light"))).toBeGreaterThanOrEqual(min);
+  });
+
+  it("keeps the eyebrow readable in dark mode too", () => {
+    expect(
+      contrast(token("--tds-eyebrow-color", "dark"), token("--color-paper", "dark")),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("re-points the eyebrow inside a dark tone, where cranberry would fail", () => {
+    // Cranberry is a DEEP red: 2.16:1 on `--color-surface-navy`. The tone
+    // classes already remap the page tokens for their children, so the eyebrow
+    // colour belongs in that remap — coral is the light-on-dark counterpart.
+    const tone = primitives.slice(
+      primitives.indexOf(".tds-tone-navy,"),
+      primitives.indexOf(".tds-tone-navy {"),
+    );
+    expect(tone).toMatch(/--tds-eyebrow-color:\s*var\(--color-accent-pink\)/);
+    expect(
+      contrast(token("--color-accent-pink", "light"), token("--color-surface-navy", "light")),
+      "the on-dark eyebrow colour must clear AA on the navy tone",
+    ).toBeGreaterThanOrEqual(4.5);
+    // And the guard for WHY it is re-pointed: the light-ground colour must not
+    // be usable here, or this rule looks like redundant ceremony.
+    expect(
+      contrast(token("--tds-eyebrow-color", "light"), token("--color-surface-navy", "light")),
+    ).toBeLessThan(4.5);
+  });
+});
+
 describe("decoration layer", () => {
   /** Body of the rule that starts exactly at `<selector> {`. */
   const ruleBody = (css: string, selector: string) => {

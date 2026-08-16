@@ -211,8 +211,12 @@
   --tds-decor-coral: 255 166 192;
   --tds-decor-gold: 233 180 85;
   --tds-decor-field-strength: 0.55;
-  --tds-decor-line-opacity: 0.2;
-  --tds-decor-shape-alpha: 0.06;
+  --tds-decor-line-opacity: 0.24;
+  --tds-decor-shape-alpha: 0.075;
+
+  /* A light hue carries further on a dark ground, so the hover wash is dialled
+     back rather than kept at the light value. */
+  --tds-hover-wash: color-mix(in srgb, var(--color-accent-pink) 10%, transparent);
 }
 
 /* =====================================================================
@@ -309,6 +313,25 @@
   --tds-eyebrow-family: var(--font-body);
   --tds-eyebrow-weight: 500;
   --tds-eyebrow-tracking: 0.14em;
+  /* An eyebrow is the brand direction's "kleines Label", and that is
+     cranberry's assigned role — it was `--color-muted` (grey), which is why
+     cranberry had exactly ONE call site in the whole library. Measured 7.29:1
+     on paper, so it clears AA for small text and AAA besides; the numeric
+     check lives in design.test.ts, because moving a colour into a TEXT role is
+     precisely where contrast quietly fails and a screenshot never shows it.
+     A token, like the three above, so a surface can opt out without forking
+     the class. Note the panel's own `.tds-page__eyebrow` (app.css) keeps the
+     per-product accent instead — that one is product signal, not decoration. */
+  --tds-eyebrow-color: var(--color-cranberry);
+
+  /* The wash a hovered row takes. Coral, because "Hoverzustände" is exactly
+     what the brand direction assigns it — the three row primitives
+     (`.tds-list__row`, `.tds-table tbody tr`, `.entry-row`) all used the
+     neutral sand, so the warmest hue in the palette was doing no work in the
+     interface at all. A token because three rules read it, and because a raw
+     `rgba()` here would be the hard-coded alpha the `--tds-decor-*` tokens
+     exist to avoid. */
+  --tds-hover-wash: color-mix(in srgb, var(--color-accent-pink) 12%, transparent);
 
   /* --- Accepted alias ------------------------------------------------
      `--color-border` is NOT a second border token: it is an alias of
@@ -363,9 +386,11 @@
   --tds-decor-gold: 185 121 28;
   --tds-decor-field-strength: 1;
   /* Conduit lines are a whisper by design — "nur wenige Linien pro
-     Abschnitt", and they must never compete with body copy. */
-  --tds-decor-line-opacity: 0.16;
-  --tds-decor-shape-alpha: 0.07;
+     Abschnitt", and they must never compete with body copy. Raised one step
+     (0.16 → 0.20) because at the original dose they were, in practice,
+     invisible: the point of drawing them is that someone sees them. */
+  --tds-decor-line-opacity: 0.2;
+  --tds-decor-shape-alpha: 0.09;
 
   /* The three-part brand accent (bordeaux : coral : gold ≈ 42 : 20 : 12
      with a 6px gap). Tokenised so a surface or a single call site can
@@ -435,7 +460,7 @@
 @media (max-width: 48rem) {
   :root {
     --tds-decor-field-strength: 0.55;
-    --tds-decor-shape-alpha: 0.05;
+    --tds-decor-shape-alpha: 0.06;
   }
 }
 
@@ -601,7 +626,7 @@ input[type="radio"] {
   font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: var(--tds-eyebrow-tracking);
-  color: var(--color-muted);
+  color: var(--tds-eyebrow-color);
   font-weight: var(--tds-eyebrow-weight);
 }
 .lead {

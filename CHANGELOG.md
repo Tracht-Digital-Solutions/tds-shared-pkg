@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **The brand hues take their assigned INTERFACE roles, not just decorative
+  ones.** Three of the five palette colours were effectively invisible in the
+  running design — `--color-cranberry` had exactly ONE call site in the whole
+  library, gold three, coral five, all of them decoration, while
+  `--color-muted` (grey) carried 29. The brand direction assigns each a job;
+  those jobs are now filled:
+  - **`.eyebrow` is cranberry**, through a new `--tds-eyebrow-color` token so a
+    surface can opt out without forking the class ("kleine Labels"). 7.29:1 on
+    paper.
+  - **`.section-num` is bordeaux** ("Kapitelmarken"), and its 24px rule is
+    **solid gold** ("kurze Linie") — the `opacity: 0.5` is dropped, because at
+    half opacity gold lands near 1.8:1 where a graphic needs 3:1. It is also no
+    longer `currentColor`, so it stays gold on white-labelled dark sections.
+  - **Row hovers are a coral wash** via the new `--tds-hover-wash`
+    ("Hoverzustände"). `.tds-list__row`, `.tds-table tbody tr` and `.entry-row`
+    all used the neutral sand, so the warmest hue in the palette was doing no
+    work in the interface at all.
+  - **`.tds-tone-navy` / `.tds-tone-ink` re-point the eyebrow to coral**, since
+    cranberry is a deep red and measures 2.16:1 on the navy. A safety net —
+    every eyebrow in a dark tone today already carries its own white utility.
+
+  Deliberately left alone: `.chip` (four to five per card on the landingpage —
+  twenty coloured labels on one screen is not a dose), `.chip-active` (already
+  bordeaux), and the panel's `.tds-page__eyebrow` (carries the per-product
+  accent, which is product signal rather than decoration).
+
+  Guarded numerically in `design.test.ts`: the contrast of each role is
+  computed from the real token chain, resolved through `--tds-eyebrow-color`
+  rather than the hue name — moving a colour into a TEXT role is exactly where
+  contrast quietly fails, and no screenshot shows it.
+- **The decoration layer is one step more present.** It was dosed so quietly
+  that shapes and conduits did not read at all: shape alpha 0.07 → 0.09 (dark
+  0.06 → 0.075, phone 0.05 → 0.06), line opacity 0.16 → 0.20 (dark 0.20 →
+  0.24), the `.tds-wash` fields 0.12/0.11/0.09 → 0.14/0.13/0.11, and the panel
+  canvas fields 0.06/0.05 → 0.07/0.06. Only the literals moved —
+  `--tds-decor-field-strength` stays 1 / 0.55, so the phone and dark-mode
+  reductions keep their proportions and there is exactly one place that was
+  turned up.
 - **Checkboxes and radios take the brand accent** (`accent-color:
   var(--tds-panel-accent)`). They were the last unbranded control in the
   system: every settings form in the panel — dozens across thirteen extensions

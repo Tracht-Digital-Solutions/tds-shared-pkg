@@ -102,8 +102,9 @@
 /* Colour-codes a `.section-num` marker by its hue. Opt in by setting
    `--section-hue` on (or above) the marker, e.g.
    style="--section-hue: var(--color-cat-teal)" — the leading rule takes
-   the full hue (no longer the muted currentColor) so sections read as
-   distinct zones without a heavy header fill. */
+   the full hue so sections read as distinct zones without a heavy header
+   fill. This REPLACES the base marker's own colours (bordeaux label, gold
+   rule); it is a per-zone override, not an addition to them. */
 .section-accent {
   --section-hue: var(--color-primary);
 }
@@ -113,7 +114,6 @@
 .section-accent .section-num::before,
 .section-num.section-accent::before {
   background: var(--section-hue);
-  opacity: 1;
   width: 2rem;
 }
 
@@ -575,7 +575,7 @@
     ),
     radial-gradient(
       42rem 30rem at 0% 22%,
-      rgb(var(--tds-decor-navy) / calc(0.06 * var(--tds-decor-field-strength)))
+      rgb(var(--tds-decor-navy) / calc(0.07 * var(--tds-decor-field-strength)))
         0%,
       transparent 68%
     ),
@@ -583,7 +583,7 @@
       38rem 26rem at 88% 100%,
       rgb(
           var(--tds-decor-bordeaux) /
-            calc(0.05 * var(--tds-decor-field-strength))
+            calc(0.06 * var(--tds-decor-field-strength))
         )
         0%,
       transparent 66%

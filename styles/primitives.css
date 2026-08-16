@@ -35,23 +35,35 @@
 
 /* === Editorial typography ========================================= */
 
+/* The chapter mark. Bordeaux, not grey: "Kapitelmarken" is the brand
+   direction's first named role for it, and a numbered section heading is
+   exactly that. ~9:1 on paper. On the dark toned sections the apps override
+   this with a white utility, which still wins — the label follows its ground,
+   the rule below does not. */
 .section-num {
   font-family: var(--font-body);
   font-size: 0.6875rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-muted);
+  color: var(--color-accent);
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
 }
+/* The 24px rule beside it is the brand direction's "kurze Linie in Ocker" —
+   the one place gold gets to appear outside pure decoration.
+
+   SOLID, and the dropped `opacity: 0.5` is the point: gold measures 3.49:1 on
+   paper and 4.52:1 on the navy of the dark sections, which clears the 3:1 a
+   graphic needs; at half opacity it lands near 1.8:1 and is a smudge. It is
+   also no longer `currentColor`, so it stays gold on the white-labelled dark
+   sections instead of turning white with the text. */
 .section-num::before {
   content: "";
   display: inline-block;
   width: 1.5rem;
   height: 1px;
-  background: currentColor;
-  opacity: 0.5;
+  background: var(--color-gold);
 }
 
 /* Drop-cap for the first paragraph of editorial pages */
@@ -660,7 +672,7 @@ label.tds-field-row > :is(input, select, textarea) {
    cards/widgets further down. */
 .tds-list__row:hover,
 .tds-list__row:focus-within {
-  background: var(--color-soft);
+  background: var(--tds-hover-wash);
 }
 
 .tds-table {
@@ -705,7 +717,7 @@ label.tds-field-row > :is(input, select, textarea) {
 }
 .tds-table tbody tr:hover td,
 .tds-table tbody tr:focus-within td {
-  background: var(--color-soft);
+  background: var(--tds-hover-wash);
 }
 
 /* Phone widths: let a wide table scroll instead of losing its right-hand
@@ -1088,12 +1100,12 @@ button.tds-row:focus-visible {
   background:
     radial-gradient(
       circle at 8% 38%,
-      rgb(var(--tds-decor-navy) / calc(0.12 * var(--tds-decor-field-strength))),
+      rgb(var(--tds-decor-navy) / calc(0.14 * var(--tds-decor-field-strength))),
       transparent 30%
     ),
     radial-gradient(
       circle at 92% 62%,
-      rgb(var(--tds-decor-bordeaux) / calc(0.11 * var(--tds-decor-field-strength))),
+      rgb(var(--tds-decor-bordeaux) / calc(0.13 * var(--tds-decor-field-strength))),
       transparent 32%
     ),
     /* The third field is placed LOW and off-centre (62% 88%), not at the
@@ -1102,7 +1114,7 @@ button.tds-row:focus-visible {
        paragraph is the one thing this layer must not do. */
     radial-gradient(
       circle at 62% 88%,
-      rgb(var(--tds-decor-coral) / calc(0.09 * var(--tds-decor-field-strength))),
+      rgb(var(--tds-decor-coral) / calc(0.11 * var(--tds-decor-field-strength))),
       transparent 24%
     );
 }
@@ -1111,7 +1123,7 @@ button.tds-row:focus-visible {
 .tds-wash--calm::before {
   background: radial-gradient(
     circle at 4% 30%,
-    rgb(var(--tds-decor-navy) / calc(0.1 * var(--tds-decor-field-strength))),
+    rgb(var(--tds-decor-navy) / calc(0.12 * var(--tds-decor-field-strength))),
     transparent 34%
   );
 }
@@ -1121,12 +1133,12 @@ button.tds-row:focus-visible {
   background:
     radial-gradient(
       circle at 94% 26%,
-      rgb(var(--tds-decor-navy) / calc(0.11 * var(--tds-decor-field-strength))),
+      rgb(var(--tds-decor-navy) / calc(0.13 * var(--tds-decor-field-strength))),
       transparent 30%
     ),
     radial-gradient(
       circle at 6% 74%,
-      rgb(var(--tds-decor-bordeaux) / calc(0.1 * var(--tds-decor-field-strength))),
+      rgb(var(--tds-decor-bordeaux) / calc(0.12 * var(--tds-decor-field-strength))),
       transparent 32%
     );
 }
@@ -1377,6 +1389,14 @@ button.tds-row:focus-visible {
   --color-border: rgb(255 255 255 / 0.16);
   --color-card: rgb(255 255 255 / 0.08);
   --color-soft: rgb(255 255 255 / 0.06);
+  /* The eyebrow keeps a brand hue here, but not the same one: cranberry is a
+     DEEP red and lands at 2.16:1 on the navy — unreadable. Coral is its
+     light-on-dark counterpart at 6.67:1, so the label stays branded instead of
+     falling back to plain white.
+     A safety net rather than a correction: every eyebrow inside a dark tone
+     today already carries its own `text-white/…` utility, which still wins.
+     This is what catches the next one that doesn't. */
+  --tds-eyebrow-color: var(--color-accent-pink);
 }
 .tds-tone-navy {
   background-color: var(--color-surface-navy);
@@ -1455,7 +1475,7 @@ button.tds-row:focus-visible {
   transition: background-color var(--tds-dur-base) var(--tds-ease-out);
 }
 .entry-row:hover {
-  background: var(--color-soft);
+  background: var(--tds-hover-wash);
 }
 
 /* === Hamburger toggle bars ======================================== */
