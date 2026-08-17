@@ -169,11 +169,17 @@ import this — they duplicate the small bit of validation they need, by design.
     input inside a card disappears entirely, label colliding into value),
     `.status-pill` and `.chip--neutral` (transparent — they degrade to bare
     small-caps text), `.btn-ghost` (a button that reads as text until hover).
-    `currentColor` at 12% does the variant work for one rule instead of eleven
-    hard-coded mixes; `.chip-solid` must stay excluded, because there
-    `currentColor` is white. Nothing about this failure mode throws, warns or
-    breaks a build — `design.test.ts` asserts a fill counterpart exists per
-    selector precisely because the browser is otherwise the only witness.
+    Nothing about this failure mode throws, warns or breaks a build —
+    `design.test.ts` asserts a fill counterpart exists per selector precisely
+    because the browser is otherwise the only witness. **Two traps that only
+    the BUILT css shows,** both pinned by that test: the wash must not mix
+    `currentColor` (elegant as one hue-following rule would be, lightningcss
+    cannot resolve it at build time and the legacy fallback it emits for the
+    pinned Safari floor is a solid `background: currentColor`, i.e. a pill
+    filled with its own text colour); and it must never select `.chip`
+    wholesale, because `[data-flat] .chip` is (0,2,0) against
+    `.chip--warning`'s (0,1,0) and would override all eleven coloured variants
+    into one grey.
   - **`--tds-elevation-raised` stays untouched.** It carries the modal panel's
     and the dropdown's depth, and an overlay with no depth is unreadable. The
     card's hover *lift* is switched off in `app.css`, where the overlay that

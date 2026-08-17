@@ -1819,8 +1819,9 @@ button.tds-row:focus-visible {
                     colliding into its value.
      .status-pill   transparent; the variants set `color` + `border-color` and
                     no fill at all, so it degrades to bare small-caps text.
-     .chip--neutral transparent (the coloured variants already carry a 12%
-                    wash and survive on their own).
+     .chip--neutral transparent (the COLOURED chip variants already carry a
+                    12% wash of their own hue and survive borderless — they
+                    must be left alone here, see below).
      .btn-ghost     transparent + `border-color`, i.e. a button that reads as
                     plain text until it is hovered.
 
@@ -1829,9 +1830,20 @@ button.tds-row:focus-visible {
    state wherever a coloured edge was the only cue". So each one trades its
    edge for a fill; nothing is merely deleted.
 
-   `currentColor` does the variant work for free: every `.status-pill--*` and
-   `.chip--*` already sets `color`, so one rule gives each variant its own
-   correctly-hued wash instead of eleven hard-coded mixes.
+   TWO THINGS THAT LOOK RIGHT AND ARE NOT, both learned from the built CSS:
+
+   1. NOT `color-mix(in srgb, currentColor 12%, transparent)`, tempting as it
+      is (one rule would tint every variant in its own hue instead of eleven
+      hard-coded mixes). lightningcss cannot resolve a mix containing
+      `currentColor` at build time, so the legacy fallback it emits for the
+      pinned Safari floor is `background: currentColor` — a SOLID block of the
+      pill's own text colour, i.e. perfectly invisible text. A wash whose
+      operands are known tokens compiles to a real colour instead.
+   2. This block must not select the coloured variants at all.
+      `[data-flat] .chip` is (0,2,0) against `.chip--warning`'s (0,1,0), so a
+      blanket rule here silently overrides every variant's wash and renders
+      all of them in one grey. Hence the explicit list plus
+      `:not([class*="--"])` for the variant-less chip.
 
    `.field` is deliberately absent — its `border-bottom` is a literal 1px
    line BETWEEN two things, not a self-outline, so it never went through the
@@ -1842,12 +1854,12 @@ button.tds-row:focus-visible {
    build, which is exactly how it would ship. */
 
 [data-flat] .status-pill,
-[data-flat] .chip:not(.chip-solid) {
-  background: color-mix(in srgb, currentColor 12%, transparent);
+[data-flat] .chip--neutral,
+[data-flat] .chip:not(.chip-solid):not([class*="--"]) {
+  background: color-mix(in srgb, var(--color-ink) 6%, var(--color-card));
 }
-/* `.chip-solid` is excluded because there `currentColor` is white: a 12%
-   white wash would paint straight over the solid primary fill and leave
-   white text on an almost-white chip. */
+/* `.chip-solid` is excluded because it already carries a solid primary fill
+   with white text; a wash over it would leave white on near-white. */
 
 [data-flat] .field-boxed {
   background: color-mix(in srgb, var(--color-ink) 6%, var(--color-card));

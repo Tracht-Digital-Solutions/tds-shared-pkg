@@ -337,7 +337,8 @@ describe("surface character", () => {
     // that throws, warns, or fails a build: it just ships.
     for (const selector of [
       ".status-pill",
-      ".chip:not(.chip-solid)",
+      ".chip--neutral",
+      ".chip:not(.chip-solid):not([class*=\"--\"])",
       ".field-boxed",
       ".btn-ghost",
     ]) {
@@ -354,6 +355,16 @@ describe("surface character", () => {
     expect(ruleBlock(primitives, "[data-flat] .field-boxed")).toMatch(
       /background:\s*color-mix/,
     );
+
+    const flatSection = primitives.slice(primitives.indexOf("[data-flat] "));
+    // No `currentColor` inside these mixes. lightningcss cannot resolve one at
+    // build time, so the legacy fallback it emits for the pinned Safari floor
+    // is a SOLID `background: currentColor` — a pill filled with its own text
+    // colour. Only visible in the built css, never in the source.
+    expect(flatSection).not.toContain("currentColor");
+    // And never a blanket `.chip`: at (0,2,0) it outranks every `.chip--*`
+    // variant's own wash and renders all eleven in one grey.
+    expect(flatSection).not.toMatch(/\[data-flat\]\s+\.chip\s*[,{]/);
     // `.brand-header` draws a LITERAL 1px border-bottom rather than using the
     // token, so it is the one separator a flat consumer cannot switch off from
     // its own stylesheet without re-declaring a shared class.
