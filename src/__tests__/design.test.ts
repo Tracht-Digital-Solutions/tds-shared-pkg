@@ -48,6 +48,23 @@ const surfaceCss = Object.fromEntries(
   SURFACES.map((s) => [s, stripComments(read(`surfaces/${s}.css`))]),
 ) as Record<(typeof SURFACES)[number], string>;
 
+/**
+ * The `[data-surface="x"] {}` block a layer opens with, i.e. what EVERY
+ * consumer of that surface gets. Assertions about a surface's character
+ * belong here rather than against the whole file: a layer may also carry
+ * opt-in variant blocks (`[data-frontend="admin"]`, `[data-flat]`) whose
+ * whole point is to differ, and a file-wide `not.toContain` would forbid
+ * them. The base block's closing brace is at column 0, and no token value
+ * spans a line, so `\n}` is an exact end marker.
+ */
+const baseBlockOf = (surface: (typeof SURFACES)[number]): string => {
+  const css = surfaceCss[surface];
+  const at = css.indexOf(`[data-surface="${surface}"] {`);
+  if (at === -1) throw new Error(`base block missing from surfaces/${surface}.css`);
+  const end = css.indexOf("\n}", at);
+  return css.slice(at, end === -1 ? undefined : end);
+};
+
 /** Component-geometry tokens the surface layers are allowed to flip. */
 const GEOMETRY_TOKENS = [
   "--tds-radius-btn",
@@ -201,11 +218,18 @@ describe("surface character", () => {
   it("makes marketing the borderless surface", () => {
     // The public site separates with fill, tone and spacing rather than by
     // drawing a box around everything. Panel and blog must NOT inherit this:
-    // their hairline is load-bearing structure.
+    // their hairline is load-bearing structure — on a dashboard of a dozen
+    // equal-weight cards, and in an article list, the edge IS the separation.
+    //
+    // Checked against the BASE blocks only (the same narrowing the accent test
+    // below applies, and for the same reason): the panel additionally carries
+    // an opt-in `[data-flat]` variant, and an attribute nothing else sets may
+    // drop the outlines for its one consumer. What must never happen is the
+    // hairline going to 0 for every panel consumer at once.
     expect(surfaceCss.marketing).toMatch(/--tds-border-hairline:\s*0/);
     for (const surface of ["panel", "blog"] as const) {
       expect(
-        surfaceCss[surface],
+        baseBlockOf(surface),
         `${surface} must keep its hairline outlines`,
       ).not.toContain("--tds-border-hairline");
     }
@@ -271,6 +295,93 @@ describe("surface character", () => {
     expect(baseBlock).toMatch(/--tds-panel-accent:\s*var\(--color-primary\)/);
     expect(baseBlock).not.toContain("--color-management");
     expect(surfaceCss.panel).not.toContain('[data-frontend="customer"]');
+  });
+
+  it("gives the panel an opt-in FLAT variant that drops edge and elevation", () => {
+    // The public tools site renders on this surface and wants no outlines and
+    // no depth at all. It cannot get that from the base block (the admin panel
+    // and the customer portal render the same layer), and it must not get it by
+    // re-declaring shared classes in its own global.css — so the variant lives
+    // here, behind an attribute nothing else sets.
+    const flat = ruleBlock(
+      surfaceCss.panel,
+      '[data-surface="panel"][data-flat]',
+    );
+    expect(flat, "the flat variant block is missing").toBeDefined();
+    expect(flat).toMatch(/--tds-border-hairline:\s*0/);
+    expect(flat).toMatch(/--tds-elevation-card:\s*none/);
+  });
+
+  it("keeps the flat variant off the accent axis and off overlay depth", () => {
+    const flat = ruleBlock(
+      surfaceCss.panel,
+      '[data-surface="panel"][data-flat]',
+    )!;
+    // Flat is a GEOMETRY variant. Touching the accent here would give the
+    // public tools site a second, undocumented way to end up in a colour it
+    // never chose — the exact failure the base-accent test above guards.
+    expect(flat).not.toContain("--tds-panel-accent");
+    // `--tds-elevation-raised` carries the modal panel's and the dropdown's
+    // depth. Zeroing it globally to kill the card lift would make every
+    // overlay on the site float with nothing separating it from the page;
+    // the lift is switched off in app.css, where the overlay is drawn.
+    expect(flat).not.toContain("--tds-elevation-raised");
+    expect(app).toContain('[data-surface="panel"][data-flat] .tds-card::after');
+  });
+
+  it("gives every edge-only primitive a fill counterpart under [data-flat]", () => {
+    // THE test for this whole variant. Four primitives separate from their
+    // ground only by their outline, and a borderless one is not "flatter" but
+    // invisible — a `.field-boxed` inside a `.tds-card` shares the card's exact
+    // fill, so it disappears with its label colliding into its value. None of
+    // that throws, warns, or fails a build: it just ships.
+    for (const selector of [
+      ".status-pill",
+      ".chip:not(.chip-solid)",
+      ".field-boxed",
+      ".btn-ghost",
+    ]) {
+      // `[,{]` because these share grouped rules — pinning the literal
+      // `selector {` would make the test fail on a pure reformat.
+      const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      expect(
+        primitives,
+        `[data-flat] ${selector} needs a fill to replace its outline`,
+      ).toMatch(new RegExp(`\\[data-flat\\]\\s+${escaped}\\s*[,{]`));
+    }
+    // The invisible-input case gets its fill pinned explicitly: this is the
+    // one where the primitive's own fill EQUALS its usual ground.
+    expect(ruleBlock(primitives, "[data-flat] .field-boxed")).toMatch(
+      /background:\s*color-mix/,
+    );
+    // `.brand-header` draws a LITERAL 1px border-bottom rather than using the
+    // token, so it is the one separator a flat consumer cannot switch off from
+    // its own stylesheet without re-declaring a shared class.
+    expect(primitives).toContain("[data-flat] .brand-header {");
+  });
+
+  it("keeps .field out of the flat variant", () => {
+    // `.field`'s underline is a line BETWEEN two things: it never went through
+    // --tds-border-hairline, so it is not lost and must not be "fixed". Giving
+    // it a fill here would turn the library's one editorial input into a boxed
+    // one on the flat surface.
+    expect(primitives).not.toMatch(/\[data-flat\]\s+\.field\s*\{/);
+  });
+
+  it("keeps the brand logomark a masked token, not an image", () => {
+    // The mark is a SHAPE over a colour token, which is what makes dark mode
+    // free — the landingpage's raster pair needs `filter: brightness(0)
+    // invert(1)` to survive it. The asset URL stays app-local because
+    // tds-shared cannot serve a public/-rooted path.
+    const logo = ruleBlock(primitives, ".brand-logo")!;
+    expect(logo, ".brand-logo must live in primitives.css").toBeDefined();
+    expect(logo).toContain("--tds-brand-logo-mask");
+    expect(logo).toMatch(/background-color:\s*var\(--color-primary\)/);
+    // Unprefixed only: lightningcss collapses a hand-authored pair to the
+    // -webkit- form and drops the standard property, which leaves Firefox
+    // painting the un-masked box — a solid navy rectangle.
+    expect(logo).not.toContain("-webkit-mask");
+    expect(primitives).toContain(".brand-logo--inverse");
   });
 
   it("orders the dark correction BEFORE the admin block it feeds into", () => {

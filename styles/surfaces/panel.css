@@ -171,3 +171,44 @@
   --tds-panel-rail-from: color-mix(in srgb, var(--color-management) 16%, var(--color-surface-ink));
   --tds-panel-rail-to: color-mix(in srgb, var(--color-management) 7%, var(--color-surface-ink));
 }
+
+/* === The FLAT variant ==============================================
+   A panel-surface consumer that renders with no self-outlines and no
+   elevation at all: separation comes from fill, tone and spacing alone.
+   `tds-tools-frontend` (the public tools site) is the only consumer —
+   it writes `data-flat` beside `data-surface="panel"` on <html>.
+
+   WHY AN OWN ATTRIBUTE AND NOT `[data-frontend="tools"]`. The accent axis
+   above is keyed on `data-frontend`, and the invariant that keeps the
+   PUBLIC tools site out of the management red is "the tools site writes no
+   `data-frontend` at all" (see the note at the top of this file, pinned by
+   design.test.ts). Spending that attribute on a geometry variant would
+   quietly retire the invariant. `data-flat` also says what it does, and it
+   is reusable by any future flat consumer.
+
+   WHY THE PANEL ITSELF STAYS OUTLINED. The admin frontend and the customer
+   portal render this exact layer, and their hairlines are what separate a
+   dozen equal-weight cards on a dashboard. Only the base block is
+   load-bearing there; a variant may opt out.
+
+   `--tds-elevation-raised` is deliberately NOT touched. It carries the
+   modal panel's and the dropdown's depth (primitives.css), and an overlay
+   with no depth is unreadable — flat is about the page, not about what
+   floats above it. The panel's hover LIFT is switched off in app.css,
+   where the overlay that draws it lives.
+
+   Both attributes sit on <html>, so this is one compound selector on one
+   element. It comes last on purpose: `[data-surface][data-flat]` and
+   `[data-surface][data-frontend="admin"]` carry identical specificity, and
+   a flat admin panel (if one ever existed) should render flat.
+
+   NB the outlines this drops are only the ones a primitive draws around
+   ITSELF. Separators keep their literal 1px (`.tds-list__row`, `.tds-table`,
+   `.field`'s underline, `.hairline*`) — borderless is a look, not an excuse
+   to run table rows together. And every primitive that separated ONLY by
+   its edge gets a fill counterpart in primitives.css; see the "Flat
+   variant" section there before adding anything here. */
+[data-surface="panel"][data-flat] {
+  --tds-border-hairline: 0;
+  --tds-elevation-card: none;
+}

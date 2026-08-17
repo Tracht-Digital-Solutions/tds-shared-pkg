@@ -155,6 +155,48 @@ import this — they duplicate the small bit of validation they need, by design.
   decoration shapes. Borderless is a look; running table rows together is a
   legibility bug. `design.test.ts` pins both halves, so routing a separator
   through the token fails the suite.
+- **A surface can carry an opt-in FLAT variant: `[data-flat]`.** The panel
+  layer has one (`surfaces/panel.css`), and `tds-tools-frontend` is its only
+  consumer — it writes `<html data-surface="panel" data-flat>` and gets no
+  self-outlines and no card elevation at all, while the admin frontend and the
+  customer portal render the same layer unchanged. Three things to know before
+  touching it:
+  - **`--tds-border-hairline: 0` alone does not flatten a surface, it makes
+    parts of it INVISIBLE.** Four primitives separate from their ground *only*
+    by their edge, so each one trades that edge for a fill in the "FLAT
+    variant" section of `primitives.css`: `.field-boxed` (its `--color-card`
+    fill is the same fill as the `.tds-card` it sits in, so a borderless boxed
+    input inside a card disappears entirely, label colliding into value),
+    `.status-pill` and `.chip--neutral` (transparent — they degrade to bare
+    small-caps text), `.btn-ghost` (a button that reads as text until hover).
+    `currentColor` at 12% does the variant work for one rule instead of eleven
+    hard-coded mixes; `.chip-solid` must stay excluded, because there
+    `currentColor` is white. Nothing about this failure mode throws, warns or
+    breaks a build — `design.test.ts` asserts a fill counterpart exists per
+    selector precisely because the browser is otherwise the only witness.
+  - **`--tds-elevation-raised` stays untouched.** It carries the modal panel's
+    and the dropdown's depth, and an overlay with no depth is unreadable. The
+    card's hover *lift* is switched off in `app.css`, where the overlay that
+    draws it lives — the resting shadow is the only thing the token half
+    clears.
+  - **It is `data-flat`, not `data-frontend="tools"`.** The panel's accent axis
+    is keyed on `data-frontend`, and the invariant keeping the public tools site
+    out of the management red is "the tools site writes no `data-frontend` at
+    all". Spending that attribute on a geometry variant would quietly retire it.
+- **The brand logomark is a masked shape, `.brand-logo`** (promoted out of
+  `tds-blog-frontend` in 0.24.2). The element *is* the colour
+  (`background-color: var(--color-primary)`) and the asset is only a mask, which
+  is what makes dark mode free — the landingpage ships the mark as two raster
+  `<img>` and inverts them with `filter: brightness(0) invert(1)`. The asset URL
+  stays app-local (`--tds-brand-logo-mask`), because tds-shared cannot serve a
+  `public/`-rooted path; `--tds-brand-logo-size` and `--tds-brand-logo-ratio`
+  size it. **The ratio matters:** the mask is `contain`-fitted, so a box whose
+  aspect does not match the art letterboxes the mark and renders it smaller than
+  the space it takes, with nothing to say so. The default `1.476` is the real
+  aspect of the shipped asset (713×483). The blog's own copy of this rule
+  declares a portrait `0.885` box for that same landscape asset and has been
+  drawing the mark undersized ever since — fixing that is a blog change.
+  Author `mask` **unprefixed only**, same contract as `backdrop-filter`.
 - **The geometry scale is a plain `:root` block, NOT `@theme inline`.**
   `@theme inline` substitutes each token's literal value into Tailwind's
   generated utilities, making it impossible to override further down the

@@ -758,6 +758,22 @@
       var(--color-line)
     );
   }
+
+  /* The FLAT variant has no lift. `--tds-elevation-card: none` (see
+     surfaces/panel.css) only clears the RESTING shadow — the hover shadow is
+     drawn by the overlay above, which reads `--tds-elevation-raised`, and
+     that token has to keep its value because the modal and the dropdown
+     depend on it. So the overlay itself goes.
+
+     The `border-color` rule above is left standing: at a border width of 0 it
+     paints nothing, and deleting it would only make the flat case look like
+     the reason it exists. A flat consumer that wants a hover cue owes itself
+     a FILL change on its own interactive element — not on `.tds-card`, which
+     is also the wrapper around non-interactive page content. */
+  [data-surface="panel"][data-flat] .tds-card::after,
+  [data-surface="panel"][data-flat] .widget-slot .tds-widget::after {
+    display: none;
+  }
 }
 
 /* === Touch ergonomics (panel chrome) ============================== */

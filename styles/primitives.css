@@ -1803,3 +1803,120 @@ button.tds-row:focus-visible {
     padding-inline: 0.875rem;
   }
 }
+
+/* === The FLAT variant ==============================================
+   Fill counterparts for the primitives that a borderless surface would
+   otherwise erase. Switched on by `data-flat` on <html>, whose token half
+   lives in surfaces/panel.css — read the long note there first.
+
+   WHY THIS SECTION HAS TO EXIST. `--tds-border-hairline: 0` on its own does
+   not make a surface flat, it makes parts of it INVISIBLE. Four primitives
+   in this file separate from their ground ONLY by their edge:
+
+     .field-boxed   fill is `--color-card` — the same fill as the `.tds-card`
+                    it usually sits inside, so a borderless boxed input in a
+                    card is a completely invisible input with its label
+                    colliding into its value.
+     .status-pill   transparent; the variants set `color` + `border-color` and
+                    no fill at all, so it degrades to bare small-caps text.
+     .chip--neutral transparent (the coloured variants already carry a 12%
+                    wash and survive on their own).
+     .btn-ghost     transparent + `border-color`, i.e. a button that reads as
+                    plain text until it is hovered.
+
+   That is the documented trap in two directions at once — "a fill only
+   separates against a DIFFERENT ground", and "removing a border deletes
+   state wherever a coloured edge was the only cue". So each one trades its
+   edge for a fill; nothing is merely deleted.
+
+   `currentColor` does the variant work for free: every `.status-pill--*` and
+   `.chip--*` already sets `color`, so one rule gives each variant its own
+   correctly-hued wash instead of eleven hard-coded mixes.
+
+   `.field` is deliberately absent — its `border-bottom` is a literal 1px
+   line BETWEEN two things, not a self-outline, so it never went through the
+   token and needs no counterpart.
+
+   Anything added to this section wants an assertion in design.test.ts: an
+   invisible input is silent in the browser, in `astro check` and in the
+   build, which is exactly how it would ship. */
+
+[data-flat] .status-pill,
+[data-flat] .chip:not(.chip-solid) {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+/* `.chip-solid` is excluded because there `currentColor` is white: a 12%
+   white wash would paint straight over the solid primary fill and leave
+   white text on an almost-white chip. */
+
+[data-flat] .field-boxed {
+  background: color-mix(in srgb, var(--color-ink) 6%, var(--color-card));
+}
+
+[data-flat] .btn-ghost {
+  background: var(--color-soft);
+}
+[data-flat] .btn-ghost:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-ink) 8%, var(--color-soft));
+}
+
+/* The header shell. `.brand-header` draws its own `border-bottom` with a
+   LITERAL 1px (see the note on that rule) rather than through the hairline
+   token, so a flat consumer keeps the line unless it is switched off here —
+   the site cannot do it without re-declaring a shared class.
+
+   The fill turns fully OPAQUE and the blur goes with it: a translucent bar
+   over a blurred page is a depth effect, and it is the one thing on a flat
+   page that reads as glass. `--color-card` rather than the panel canvas on
+   purpose — a canvas-coloured bar over a canvas-coloured page has no
+   boundary at all once the page scrolls under it, which is the same
+   different-ground rule as everything above. Because the fill is opaque, a
+   `-webkit-backdrop-filter` surviving from the base rule cannot show. */
+[data-flat] .brand-header {
+  background: var(--color-card);
+  backdrop-filter: none;
+  border-bottom: 0;
+}
+
+/* === Brand logomark =============================================== */
+
+/* The TD mark, drawn as a CSS mask over a colour token rather than as an
+   <img>. That is what makes dark mode free: the landingpage ships the mark
+   as two raster images and inverts them with `filter: brightness(0)
+   invert(1)`, which is a hack that only survives because the mark is
+   monochrome. Here the element IS the colour and the asset is only a shape.
+   `--inverse` is for a fixed-dark ground (a navy footer), where the page's
+   ink token would disappear.
+
+   The ASSET stays app-local — tds-shared cannot serve a `public/`-rooted
+   URL — so each consumer points `--tds-brand-logo-mask` at its own copy:
+
+     :root { --tds-brand-logo-mask: url("/brand/td-logomark.webp"); }
+
+   `--tds-brand-logo-ratio` defaults to the real aspect of the shipped asset
+   (713x483 => 1.476). It matters because the mask is `contain`-fitted: a box
+   whose ratio does not match the art letterboxes the mark and renders it
+   SMALLER than the space it occupies, with nothing anywhere to say so.
+   (tds-blog-frontend's local copy of this rule, which this promotion
+   replaces, declares a portrait 0.885 box for the same landscape asset and
+   has been rendering the mark undersized ever since. Fixing that is a blog
+   change, not this one.) */
+.brand-logo {
+  display: inline-block;
+  flex-shrink: 0;
+  height: var(--tds-brand-logo-size, 1.4em);
+  width: calc(var(--tds-brand-logo-size, 1.4em) * var(--tds-brand-logo-ratio, 1.476));
+  background-color: var(--color-primary);
+  /* Unprefixed ONLY — the same contract as `backdrop-filter` on
+     `.brand-header` above, and for the same reason: lightningcss collapses a
+     hand-authored prefix pair down to the `-webkit-` form and drops the
+     standard property, which would leave Firefox with no mask and therefore
+     a solid navy rectangle where the mark should be. Every consumer pins a
+     Safari floor through `tdsViteBuild`, so the prefix is added at build
+     time. (tds-blog-frontend's local copy authors both by hand; verify the
+     BUILT css carries `mask` and `-webkit-mask`, not just one of them.) */
+  mask: var(--tds-brand-logo-mask) center / contain no-repeat;
+}
+.brand-logo--inverse {
+  background-color: #fff;
+}
