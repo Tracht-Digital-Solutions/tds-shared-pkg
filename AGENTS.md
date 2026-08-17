@@ -209,6 +209,37 @@ import this — they duplicate the small bit of validation they need, by design.
   cascade — a `[data-surface]` layer would never be seen. Colours and fonts
   stay in `@theme inline` (so `text-primary` / `font-display` keep working);
   anything a surface must flip goes in the ordinary `:root` block.
+- **Page width and grid density are tokens, and the grid needs no breakpoint.**
+  `.tds-shell` (+ `--tds-shell-max` / `--tds-gutter`) and `.tds-grid-auto`
+  (+ `--tds-grid-min`) replace the container utility every app was copying per
+  call site — tds-blog-frontend had `max-w-5xl mx-auto px-6` in **22** files,
+  which is exactly why nothing there ever changed shape above 1024px. Three
+  things to know:
+  - **`min(100%, …)` inside the grid's `minmax()` is not optional.** A bare
+    `minmax(16rem, 1fr)` overflows any viewport narrower than 16rem, and
+    `body { overflow-x: hidden }` **clips** that instead of revealing it — no
+    scrollbar, no error, the right-hand content simply is not there.
+  - **A Tailwind width utility cannot override `.tds-shell`.** This library is
+    unlayered and Tailwind emits utilities inside `@layer utilities`; unlayered
+    CSS beats every layer. An element with both `tds-shell` and `max-w-5xl`
+    takes the shell's width, so a half-migrated page *looks* migrated. Narrow
+    one instance by setting the token, never by adding a utility.
+  - **No token name may contain a digit.** The "surface references only tokens
+    base.css defines" test scans with `/var\((--tds-[a-z-]+)/`, a class with no
+    `0-9`, so `var(--tds-space-3xl)` is captured as `--tds-space-` and the
+    assertion fails naming a token nobody wrote. A dedicated test now forbids
+    the shape. `--tds-radius-2xl` is the standing counter-example and is safe
+    only because no surface file references it.
+  Deliberately **not** added alongside these: a Utopia-style type/space scale.
+  `base.css` carries no spacing or font-size scale on purpose ("the app owns
+  display sizing") and every consumer already has Tailwind's; a second
+  competing scale across seven repos for one consumer would be a reversal.
+- **`.tds-prose` scales its size but not its measure.** `font-size` is a `vw`
+  clamp; `max-width` is `var(--tds-measure, 65ch)` and stays in `ch`. That
+  split is deliberate: two of the four consumers (`HelpCenter` in
+  tds-core-frontend-pkg, the blog-cms markdown preview) render **inside the
+  panel**, where the viewport says nothing about the available column width —
+  a `vw`-derived measure would overflow a narrow content pane on a wide screen.
 - **Decoration is a shared layer, not per-app markup ("Digitale
   Maßarbeit").** Before this existed, every app that wanted a background
   invented one: the landingpage had a three-blob aurora that spring-followed

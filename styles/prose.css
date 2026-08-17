@@ -33,10 +33,20 @@
 
 .tds-prose {
   font-family: var(--font-body);
-  font-size: 1.0625rem;
+  /* Fluid body size. Only the SIZE is viewport-derived — the measure below
+     stays a `ch` max-width, so this cannot overflow a narrow column: `ch`
+     grows with the font, and a max-width never exceeds its container.
+     That distinction is what makes this safe for the four consumers, two of
+     which are inside the panel (the blog-cms markdown preview and
+     tds-core-frontend-pkg's HelpCenter) where the available width has nothing
+     to do with the window width. A vw-derived MEASURE would break both. */
+  font-size: clamp(1.0625rem, 1.02rem + 0.2vw, 1.1875rem);
   line-height: 1.7;
   color: var(--color-ink);
-  max-width: 65ch;
+  /* Tokenised so a consumer can tighten or widen the measure without forking
+     the class. The fallback keeps this stylesheet standalone-usable, and
+     matches the value that was hard-coded here before. */
+  max-width: var(--tds-measure, 65ch);
 }
 
 .tds-prose p {

@@ -198,6 +198,82 @@ describe.each(SURFACES)("surfaces/%s.css", (surface) => {
       );
     }
   });
+
+  it("references no token whose name contains a digit", () => {
+    // The check above cannot see one. Its pattern is /var\((--tds-[a-z-]+)/ —
+    // a character class with NO `0-9` — so `var(--tds-space-3xl)` is captured
+    // as `--tds-space-`, base.css is searched for a token that does not exist,
+    // and the assertion fails with a message naming a token nobody wrote.
+    // Rather than widen that pattern (which would silently change what a
+    // decade of surface files are checked against), forbid the shape outright:
+    // token names take word suffixes, never numerals.
+    // `--tds-radius-2xl` is the standing counter-example — it exists in
+    // base.css and is safe only because no surface file references it.
+    for (const [surface, code] of Object.entries(surfaceCss)) {
+      const digity = [...code.matchAll(/var\(\s*(--tds-[a-z0-9-]*\d[a-z0-9-]*)/g)].map(
+        (m) => m[1],
+      );
+      expect(digity, `surfaces/${surface}.css references a digit-bearing token`).toEqual(
+        [],
+      );
+    }
+  });
+});
+
+describe("fluid layout", () => {
+  const LAYOUT_TOKENS = [
+    "--tds-shell-max",
+    "--tds-shell-wide",
+    "--tds-shell-article",
+    "--tds-shell-prose",
+    "--tds-measure",
+    "--tds-grid-min",
+    "--tds-gutter",
+  ] as const;
+
+  it("declares every layout token in base.css", () => {
+    for (const token of LAYOUT_TOKENS) {
+      expect(base, `${token} must be declared in base.css`).toContain(`${token}:`);
+    }
+  });
+
+  it("keeps the layout tokens OUT of the @theme inline block", () => {
+    // Same reason as the geometry scale: @theme inline substitutes each token's
+    // literal value into Tailwind's generated utilities, which makes it
+    // impossible to override further down the cascade — a [data-surface] or a
+    // consuming app's :root would never be seen.
+    const start = base.indexOf("@theme inline");
+    const themeBlock = base.slice(start, base.indexOf("}", base.indexOf("--font-mono", start)));
+    for (const token of LAYOUT_TOKENS) {
+      expect(themeBlock, `${token} must not live in @theme inline`).not.toContain(token);
+    }
+  });
+
+  it("ships a page shell and an intrinsic grid driven by those tokens", () => {
+    const shell = primitives.match(/\.tds-shell\s*\{[^}]*\}/)?.[0] ?? "";
+    expect(shell).toContain("var(--tds-shell-max)");
+    expect(shell).toContain("margin-inline: auto");
+    expect(shell).toContain("var(--tds-gutter)");
+
+    const grid = primitives.match(/\.tds-grid-auto\s*\{[^}]*\}/)?.[0] ?? "";
+    expect(grid).toContain("auto-fill");
+    expect(grid).toContain("var(--tds-grid-min)");
+    // The overflow guard. Without it the grid overflows any viewport narrower
+    // than --tds-grid-min, and body{overflow-x:hidden} CLIPS that silently.
+    expect(grid).toContain("min(100%");
+  });
+
+  it("keeps the prose measure in ch and only the font size fluid", () => {
+    // .tds-prose renders inside the panel too (HelpCenter, the blog-cms
+    // preview), where the viewport says nothing about the available width. A
+    // vw-derived max-width would overflow a narrow content pane on a wide
+    // screen; a vw-derived font-size cannot.
+    const rule = prose.match(/\.tds-prose\s*\{[^}]*\}/)?.[0] ?? "";
+    expect(rule).toMatch(/max-width:\s*var\(\s*--tds-measure/);
+    expect(rule).not.toMatch(/max-width:[^;]*vw/);
+    expect(rule).toMatch(/font-size:\s*clamp\(/);
+    expect(base).toMatch(/--tds-measure:\s*\d+ch/);
+  });
 });
 
 describe("surface character", () => {

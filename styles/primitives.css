@@ -785,6 +785,47 @@ label.tds-field-row > :is(input, select, textarea) {
   border-radius: var(--tds-radius-card);
 }
 
+/* === Page shell ===================================================
+   The centred page container. Before this, each app repeated a container
+   utility per call site — tds-blog-frontend had `max-w-5xl mx-auto px-6` in 22
+   files — so the page width was not a decision anywhere, it was 22 copies of
+   one, and none of them could be changed without changing all of them.
+
+   CASCADE TRAP, and it is not a specificity question: this stylesheet is
+   UNLAYERED, while Tailwind emits utilities inside `@layer utilities`, and
+   unlayered CSS beats every layer. So an element carrying both `tds-shell` and
+   a width utility takes the SHELL's width and the utility does nothing — which
+   means a half-migrated page looks fully migrated. To narrow one instance, set
+   the token (`style="--tds-shell-max: 48rem"`), never a utility class. */
+.tds-shell {
+  max-width: var(--tds-shell-max);
+  margin-inline: auto;
+  padding-inline: var(--tds-gutter);
+}
+.tds-shell--wide {
+  max-width: var(--tds-shell-wide);
+}
+
+/* === Intrinsic card grid ==========================================
+   A multi-column grid with NO breakpoint at any width: `auto-fill` derives the
+   column count from the space the grid actually gets, so it answers a wider
+   page, a collapsed sidebar or a narrower parent identically and without
+   either side knowing about the other.
+
+   `min(100%, …)` is the overflow guard, and it is not optional: a bare
+   `minmax(16rem, 1fr)` overflows any viewport narrower than 16rem, and
+   `body { overflow-x: hidden }` (base.css) CLIPS that rather than revealing
+   it — no scrollbar, no error, the content on the right simply is not there.
+
+   Set `--tds-grid-min` on the grid to change the density; never write a column
+   count, or the grid stops being intrinsic. Same shape as `.dashboard-grid`
+   in app.css, which predates this and stays where it is (panel-owned). */
+.tds-grid-auto {
+  display: grid;
+  gap: var(--tds-gutter);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--tds-grid-min)), 1fr));
+}
+
 /* === Generic layout ===============================================
    Two shapes that recur constantly in the panel's component internals: form
    bodies / detail regions (a vertical stack) and header rows / filter bars /

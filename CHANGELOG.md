@@ -6,7 +6,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **A fluid layout scale: `.tds-shell`, `.tds-grid-auto`, and seven tokens.**
+  Page width was not a decision anywhere — it was a container utility copied
+  per call site (`tds-blog-frontend` carried `max-w-5xl mx-auto px-6` in **22**
+  files), which is why nothing on that site changed shape above 1024px: to
+  widen it you had to edit 22 files, and so nobody ever did.
+  - `--tds-shell-max` (90rem), `--tds-shell-wide`, `--tds-shell-article`,
+    `--tds-shell-prose`, `--tds-measure` (65ch), `--tds-grid-min` (16rem) and
+    `--tds-gutter` (a `clamp()`), all in the plain `:root` — never
+    `@theme inline`, or a consumer could not override them.
+  - `.tds-shell` centres and gutters a page; `.tds-shell--wide` is the roomier
+    variant.
+  - `.tds-grid-auto` is an intrinsic grid with **no breakpoint at any width**:
+    `auto-fill` derives the column count from the space the grid actually has,
+    so it answers a wider page or a collapsed sidebar without either side
+    knowing about the other. The `min(100%, …)` inside its `minmax()` is the
+    overflow guard and is not optional — a bare `minmax(16rem, 1fr)` overflows
+    any narrower viewport, and `body { overflow-x: hidden }` **clips** that
+    rather than revealing it.
+  - **Token names may not contain digits.** The existing "surface references
+    only tokens base.css defines" test scans with `/var\((--tds-[a-z-]+)/` — a
+    class with no `0-9` — so `var(--tds-space-3xl)` is captured as
+    `--tds-space-` and the assertion fails naming a token nobody wrote. A new
+    test forbids the shape outright rather than widening that pattern.
+    (`--tds-radius-2xl` survives only because no surface file references it.)
+  - Deliberately **not** added: a Utopia-style type/space scale. `base.css`
+    carries no spacing or font-size scale on purpose and every app already has
+    Tailwind's; a second competing scale across seven repos for one consumer
+    would be a reversal, not an addition.
+
 ### Changed
+- **`.tds-prose` scales its body size and tokenises its measure.**
+  `font-size` is now `clamp(1.0625rem, 1.02rem + 0.2vw, 1.1875rem)` and
+  `max-width` reads `var(--tds-measure, 65ch)`.
+  Only the **size** is viewport-derived; the **measure** stays a `ch`
+  `max-width`, and that split is what keeps this safe for all four consumers —
+  two of them (`tds-core-frontend-pkg`'s `HelpCenter`, the blog-cms markdown
+  preview) render inside the panel, where the viewport says nothing about the
+  available column width and a `vw`-derived measure would overflow it.
+  The `65ch` fallback means consumers still on an older `base.css` render
+  byte-identically.
 - **The brand hues take their assigned INTERFACE roles, not just decorative
   ones.** Three of the five palette colours were effectively invisible in the
   running design — `--color-cranberry` had exactly ONE call site in the whole

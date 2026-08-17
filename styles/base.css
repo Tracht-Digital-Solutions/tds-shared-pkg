@@ -343,6 +343,45 @@
      per-product accent instead — that one is product signal, not decoration. */
   --tds-eyebrow-color: var(--color-cranberry);
 
+  /* --- Fluid layout ---------------------------------------------------
+     Page width, gutter and grid density. Before these, every app hard-coded
+     its own container: the blog repeated `max-w-5xl mx-auto px-6` in 22 files,
+     which is why nothing above 1024px ever changed shape there — widening the
+     site meant editing 22 files and nobody did.
+
+     TWO CONSTRAINTS THESE NAMES OBEY, both learned the hard way:
+
+     · NO DIGITS IN THE NAME. design.test.ts scans surface files with
+       /var\((--tds-[a-z-]+)/ — a character class with no `0-9`. A token called
+       `--tds-shell-2xl` is captured as `--tds-shell-`, which resolves to
+       nothing, and the "surface references only tokens base.css defines"
+       assertion goes red the moment a surface layer uses it. Word suffixes
+       only. (`--tds-radius-2xl` gets away with it purely because no surface
+       file references it.)
+     · A SURFACE MAY ONLY DECLARE CUSTOM PROPERTIES — no @media, no @container.
+       So anything fluid has to be a clamp() INSIDE the token value, never a
+       query around it. Same reason --tds-panel-title-size is a clamp().
+
+     `--tds-shell-max` is deliberately a plain max and not a clamp: the shell
+     grows with the viewport on its own, and the intrinsic grid answers the
+     extra room with MORE COLUMNS rather than longer lines. Consumers that want
+     a different ceiling set the token; tds-blog-frontend takes it to 120rem. */
+  --tds-shell-max: 90rem;
+  --tds-shell-wide: 104rem;
+  --tds-shell-article: 82rem;
+  --tds-shell-prose: 48rem;
+
+  /* Long-form reading measure. Stays a `ch` max-width, never a vw clamp:
+     .tds-prose also renders inside the admin panel's help centre and its CMS
+     preview, where a viewport-derived width would overflow a narrow content
+     pane on a wide screen. */
+  --tds-measure: 65ch;
+
+  /* Minimum track for the intrinsic card grid. */
+  --tds-grid-min: 16rem;
+
+  --tds-gutter: clamp(1.25rem, 0.9rem + 1.6vw, 2.5rem);
+
   /* The wash a hovered row takes. Coral, because "Hoverzustände" is exactly
      what the brand direction assigns it — the three row primitives
      (`.tds-list__row`, `.tds-table tbody tr`, `.entry-row`) all used the
