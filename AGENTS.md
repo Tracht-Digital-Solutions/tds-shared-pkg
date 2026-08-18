@@ -208,6 +208,23 @@ import this — they duplicate the small bit of validation they need, by design.
     is keyed on `data-frontend`, and the invariant keeping the public tools site
     out of the management red is "the tools site writes no `data-frontend` at
     all". Spending that attribute on a geometry variant would quietly retire it.
+- **The DE|EN switch is `.tds-lang-toggle`** (promoted out of
+  `tds-blog-frontend` in 0.25.3). It is a group of **links**, not buttons: each
+  half is a real URL to the same page in the other language, so it works without
+  JS, opens in a new tab and is crawlable. `aria-current="true"` on the active
+  half carries the state — `.on` is only paint, and a consumer that sets one
+  without the other is lying to assistive tech. Wrap it in `role="group"` with a
+  **bilingual** `aria-label` ("Sprache / Language"): the control names languages
+  in their own tongue, so a single-language label is wrong for half its users.
+  The active half is `--color-surface-navy`, a FIXED-dark token, because a
+  flipping one would put white text on near-white in dark mode. Geometry follows
+  `--tds-radius-chip`, so it is square on the blog and a pill on marketing.
+  Before this it existed only in the blog, which is why the tools site — the
+  blog's sibling public property — shipped a plain text link that showed the
+  language you were *not* on and never said which one you were reading.
+  **Consumers differ on the hrefs, deliberately:** the blog points at the two
+  home pages, the tools site at the equivalent page, because somebody who
+  followed a search result to one tool wants that tool.
 - **The brand logomark is a masked shape, `.brand-logo`** (promoted out of
   `tds-blog-frontend` in 0.24.2). The element *is* the colour
   (`background-color: var(--color-primary)`) and the asset is only a mask, which
