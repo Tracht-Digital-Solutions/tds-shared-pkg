@@ -445,6 +445,16 @@ describe("surface character", () => {
         `[data-flat] ${selector} needs a fill to replace its outline`,
       ).toMatch(new RegExp(`\\[data-flat\\]\\s+${escaped}\\s*[,{]`));
     }
+    // A CARD INSIDE A CARD is the same failure one level up, and it was found
+    // in a browser rather than in this list: the nested box carries the same
+    // `--color-card` fill as its parent, so without the outline the two are
+    // one white rectangle. On the tools site the nested card is always the
+    // RESULT — the QR preview, the contrast sample, the generated password —
+    // i.e. exactly the content that must stay legible in the flow.
+    expect(
+      ruleBlock(primitives, "[data-flat] .tds-card .tds-card"),
+      "a nested card needs a fill or it merges into its parent",
+    ).toMatch(/background:\s*color-mix/);
     // The invisible-input case gets its fill pinned explicitly: this is the
     // one where the primitive's own fill EQUALS its usual ground.
     expect(ruleBlock(primitives, "[data-flat] .field-boxed")).toMatch(

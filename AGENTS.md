@@ -190,6 +190,15 @@ import this — they duplicate the small bit of validation they need, by design.
     wholesale, because `[data-flat] .chip` is (0,2,0) against
     `.chip--warning`'s (0,1,0) and would override all eleven coloured variants
     into one grey.
+  - **A card INSIDE a card counts too, and it is the one that was found in a
+    browser rather than on the list.** `.tds-card` nested in `.tds-card`
+    carries its parent's exact `--color-card` fill, so with the outline gone
+    the two are one white rectangle. It matters more than it sounds: on the
+    tools site the nested card is always the RESULT — the QR preview, the
+    contrast sample, the generated password, the generated UTM link — i.e.
+    exactly the content the feedback rules say must stay in the flow because
+    the visitor has to read or copy it. One level is treated; a third nesting
+    is a layout problem, not a colour one.
   - **`--tds-elevation-raised` stays untouched.** It carries the modal panel's
     and the dropdown's depth, and an overlay with no depth is unreadable. The
     card's hover *lift* is switched off in `app.css`, where the overlay that

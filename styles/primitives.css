@@ -2051,6 +2051,22 @@ button.tds-row:focus-visible {
 /* `.chip-solid` is excluded because it already carries a solid primary fill
    with white text; a wash over it would leave white on near-white. */
 
+/* A CARD INSIDE A CARD. Not on the original list, and found only in a
+   browser: an output box nested in a form card carries the same
+   `--color-card` fill as its parent, so with the outline gone the two are
+   one white rectangle. The tools site has four (the QR preview, the contrast
+   sample, the generated password, the generated UTM link) and every one of
+   them is the RESULT the visitor came for — the thing they have to read and
+   copy, which is precisely the content the feedback rules say must stay
+   in-flow and legible.
+
+   Same wash as the other counterparts, so a nested card reads as a step off
+   its parent's ground rather than as a second unrelated fill. Only ONE level
+   is treated: a third nesting would keep this fill, and a stack that deep is
+   a layout problem, not a colour one. */
+[data-flat] .tds-card .tds-card {
+  background: color-mix(in srgb, var(--color-ink) 6%, var(--color-card));
+}
 [data-flat] .field-boxed {
   background: color-mix(in srgb, var(--color-ink) 6%, var(--color-card));
 }
