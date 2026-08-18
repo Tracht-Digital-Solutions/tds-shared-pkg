@@ -1095,6 +1095,79 @@ describe("hamburger toggle bars", () => {
   });
 });
 
+describe("mobile navigation panel", () => {
+  // Promoted from the landingpage header once the blog and the tools site
+  // became consumers. The mechanics live in src/nav; this pins the half a
+  // browser shows and a unit test cannot.
+  // Anchored to column 0 so it picks the rule, not the indented copy inside
+  // the desktop media query.
+  const panel = primitives.match(/^\.tds-mobile-menu \{([^}]*)\}/m)?.[1] ?? "";
+
+  it("exposes the panel and its open state", () => {
+    expect(primitives).toContain(".tds-mobile-menu {");
+    expect(primitives).toContain('.tds-mobile-menu[data-open="true"] {');
+  });
+
+  it("takes its radius from the card token so each surface keeps its voice", () => {
+    // The blog flattens --tds-radius-card, which is the whole reason the
+    // journal's sheet stays angular without a per-app override.
+    expect(panel).toContain("border-radius: var(--tds-radius-card)");
+    expect(panel).not.toMatch(/border-radius:\s*[\d.]/);
+  });
+
+  it("outlines itself through the hairline token", () => {
+    expect(panel).toContain("border: var(--tds-border-hairline) solid");
+  });
+
+  it("scrolls instead of overflowing the viewport", () => {
+    // The one place this goes beyond the reference. The landingpage's own
+    // menu is six short rows; the blog's carries nav, an expanded taxonomy
+    // group, a language toggle and a CTA. A fixed panel taller than the
+    // viewport has no scrollbar and no error — its lower half is simply
+    // unreachable, and `body { overflow-x: hidden }` does nothing about it
+    // because the overflow is vertical.
+    expect(panel).toMatch(/max-height:\s*calc\(100dvh/);
+    expect(panel).toContain("overflow-y: auto");
+    expect(panel).toContain("overscroll-behavior: contain");
+  });
+
+  it("leaves docking position to the app", () => {
+    // Three headers float three different ways. Sharing `top`/`inset-inline`
+    // would put the panel in the wrong place on two of them.
+    expect(panel).not.toMatch(/(^|\s)(top|bottom|inset-inline|left|right):/);
+  });
+
+  it("resets the transform under reduced motion rather than only clamping it", () => {
+    // Nested rules close with an indented brace, so a top-level `\n}` is the
+    // media block's own.
+    const blocks = primitives.match(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n\}/g) ?? [];
+    const block = blocks.find((b) => b.includes(".tds-mobile-menu")) ?? "";
+    expect(block, "no reduced-motion block covers .tds-mobile-menu").not.toBe("");
+    expect(block).toContain("transform: none");
+  });
+
+  it("hides both halves above the desktop breakpoint itself", () => {
+    // Not tidiness — a utility cannot do this job. `hidden` on an element
+    // wearing `.btn` loses to `.btn { display: inline-flex }`, because
+    // unlayered CSS beats `@layer utilities` outright, so an `lg:hidden`
+    // hamburger stays visible at every width with nothing to say so.
+    const block = primitives.match(/@media \(min-width: 64rem\) \{[\s\S]*?\n\}/g)
+      ?.find((b) => b.includes(".tds-menu-toggle")) ?? "";
+    expect(block, "no desktop media query hides the mobile nav").not.toBe("");
+    expect(block).toContain(".tds-mobile-menu");
+    expect(block).toContain("display: none");
+  });
+
+  it("keeps the hamburger button free of colour, because it is worn with .btn", () => {
+    // lint:primitives (one byte-identical copy in 20 repos) accepts only
+    // btn/chip/tds-dropdown__*, so this class can never replace `.btn` — it
+    // may only correct the geometry a text button gets wrong.
+    const toggle = primitives.match(/\.tds-menu-toggle \{([^}]*)\}/)?.[1] ?? "";
+    expect(toggle).toContain("position: relative");
+    expect(toggle).not.toMatch(/(background|color|border-radius):/);
+  });
+});
+
 describe("modal / confirm", () => {
   // The `.tds-modal` block styles a native <dialog> opened with showModal().
   // An earlier revision was a div overlay that re-implemented the focus trap,

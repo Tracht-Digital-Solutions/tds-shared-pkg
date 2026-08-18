@@ -1535,10 +1535,12 @@ button.tds-row:focus-visible {
        the landingpage the one it was missing.
 
    The open state keys on `[aria-expanded="true"]` on any ancestor rather
-   than a specific toggle class, so each header keeps its own button
-   naming (`.menu-toggle` / `.jnl-menu-toggle`) with no shared class to
-   coordinate. Scoped by the bar class, so it cannot leak to unrelated
-   expandable controls. */
+   than on a toggle class. That predates the shared `.tds-menu-toggle`
+   button below and outlives it on purpose: `mountMobileNav` maintains
+   `aria-expanded` because a screen reader needs it, so the bars animate
+   off state that has to be correct anyway, and any control that grows a
+   disclosure gets them for free. Scoped by the bar class, so it cannot
+   leak to unrelated expandable controls. */
 .tds-menu-bar {
   position: absolute;
   left: 50%;
@@ -1572,6 +1574,153 @@ button.tds-row:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .tds-menu-bar {
     transition-duration: 0.01ms;
+  }
+}
+
+/* The button the bars sit in. Square 44px touch target, no fill of its
+   own — it is worn TOGETHER WITH `btn btn-ghost`, never instead of it.
+   That is not a style preference: `scripts/lint-primitives.mjs` (one
+   byte-identical copy in 20 repos) accepts exactly `btn`, `chip` and
+   `tds-dropdown__(trigger|item)` as shared classes, so a hamburger
+   wearing only this class would be reported as a bare control in every
+   repo that runs the linter — and editing 20 copies to teach it a new
+   name is the most expensive way to fix that.
+
+   So `.btn` brings colour, hover/focus treatment and radius; this class
+   only overrides the geometry a text button gets wrong (a fixed square
+   instead of horizontal padding) and establishes the positioning context
+   the absolutely-placed bars need. */
+.tds-menu-toggle {
+  position: relative;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+}
+
+/* Both halves are mobile-only, and the breakpoint lives HERE rather than as
+   an `lg:hidden` utility in each header. That is not tidiness — a utility
+   cannot do this job at all:
+
+   tds-shared's stylesheets are unlayered and Tailwind emits utilities inside
+   `@layer utilities`, so unlayered CSS wins outright. `hidden` on an element
+   wearing `.btn` loses to `.btn { display: inline-flex }` and the hamburger
+   stays visible at every width, with nothing to say so. The tools site has
+   the same trap written up in its own header for the CTA button.
+
+   64rem is Tailwind's `lg` and the default of `MOBILE_NAV_DESKTOP_QUERY` in
+   `src/nav` — change one and change the other, or the panel will hide at a
+   width where the mechanics still consider it open. */
+@media (min-width: 64rem) {
+  .tds-menu-toggle,
+  .tds-mobile-menu {
+    display: none;
+  }
+}
+
+/* === Mobile navigation panel ====================================== */
+
+/* The panel a `.tds-menu-toggle` opens: a sheet docked under the header,
+   keyed on `data-open` and driven by `mountMobileNav` from
+   `@tracht-digital-solutions/tds-shared/nav`.
+
+   Promoted from the landingpage header, which is the reference layout the
+   public sites converged on. Three consumers today (landingpage, blog,
+   tools), so it clears the "don't promote until two consumers need it"
+   bar in the ledger below.
+
+   POSITION IS DELIBERATELY NOT SET HERE. Every header floats differently
+   — the landingpage's is an inset pill, the blog's and the tools site's
+   are full-bleed sticky bars — so `inset-inline`/`top` stay app-local and
+   only the sheet's own behaviour is shared.
+
+   Geometry comes from tokens, so each surface keeps its own voice with no
+   per-app override: `[data-surface="blog"]` flattens `--tds-radius-card`
+   to 0 and the same markup renders as the journal's angular sheet.
+
+   `max-height` + `overflow-y` are the one place this goes BEYOND the
+   reference, and it is not cosmetic. The landingpage's own menu is six
+   short rows; the blog's carries its nav, an expanded taxonomy group, a
+   language toggle and a CTA. A fixed panel taller than the viewport has
+   no scrollbar and no error — its lower half is simply unreachable, and
+   `body { overflow-x: hidden }` does nothing about it because the
+   overflow is vertical. `--tds-mobile-menu-inset` is what the app tells
+   it about its own docking offset. */
+.tds-mobile-menu {
+  position: fixed;
+  z-index: 30;
+  transform-origin: top center;
+  padding: 0.75rem;
+  border-radius: var(--tds-radius-card);
+  border: var(--tds-border-hairline) solid var(--color-line);
+  background: var(--color-card);
+  box-shadow: var(--tds-shadow-sm);
+  max-height: calc(100dvh - var(--tds-mobile-menu-inset, 5.25rem) - 1rem);
+  overflow-y: auto;
+  /* Keeps a flick at the end of the list from chaining into the page
+     behind the panel, which the scroll lock cannot prevent on iOS. */
+  overscroll-behavior: contain;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(0.96) translateY(-0.5rem);
+  /* `visibility` is delayed out and immediate in, so the panel stays
+     hittable for the whole fade-out and is never a transparent sheet
+     swallowing taps once closed. */
+  transition:
+    opacity var(--tds-dur-base) var(--tds-ease-out),
+    transform var(--tds-dur-base) var(--tds-ease-out),
+    visibility var(--tds-dur-none) linear var(--tds-dur-base);
+}
+.tds-mobile-menu[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: scale(1) translateY(0);
+  transition:
+    opacity var(--tds-dur-base) var(--tds-ease-out),
+    transform var(--tds-dur-base) var(--tds-ease-out),
+    visibility var(--tds-dur-none) linear var(--tds-dur-none);
+}
+
+/* A row inside the panel — large type, a 48px target, no fill at rest. */
+.tds-mobile-menu__link {
+  display: flex;
+  align-items: center;
+  min-height: 3rem;
+  padding-inline: 1rem;
+  border-radius: var(--tds-radius-btn);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  text-decoration: none;
+  transition: background-color var(--tds-dur-fast) var(--tds-ease-out);
+}
+.tds-mobile-menu__link:hover,
+.tds-mobile-menu__link:focus-visible {
+  background: var(--tds-hover-wash);
+}
+
+/* A labelled divider between groups of rows. */
+.tds-mobile-menu__group-label {
+  margin: 0.75rem 1rem 0.25rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tds-mobile-menu,
+  .tds-mobile-menu[data-open="true"],
+  .tds-mobile-menu__link {
+    transition-duration: 0.01ms;
+  }
+  /* End states reset, not just shortened — a clamped duration still
+     animates a transform, and the point of the preference is that the
+     panel appears rather than travels. */
+  .tds-mobile-menu,
+  .tds-mobile-menu[data-open="true"] {
+    transform: none;
   }
 }
 

@@ -72,6 +72,11 @@
       "import": "./dist/toast/index.js",
       "require": "./dist/toast/index.cjs"
     },
+    "./nav": {
+      "types": "./dist/nav/index.d.ts",
+      "import": "./dist/nav/index.js",
+      "require": "./dist/nav/index.cjs"
+    },
     "./api": {
       "types": "./dist/api/index.d.ts",
       "import": "./dist/api/index.js",

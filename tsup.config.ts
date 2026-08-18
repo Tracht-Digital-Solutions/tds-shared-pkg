@@ -13,6 +13,7 @@ export default defineConfig({
     "design/index": "src/design/index.ts",
     "theme/index": "src/theme/index.ts",
     "toast/index": "src/toast/index.ts",
+    "nav/index": "src/nav/index.ts",
     "api/index": "src/api/index.ts",
     "markdown/index": "src/markdown/index.ts",
   },

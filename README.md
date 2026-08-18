@@ -128,6 +128,7 @@ import { LanguageProvider, useLang } from "@tracht-digital-solutions/tds-shared/
 import { ease } from "@tracht-digital-solutions/tds-shared/motion";
 import { ThemeToggle, CookieNotice, LiveChatCta, ToastHost, Spinner, Skeleton, SkeletonText } from "@tracht-digital-solutions/tds-shared/components";
 import { toast } from "@tracht-digital-solutions/tds-shared/toast";
+import { mountMobileNav } from "@tracht-digital-solutions/tds-shared/nav";
 import { apiFetch, apiUrl } from "@tracht-digital-solutions/tds-shared/api";
 import { renderMarkdown } from "@tracht-digital-solutions/tds-shared/markdown";
 import { tdsViteBuild, cssTarget } from "@tracht-digital-solutions/tds-shared/astro";
@@ -209,6 +210,55 @@ toast.info("Neue Kontaktanfrage: Max Mustermann", {
   href: "/kontakt?id=42",      // same-document paths only
 });
 ```
+
+## Mobile navigation
+
+One mechanic for every public header. The markup stays app-local — three sites,
+three link sources — but the behaviour comes from here:
+
+```astro
+<button id="menu-toggle" type="button" class="btn btn-ghost tds-menu-toggle"
+        aria-controls="mobile-menu" aria-expanded="false" aria-label="Menü">
+  <span class="tds-menu-bar tds-menu-bar-top" aria-hidden="true"></span>
+  <span class="tds-menu-bar tds-menu-bar-mid" aria-hidden="true"></span>
+  <span class="tds-menu-bar tds-menu-bar-bot" aria-hidden="true"></span>
+</button>
+
+<div id="mobile-menu" class="tds-mobile-menu inset-x-3 top-20" aria-hidden="true">
+  <a href="/preise" data-menu-link class="tds-mobile-menu__link">Preise</a>
+</div>
+
+<script>
+  import { mountMobileNav } from "@tracht-digital-solutions/tds-shared/nav";
+  const toggle = document.getElementById("menu-toggle");
+  const panel = document.getElementById("mobile-menu");
+  if (toggle && panel) mountMobileNav({ toggle, panel });
+</script>
+```
+
+What you get: `aria-expanded`/`data-open`/`aria-hidden` kept in sync (the
+hamburger animates off the first), a **counted** body scroll lock, Escape with
+focus handed back to the toggle, outside-click, close-on-`[data-menu-link]`,
+a forced close when the viewport crosses into the desktop nav, and a Tab trap
+spanning toggle + panel.
+
+Three things to get right:
+
+- **The `<script>` must not be `is:inline`.** An inline script is not bundled, so
+  its `import` would reach the browser as a bare specifier.
+- **`.tds-menu-toggle` is worn *with* `btn btn-ghost`, never instead of it** —
+  `lint:primitives` accepts only `btn` / `chip` / `tds-dropdown__*` as shared
+  classes.
+- **Docking position stays app-local** (`inset-x-*`, `top-*`). Tell the panel its
+  offset via `--tds-mobile-menu-inset` so its `max-height` leaves the viewport.
+
+The scroll lock is exported on its own (`lockBodyScroll()`) — any future overlay
+should join that counter rather than writing `body.style.overflow`, or whichever
+overlay closes first unlocks the page behind the other.
+
+The panel host (`tds-core-frontend-pkg`) is deliberately **not** a consumer: a
+dashboard shell with ~30 entries in 6 colour-coded zones keeps its off-canvas
+drawer.
 
 ## Design system (CSS, in each frontend)
 

@@ -304,6 +304,12 @@
   /* Reserved for the two genuinely slow surfaces — the modal and the mobile
      drawer. It had no consumers at all until those adopted it. */
   --tds-dur-slow: 320ms;
+  /* An explicit zero, the twin of `--tds-radius-none`. Needed because a
+     `visibility` step must be instant while still riding the transition
+     list (see `.tds-mobile-menu`), and a literal `0s` there is
+     indistinguishable to a reader — and to design.test.ts — from the
+     hard-coded durations the motion scale exists to eliminate. */
+  --tds-dur-none: 0s;
 
   /* Loop durations for the indeterminate indicators. Kept separate from the
      transition scale above because they are periods, not response times: a

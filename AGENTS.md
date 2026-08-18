@@ -588,6 +588,33 @@ import this — they duplicate the small bit of validation they need, by design.
   read from `vite.build.cssTarget`. Frontends import `tdsViteBuild` so the
   Safari floor is defined once — never hand-copy the array back into a
   frontend's `astro.config.mjs` (that's the drift this export removed).
+- **A mobile menu is `src/nav` + `.tds-mobile-menu`, never a fifth hand-roll.**
+  Before this the workspace held four of them: the landingpage's docked dropdown,
+  the blog's full-screen overlay at a different breakpoint, the panel host's
+  off-canvas drawer — and the tools site, a public property with **no mobile
+  navigation at all**. Two scroll-lock strategies, two focus strategies, and only
+  one of the four both trapped focus and returned it. `mountMobileNav` is the
+  union of the best of them; the three public headers keep their own markup and
+  link sources and share only the behaviour.
+  - **The scroll lock is COUNTED, and that is the part worth protecting.**
+    `body.style.overflow` written directly means the first overlay to close
+    unlocks the page behind the second — a background that scrolls under an open
+    modal, which reads as a CSS bug and points nowhere near the cause. Anything
+    new that needs the page still calls `lockBodyScroll()`.
+  - **`.tds-menu-toggle` may never replace `.btn`.** `lint:primitives` accepts
+    exactly `btn` / `chip` / `tds-dropdown__(trigger|item)`, in a copy that is
+    byte-identical across 20 repos, so a toggle wearing only the new class is a
+    bare control everywhere — and teaching 20 copies a new name is the most
+    expensive possible fix. The class carries geometry only; `design.test.ts`
+    asserts it declares no colour.
+  - **The panel host is a documented non-consumer.** `tds-core-frontend-pkg`
+    keeps its off-canvas drawer: ~30 nav entries across 6 colour-coded zones is
+    not a dropdown case. Leaving two mechanics in the system was the deliberate
+    choice, not an oversight.
+  - **`--tds-dur-none` exists for the `visibility` step**, and only for that. A
+    literal `0s` in a transition list is indistinguishable — to a reader and to
+    `design.test.ts`'s "every duration comes from a token" check — from the magic
+    numbers the motion scale was built to remove.
 
 ## Layout
 
@@ -615,6 +642,14 @@ src/
 │                             #   showToast + toast.*). React-free on purpose:
 │                             #   plain-TS callers (the host's dashboardLayout.ts)
 │                             #   import it without pulling in the runtime.
+├── nav/                      # mobile navigation MECHANICS (mountMobileNav +
+│                             #   the counted lockBodyScroll). React-free, because
+│                             #   the three public headers are .astro markup over
+│                             #   three different link sources — there is shared
+│                             #   behaviour here, no shared markup. Pairs with
+│                             #   .tds-mobile-menu / .tds-menu-toggle / .tds-menu-bar*
+│                             #   in primitives.css. The panel host is deliberately
+│                             #   NOT a consumer — see the note below.
 ├── api/                      # the panel API TRANSPORT (apiBase/apiUrl/apiFetch).
 │                             #   Also React-free. Every tds-ext-* island calls
 │                             #   the composed backend through it — see the
