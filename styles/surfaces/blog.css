@@ -61,3 +61,36 @@
   --tds-flat-tint: color-mix(in srgb, var(--color-primary) 9%, var(--color-paper));
   --tds-flat-hover: color-mix(in srgb, var(--color-soft) 70%, var(--color-line));
 }
+
+/* === The FLAT variant ==============================================
+   The same opt-in `data-flat` the panel layer carries, paired with this
+   surface — `tds-tools-frontend` (the public tools site) is its consumer.
+
+   WHY THE PAIRING HAS TO EXIST HERE. The variant's two halves live apart:
+   the fill counterparts in primitives.css are scoped to the bare
+   `[data-flat]` and therefore already reach any surface, while the TOKEN
+   half was written only as `[data-surface="panel"][data-flat]`. So a blog
+   consumer writing `data-flat` got every fill and none of the flattening —
+   the attribute selected nothing, silently, which is exactly why the tools
+   site's own surface test used to assert the attribute was ABSENT.
+
+   WHY NOT THE BASE BLOCK. `blog.tracht-digital.de` renders this same layer,
+   and its hairlines are load-bearing: an article list separates its rows by
+   their edge. Only a variant may drop them, and only for the consumer that
+   opts in.
+
+   WHY NOT A BARE `[data-flat]`. A surface-agnostic block would flatten any
+   future surface by accident, and the opt-in stops being greppable. One
+   pairing per surface that actually has a flat consumer.
+
+   NB what this drops is only the outline a primitive draws around ITSELF.
+   Lines BETWEEN two things keep their literal 1px (`.tds-list__row`,
+   `.tds-table`, `.field`'s underline, `.hairline*`) — borderless is a look,
+   running rows together is a legibility bug. `--tds-elevation-card` is
+   already `none` in the base block above, so the variant only has to move
+   the edge. Read the "FLAT variant" section of primitives.css before adding
+   anything here: every primitive that separated ONLY by its edge needs a
+   fill counterpart, or it does not become flatter, it becomes invisible. */
+[data-surface="blog"][data-flat] {
+  --tds-border-hairline: 0;
+}

@@ -374,11 +374,15 @@ describe("surface character", () => {
   });
 
   it("gives the panel an opt-in FLAT variant that drops edge and elevation", () => {
-    // The public tools site renders on this surface and wants no outlines and
-    // no depth at all. It cannot get that from the base block (the admin panel
-    // and the customer portal render the same layer), and it must not get it by
-    // re-declaring shared classes in its own global.css — so the variant lives
-    // here, behind an attribute nothing else sets.
+    // A panel consumer that wants no outlines and no depth at all cannot get
+    // that from the base block (the admin frontend and the customer portal
+    // render the same layer), and must not get it by re-declaring shared
+    // classes in its own global.css — so the variant lives here, behind an
+    // attribute nothing else sets.
+    //
+    // It has NO consumer today: `tds-tools-frontend` moved to the blog surface
+    // and takes the blog's pairing below. Kept deliberately — the variant is
+    // documented, tested and reusable, and its fill counterparts are shared.
     const flat = ruleBlock(
       surfaceCss.panel,
       '[data-surface="panel"][data-flat]',
@@ -386,6 +390,21 @@ describe("surface character", () => {
     expect(flat, "the flat variant block is missing").toBeDefined();
     expect(flat).toMatch(/--tds-border-hairline:\s*0/);
     expect(flat).toMatch(/--tds-elevation-card:\s*none/);
+  });
+
+  it("pairs the same FLAT variant with the blog surface", () => {
+    // The variant's two halves live in different files: the fill counterparts
+    // in primitives.css are scoped to the BARE `[data-flat]` and so already
+    // reach every surface, while the token half is written per surface. A blog
+    // consumer writing the attribute therefore used to get every fill and none
+    // of the flattening — no error, no warning, an attribute selecting nothing.
+    // `tds-tools-frontend` (the public tools site) is the consumer.
+    const flat = ruleBlock(surfaceCss.blog, '[data-surface="blog"][data-flat]');
+    expect(flat, "the blog flat variant block is missing").toBeDefined();
+    expect(flat).toMatch(/--tds-border-hairline:\s*0/);
+    // Elevation is already `none` in the blog BASE block, so restating it here
+    // would just be a second place to keep in sync.
+    expect(flat).not.toContain("--tds-elevation-card");
   });
 
   it("keeps the flat variant off the accent axis and off overlay depth", () => {

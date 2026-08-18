@@ -155,12 +155,22 @@ import this — they duplicate the small bit of validation they need, by design.
   decoration shapes. Borderless is a look; running table rows together is a
   legibility bug. `design.test.ts` pins both halves, so routing a separator
   through the token fails the suite.
-- **A surface can carry an opt-in FLAT variant: `[data-flat]`.** The panel
-  layer has one (`surfaces/panel.css`), and `tds-tools-frontend` is its only
-  consumer — it writes `<html data-surface="panel" data-flat>` and gets no
-  self-outlines and no card elevation at all, while the admin frontend and the
-  customer portal render the same layer unchanged. Three things to know before
+- **A surface can carry an opt-in FLAT variant: `[data-flat]`.** Two layers
+  pair with it — `surfaces/panel.css` and `surfaces/blog.css` — and a consumer
+  writes `<html data-surface="…" data-flat>` to get no self-outlines at all,
+  while every other consumer of that same layer keeps its hairlines.
+  `tds-tools-frontend` (the public tools site) is the consumer, on the **blog**
+  pairing since 0.25.1; it rendered the panel pairing until it changed surface,
+  which is why both exist and only one is in use. Four things to know before
   touching it:
+  - **The variant has TWO HALVES in two files, and only one of them is
+    surface-scoped.** The fill counterparts in `primitives.css` are scoped to
+    the bare `[data-flat]`, so they already reach every surface; the token half
+    (`--tds-border-hairline: 0`) is written per surface. A consumer on a layer
+    with no pairing therefore gets every fill and none of the flattening — the
+    attribute selects nothing, silently, and the page keeps every outline.
+    **Adding a flat consumer on a new surface means adding that surface's
+    pairing**, not just the attribute.
   - **`--tds-border-hairline: 0` alone does not flatten a surface, it makes
     parts of it INVISIBLE.** Four primitives separate from their ground *only*
     by their edge, so each one trades that edge for a fill in the "FLAT

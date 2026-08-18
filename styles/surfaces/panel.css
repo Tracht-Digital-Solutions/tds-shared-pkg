@@ -175,8 +175,15 @@
 /* === The FLAT variant ==============================================
    A panel-surface consumer that renders with no self-outlines and no
    elevation at all: separation comes from fill, tone and spacing alone.
-   `tds-tools-frontend` (the public tools site) is the only consumer —
-   it writes `data-flat` beside `data-surface="panel"` on <html>.
+   A consumer writes `data-flat` beside `data-surface="panel"` on <html>.
+
+   NO PANEL CONSUMER TODAY. `tds-tools-frontend` was this block's consumer
+   until it moved to the blog surface; it now takes the identical pairing at
+   the end of surfaces/blog.css. The block stays: the variant is documented,
+   tested and reusable, and the fill counterparts in primitives.css (scoped
+   to the bare `[data-flat]`, so they already reach every surface) are what
+   make either pairing safe. The admin frontend and the customer portal
+   render this layer and must never inherit it.
 
    WHY AN OWN ATTRIBUTE AND NOT `[data-frontend="tools"]`. The accent axis
    above is keyed on `data-frontend`, and the invariant that keeps the
