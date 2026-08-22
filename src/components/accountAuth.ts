@@ -50,6 +50,21 @@ export const DEFAULT_LOGIN_URL = "https://auth.tracht-digital.de";
  */
 export const ACCOUNT_HINT_KEY = "tds_pub_account";
 
+/**
+ * The display name the last probe returned, so the reserved trigger is the
+ * same WIDTH as the settled one and not merely the same height.
+ *
+ * Reserving the avatar alone is not enough: the trigger is ~66px without a name
+ * and ~154px with one, and the header's flexible nav absorbs the difference by
+ * sliding sideways on every page view. Measured in a browser, because no test
+ * sees a layout shift.
+ *
+ * It is the person's own name in their own browser, sitting beside a session
+ * cookie for the same person, and it is cleared by {@link clearAccountHint} on
+ * sign-out and on any probe that comes back unauthenticated.
+ */
+export const ACCOUNT_LABEL_KEY = "tds_pub_account_label";
+
 /** Where the account menu sends each kind of request. */
 export interface AccountEndpoints {
   /** `<apiBase>/auth` — may be the same-origin proxy. READS only. */
@@ -122,7 +137,7 @@ export async function fetchAccount(endpoints: AccountEndpoints): Promise<Me | nu
     })();
     mePromise = mePromise.then((me) => {
       if (me === null) mePromise = null;
-      else setAccountHint();
+      else setAccountHint(me.label ?? me.name ?? me.email ?? "");
       return me;
     });
   }
@@ -202,9 +217,11 @@ export function hasAccountHint(): boolean {
   }
 }
 
-export function setAccountHint(): void {
+export function setAccountHint(label = ""): void {
   try {
-    storage()?.setItem(ACCOUNT_HINT_KEY, "1");
+    const store = storage();
+    store?.setItem(ACCOUNT_HINT_KEY, "1");
+    if (label !== "") store?.setItem(ACCOUNT_LABEL_KEY, label);
   } catch {
     /* ignored — see storage() */
   }
@@ -212,9 +229,20 @@ export function setAccountHint(): void {
 
 export function clearAccountHint(): void {
   try {
-    storage()?.removeItem(ACCOUNT_HINT_KEY);
+    const store = storage();
+    store?.removeItem(ACCOUNT_HINT_KEY);
+    store?.removeItem(ACCOUNT_LABEL_KEY);
   } catch {
     /* ignored — see storage() */
+  }
+}
+
+/** The cached display name, or `""` when this browser has never seen one. */
+export function accountHintLabel(): string {
+  try {
+    return storage()?.getItem(ACCOUNT_LABEL_KEY) ?? "";
+  } catch {
+    return "";
   }
 }
 

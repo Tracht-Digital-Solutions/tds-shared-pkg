@@ -35,7 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     common case.
   - The `tds_pub_account` hint gates the remember-me refresh, not just the
     placeholder width: without it every anonymous reader would pay a
-    `POST /refresh` plus a re-probe on every page view.
+    `POST /refresh` plus a re-probe on every page view. It also caches the
+    display name (`tds_pub_account_label`), because reserving the avatar alone
+    leaves a ~66px trigger against a settled ~154px and both public headers
+    give their nav a `flex-1` — so the whole bar slid sideways when the name
+    arrived. Measured in a browser; no test sees a layout shift.
   - `install/profiles/blog.php` gained `GET /auth/me` and `loginUrl`;
     `installer.test.ts` now fails a profile that has one without the other.
   - `Me` gained the five optional fields `/me` really returns (`displayName`,

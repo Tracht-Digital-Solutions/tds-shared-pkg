@@ -837,6 +837,12 @@ difference follows from one fact: **a public page is fully usable signed out.**
   page view. The key is `tds_pub_account` — deliberately not `tds_admin`/
   `tds_customer`, so nobody reads it as something the host's pre-paint gate
   consumes.
+- **The hint caches the NAME (`tds_pub_account_label`), and that is the whole
+  point of it.** Reserving the avatar alone leaves the trigger at ~66px against
+  a settled ~154px, and both headers give their nav a `flex-1`, so the entire
+  bar slides sideways when the name arrives. Found by measuring the built site
+  in a browser; no test sees a layout shift. Both keys are cleared together on
+  sign-out and on any probe that comes back unauthenticated.
 - **No company switcher.** Acting as a company needs `X-Act-As-Company`, which is
   not in auth-api's `Allow-Headers` — the preflight would fail, i.e. the request
   is never sent and the control merely looks dead.

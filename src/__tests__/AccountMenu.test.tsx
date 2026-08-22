@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import AccountMenu from "../components/AccountMenu";
 import {
   ACCOUNT_HINT_KEY,
+  ACCOUNT_LABEL_KEY,
   clearAccountHint,
   invalidateAccount,
   setAccountHint,
@@ -145,9 +146,12 @@ describe("a visitor with no session", () => {
   });
 
   it("carries no stale hint away with it", async () => {
-    setAccountHint();
+    setAccountHint("Julian Tracht");
     render(<AccountMenu />);
     await waitFor(() => expect(localStorage.getItem(ACCOUNT_HINT_KEY)).toBeNull());
+    // The cached name goes with it — a signed-out browser must not keep a
+    // person's name lying around for the next visitor to this machine.
+    expect(localStorage.getItem(ACCOUNT_LABEL_KEY)).toBeNull();
   });
 });
 
@@ -161,6 +165,28 @@ describe("a browser that has been signed in before", () => {
     expect(placeholder).not.toBeNull();
     expect((placeholder as HTMLButtonElement).disabled).toBe(true);
     expect(container.querySelector(".tds-avatar")).not.toBeNull();
+  });
+
+  it("reserves the NAME too, not just the avatar", async () => {
+    // The name is most of the trigger's width (~66px without it, ~154px with),
+    // and the header's flexible nav absorbs the difference by sliding
+    // sideways. Reserving only the avatar still shifts the whole bar on every
+    // page view. Nothing but a browser measurement showed this.
+    localStorage.setItem("tds_pub_account_label", "Julian Tracht");
+    respond(/\/auth\/me$/, 200, ME);
+    const { container } = render(<AccountMenu />);
+    expect(container.querySelector(".tds-dropdown__label")?.textContent).toBe("Julian Tracht");
+    await waitFor(() =>
+      expect(container.querySelectorAll(".tds-dropdown__label").length).toBeGreaterThan(1),
+    );
+  });
+
+  it("caches the name the probe returned, for the next page view", async () => {
+    respond(/\/auth\/me$/, 200, ME);
+    render(<AccountMenu />);
+    await waitFor(() =>
+      expect(localStorage.getItem("tds_pub_account_label")).toBe("Julian Tracht"),
+    );
   });
 
   it("tries the remember-me exchange exactly once when /me says 401", async () => {

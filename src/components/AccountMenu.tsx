@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Avatar from "./Avatar.js";
 import {
   accountEndpoints,
+  accountHintLabel,
   clearAccountHint,
   DEFAULT_LOGIN_URL,
   fetchAccount,
@@ -174,6 +175,9 @@ export default function AccountMenu({
    */
   const [seenBefore] = useState<boolean>(() => hasAccountHint());
 
+  /** The last known display name, so the reserved trigger is the right WIDTH. */
+  const [cachedLabel] = useState<string>(() => accountHintLabel());
+
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -274,15 +278,21 @@ export default function AccountMenu({
 
   if (loading) {
     // Two shapes, each one chosen so the settled state has the same width: a
-    // browser that has been signed in gets the trigger's geometry, everyone
-    // else gets whatever their signed-out state will be anyway. The only
-    // visitor who ever sees the header move is one on their first page view
-    // after signing in.
+    // browser that has been signed in gets the trigger's geometry INCLUDING
+    // the cached name, everyone else gets whatever their signed-out state will
+    // be anyway. Reserving the avatar alone was not enough — the name is most
+    // of the trigger's width, and the header's flexible nav slid sideways when
+    // it arrived. Only the first page view after signing in still moves.
     if (seenBefore) {
       return (
         <div className={`tds-dropdown${className ? ` ${className}` : ""}`} aria-hidden="true">
           <button type="button" className="tds-dropdown__trigger" disabled tabIndex={-1}>
             <span className="tds-avatar tds-avatar--sm" />
+            {!compact && cachedLabel !== "" && (
+              <span className="min-w-0 hidden sm:block">
+                <span className="tds-dropdown__label text-sm font-medium">{cachedLabel}</span>
+              </span>
+            )}
             <span style={{ color: "var(--color-muted)" }}>
               <Glyph size={14}>{ICON.chevron}</Glyph>
             </span>
