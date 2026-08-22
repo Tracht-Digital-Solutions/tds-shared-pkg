@@ -24,7 +24,7 @@
  * configured, `write` is always an absolute origin.
  */
 
-import { DEFAULT_API_BASE, runtimeSetting } from "../api/index.js";
+import { DEFAULT_API_BASE, runtimeAbsolute, runtimeSetting } from "../api/index.js";
 import type { Me } from "../types/index.js";
 
 /** auth-api behind the production gateway. Also the JWT issuer. */
@@ -83,7 +83,6 @@ export interface AccountEndpointFallbacks {
 }
 
 const trimEnd = (value: string): string => value.replace(/\/+$/, "");
-const isAbsolute = (value: string): boolean => /^https?:\/\//i.test(value);
 
 /**
  * Resolve the three bases against `tds-runtime.json`, falling back to the
@@ -101,14 +100,15 @@ export async function accountEndpoints(
 
   // `authBase` is accepted ONLY when it is absolute. In proxy mode the host
   // publishes a relative `/api/...`, and honouring it here is precisely the
-  // dropped-Set-Cookie trap described at the top of this file. Rejecting it
-  // needs no new runtime key and cannot be forgotten at a call site.
-  const declared = await runtimeSetting("authBase", "");
-  const write = isAbsolute(declared) ? declared : (fallbacks.authApi ?? DEFAULT_AUTH_ORIGIN);
+  // dropped-Set-Cookie trap described at the top of this file. The rule lives
+  // in `runtimeAbsolute` because `tds-auth-frontend` needs the identical one —
+  // two hand-written copies of "reject a relative base" is how one of them
+  // eventually stops rejecting.
+  const write = await runtimeAbsolute("authBase", fallbacks.authApi ?? DEFAULT_AUTH_ORIGIN);
 
   return {
     read: `${trimEnd(base)}/auth`,
-    write: trimEnd(write),
+    write,
     login: trimEnd(login),
   };
 }

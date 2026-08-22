@@ -3,16 +3,30 @@
 declare(strict_types=1);
 
 /**
- * TDS — Setup-Assistent für die öffentlichen Frontends
- * ====================================================
+ * TDS — Setup-Assistent für die Sites, reachable at `/install`
+ * =============================================================
  *
- * One installer, three sites: `tds-landingpage-frontend`, `tds-blog-frontend`
- * and `tds-tools-frontend`. It is maintained HERE, in `tds-shared-pkg/install/`,
- * and copied into each site's `public/_setup/` by that repo's
- * `scripts/sync-installer.mjs` (a `prebuild` step). Astro copies `public/`
- * verbatim into `dist/`, `_build.yml` force-pushes `dist/` onto the orphan
- * `release` branch, and Plesk pulls it — so the installer reaches the host with
- * no pipeline change at all.
+ * One installer, four sites: `tds-landingpage-frontend`, `tds-blog-frontend`,
+ * `tds-tools-frontend` and `tds-auth-frontend`. It is maintained HERE, in
+ * `tds-shared-pkg/install/`, and copied into each site's `public/install/` by
+ * that repo's `scripts/sync-installer.mjs` (a `prebuild` step). Astro copies
+ * `public/` verbatim into `dist/`, `_build.yml` force-pushes `dist/` onto the
+ * orphan `release` branch, and Plesk pulls it — so the installer reaches the
+ * host with no pipeline change at all.
+ *
+ * ### Why this file is called index.php on the host
+ *
+ * It ships as `install/index.php`, so the wizard answers at `/install/` — the
+ * URL an operator guesses, rather than the `_setup` this used to live under.
+ * The copy step does the rename, the way it already renames
+ * `profiles/<id>.php` to `profile.php`.
+ *
+ * That form needs the `install/.htaccess` shipped beside it: `DirectoryIndex`
+ * is INHERITED from the docroot, and the landingpage's own `.htaccess` sets it
+ * to `index.html`, which would make `/install/` a 403. The old
+ * `/_setup/install.php` never hit that, because a direct file request consults
+ * no DirectoryIndex. Where no `.htaccess` is honoured at all (an nginx-only
+ * vhost), `/install/index.php` still works and is the documented fallback.
  *
  * ### What it is for
  *
@@ -45,7 +59,7 @@ declare(strict_types=1);
  * So the wizard requires a platform admin login against `tds-auth-api` before it
  * will show a configuration form, rate-limits those attempts on disk, sends
  * `X-Robots-Tag: noindex`, and once finished locks itself into a read-only
- * diagnosis mode via `_setup/.tds-site-installed`.
+ * diagnosis mode via `install/.tds-site-installed`.
  *
  * @see tds-gateway-api/public/install.php  the backend twin this mirrors
  */
@@ -53,13 +67,13 @@ declare(strict_types=1);
 session_start();
 
 // Belt and braces: the meta tag below covers browsers, this covers the crawlers
-// that read headers only. `public/robots.txt` disallows /_setup/ as well.
+// that read headers only. `public/robots.txt` disallows /install as well.
 header('X-Robots-Tag: noindex, nofollow', true);
 
-$SETUP_DIR = __DIR__;                 // <docroot>/_setup
+$INSTALL_DIR = __DIR__;                 // <docroot>/install
 $DOCROOT   = dirname(__DIR__);        // <docroot> — the deployed dist/
-$LOCK_FILE = $SETUP_DIR . '/.tds-site-installed';
-$ATTEMPTS  = $SETUP_DIR . '/.tds-login-attempts';
+$LOCK_FILE = $INSTALL_DIR . '/.tds-site-installed';
+$ATTEMPTS  = $INSTALL_DIR . '/.tds-login-attempts';
 
 /** Sessions live under their own key so a gateway install on the same host cannot collide. */
 const SESSION_KEY = 'tds_site_install';
@@ -183,15 +197,15 @@ function read_env_kv(string $file): array
 /**
  * Load the site profile written next to this file by `sync-installer.mjs`.
  *
- * The package ships all three under `install/profiles/`; the sync step copies
- * exactly one to `_setup/profile.php`, so the installer never has to guess which
+ * The package ships all four under `install/profiles/`; the sync step copies
+ * exactly one to `install/profile.php`, so the installer never has to guess which
  * site it is running on.
  *
  * @return array<string,mixed>|null
  */
-function load_profile(string $setupDir): ?array
+function load_profile(string $installDir): ?array
 {
-    $file = $setupDir . '/profile.php';
+    $file = $installDir . '/profile.php';
     if (!is_file($file)) {
         return null;
     }
@@ -473,6 +487,7 @@ function runtime_config(array $profile, array $c): array
     return $out;
 }
 
+
 /**
  * Where the secrets file goes.
  *
@@ -487,14 +502,14 @@ function runtime_config(array $profile, array $c): array
  * because it contains no `=`. The Apache deny is written too, but it is the
  * second line of defence rather than the only one — nginx-only hosts ignore it.
  */
-function secrets_path(string $docroot, string $setupDir): string
+function secrets_path(string $docroot, string $installDir): string
 {
     $parent = dirname($docroot);
     if ($parent !== $docroot && is_dir($parent) && is_writable($parent)) {
         return $parent . '/tds-site-secrets.env';
     }
 
-    return $setupDir . '/tds-site-secrets.php';
+    return $installDir . '/tds-site-secrets.php';
 }
 
 /**
@@ -539,7 +554,7 @@ function install_tasks(array $profile, array $c): array
  * @param array<string,string> $c
  * @return array{0:bool|null,1:string}
  */
-function run_task(string $id, array $profile, array $c, string $docroot, string $setupDir, string $lockFile): array
+function run_task(string $id, array $profile, array $c, string $docroot, string $installDir, string $lockFile): array
 {
     $apiBase = trim_url($c['api_base']);
 
@@ -569,13 +584,21 @@ function run_task(string $id, array $profile, array $c, string $docroot, string 
             return [true, 'Gateway antwortet (HTTP 200).'];
 
         case 'check_public':
+            // Most sites read the gateway; the central login reads the auth
+            // service, whose base the operator typed separately. Resolving both
+            // against $apiBase would work only as long as auth is mounted under
+            // the gateway, and would report a green check against the wrong host
+            // the moment it is not.
+            $probeBase = ($profile['probe_base'] ?? 'api') === 'auth'
+                ? trim_url($c['auth_base'] ?? $apiBase)
+                : $apiBase;
             $details = [];
             $empty = [];
             $failed = [];
             /** @var list<array{0:string,1:string,2:string}> $routes */
             $routes = $profile['public_routes'];
             foreach ($routes as [$method, $path, $countKey]) {
-                [$status, , $body] = http_request($apiBase . $path, ['method' => $method, 'timeout' => 15]);
+                [$status, , $body] = http_request($probeBase . $path, ['method' => $method, 'timeout' => 15]);
                 if ($status !== 200) {
                     $failed[] = $path . ' → HTTP ' . $status;
                     continue;
@@ -604,23 +627,38 @@ function run_task(string $id, array $profile, array $c, string $docroot, string 
             $missing = [];
             /** @var list<string> $origins */
             $origins = $profile['origins'];
+            // The preflight has to name a route this site really calls. /contact
+            // is right for the three content sites and meaningless for the login
+            // site, which never posts one — and a preflight against a route that
+            // does not exist proves nothing about the one that does.
+            [$corsMethod, $corsPath] = $profile['cors_probe'] ?? ['POST', '/contact'];
+            // A wildcard Allow-Origin is a pass for a plain read and NEVER for a
+            // credentialed call: every browser rejects `*` when the request
+            // carries cookies. On the login site that distinction is the whole
+            // check, so a CDN or WAF rewriting the header to `*` would break
+            // signing in and nothing else.
+            $needsCreds = !empty($profile['cors_credentials']);
             foreach ($origins as $origin) {
-                [$status, $headers] = http_request($apiBase . '/contact', [
+                [$status, $headers] = http_request($apiBase . $corsPath, [
                     'method'  => 'OPTIONS',
                     'headers' => [
                         'Origin'                         => $origin,
-                        'Access-Control-Request-Method'  => 'POST',
+                        'Access-Control-Request-Method'  => $corsMethod,
                         'Access-Control-Request-Headers' => 'content-type',
                     ],
                     'timeout' => 12,
                 ]);
                 $allow = $headers['access-control-allow-origin'] ?? '';
-                if ($status === 0 || ($allow !== $origin && $allow !== '*')) {
+                $creds = strtolower($headers['access-control-allow-credentials'] ?? '') === 'true';
+                $originOk = $needsCreds
+                    ? ($allow === $origin && $creds)
+                    : ($allow === $origin || $allow === '*');
+                if ($status === 0 || !$originOk) {
                     $missing[] = $origin;
                 }
             }
             if ($missing === []) {
-                return [true, 'Alle Origins freigegeben: ' . implode(', ', $origins)];
+                return [true, $corsMethod . ' ' . $corsPath . ' — alle Origins freigegeben: ' . implode(', ', $origins)];
             }
             if (($c['mode'] ?? 'direct') === 'proxy') {
                 // Same-origin calls never trigger a preflight, so this is FYI only.
@@ -643,7 +681,7 @@ function run_task(string $id, array $profile, array $c, string $docroot, string 
             return [$ok, $ok ? 'tds-runtime.json geschrieben.' : 'Konnte tds-runtime.json nicht schreiben.'];
 
         case 'write_secrets':
-            $file = secrets_path($docroot, $setupDir);
+            $file = secrets_path($docroot, $installDir);
             $pairs = [
                 'TDS_SITE'          => (string) $profile['id'],
                 'TDS_SITE_TOKEN'    => $c['site_token'] ?? '',
@@ -658,17 +696,21 @@ function run_task(string $id, array $profile, array $c, string $docroot, string 
             }
             @chmod($file, 0600);
             if (str_starts_with($file, $docroot . DIRECTORY_SEPARATOR)) {
-                @file_put_contents($setupDir . '/.htaccess', "Require all denied\nDeny from all\n");
+                // Deliberately writes NO .htaccess. The shipped install/.htaccess
+                // already denies this file by name — and it also carries the
+                // DirectoryIndex that makes /install/ resolve to the wizard, so
+                // overwriting it with a blanket deny (which this used to do)
+                // would 403 every remaining task of this very run.
 
                 return [null, 'Das Elternverzeichnis ist nicht beschreibbar, daher liegen die Geheimnisse '
-                    . 'unter _setup/ — als .php-Datei (wird ausgeführt, gibt nichts aus) und zusätzlich per '
-                    . '.htaccess gesperrt. Sicherer wäre ein beschreibbares Verzeichnis oberhalb des Docroots.'];
+                    . 'unter install/ — als .php-Datei (wird ausgeführt, gibt nichts aus) und zusätzlich per '
+                    . 'mitgeliefertem .htaccess gesperrt. Sicherer wäre ein beschreibbares Verzeichnis oberhalb des Docroots.'];
             }
 
             return [true, 'Abgelegt außerhalb des Docroots: ' . $file];
 
         case 'write_proxy':
-            return write_proxy($profile, $c, $docroot, $setupDir);
+            return write_proxy($profile, $c, $docroot, $installDir);
 
         case 'verify_proxy':
             $base = public_base_url();
@@ -706,7 +748,7 @@ function run_task(string $id, array $profile, array $c, string $docroot, string 
 
             return [$ok, $ok
                 ? 'Sperre gesetzt — der Assistent läuft ab jetzt nur noch im Diagnosemodus.'
-                : 'Konnte die Sperre nicht schreiben (_setup/ nicht beschreibbar).'];
+                : 'Konnte die Sperre nicht schreiben (install/ nicht beschreibbar).'];
     }
 
     return [false, 'Unbekannter Schritt: ' . $id];
@@ -723,30 +765,30 @@ function run_task(string $id, array $profile, array $c, string $docroot, string 
  * @param array<string,string> $c
  * @return array{0:bool|null,1:string}
  */
-function write_proxy(array $profile, array $c, string $docroot, string $setupDir): array
+function write_proxy(array $profile, array $c, string $docroot, string $installDir): array
 {
     $dir = $docroot . '/api';
     if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
         return [false, 'Konnte ' . $dir . ' nicht anlegen.'];
     }
 
-    $source = $setupDir . '/proxy.php';
+    $source = $installDir . '/proxy.php';
     if (!is_file($source)) {
-        return [false, 'proxy.php fehlt in _setup/ — der Kopierschritt des Builds ist unvollständig.'];
+        return [false, 'proxy.php fehlt in install/ — der Kopierschritt des Builds ist unvollständig.'];
     }
     if (!@copy($source, $dir . '/index.php')) {
         return [false, 'Konnte proxy.php nicht nach api/index.php kopieren.'];
     }
 
     $config = "<?php\n\n"
-        . "// Generated by _setup/install.php on " . gmdate('c') . ". Do not edit by hand —\n"
-        . "// re-run the setup wizard instead (delete _setup/.tds-site-installed first).\n\n"
+        . "// Generated by install/index.php on " . gmdate('c') . ". Do not edit by hand —\n"
+        . "// re-run the setup wizard instead (delete install/.tds-site-installed first).\n\n"
         . "return " . var_export([
             'site'         => (string) $profile['id'],
             'upstream'     => trim_url($c['api_base']),
-            'secrets_file' => secrets_path($docroot, $setupDir),
+            'secrets_file' => secrets_path($docroot, $installDir),
             'allow'        => $profile['proxy_allow'],
-            'state_dir'    => dirname(secrets_path($docroot, $setupDir)),
+            'state_dir'    => dirname(secrets_path($docroot, $installDir)),
         ], true) . ";\n";
     if (@file_put_contents($dir . '/config.php', $config) === false) {
         return [false, 'Konnte api/config.php nicht schreiben.'];
@@ -833,7 +875,7 @@ function public_base_url(): string
 
 // --- state --------------------------------------------------------------------
 
-$profile = load_profile($SETUP_DIR);
+$profile = load_profile($INSTALL_DIR);
 $profileOk = $profile !== null;
 $locked = is_file($LOCK_FILE);
 $lockInfo = $locked ? read_env_kv($LOCK_FILE) : [];
@@ -887,10 +929,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['__task'])) {
     };
 
     if (!$profileOk) {
-        $fail('Kein Site-Profil gefunden (_setup/profile.php).');
+        $fail('Kein Site-Profil gefunden (install/profile.php).');
     }
     if ($locked) {
-        $fail('Bereits eingerichtet (_setup/.tds-site-installed vorhanden).');
+        $fail('Bereits eingerichtet (install/.tds-site-installed vorhanden).');
     }
     if (!is_authed()) {
         $fail('Sitzung abgelaufen — bitte erneut anmelden.');
@@ -902,7 +944,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['__task'])) {
 
     try {
         /** @var array<string,mixed> $profile */
-        [$ok, $detail] = run_task((string) $_POST['__task'], $profile, $c, $DOCROOT, $SETUP_DIR, $LOCK_FILE);
+        [$ok, $detail] = run_task((string) $_POST['__task'], $profile, $c, $DOCROOT, $INSTALL_DIR, $LOCK_FILE);
         $respond($ok, (string) $detail);
     } catch (\Throwable $e) {
         $respond(false, 'Ausnahme: ' . $e->getMessage());
@@ -937,7 +979,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$locked && $profileOk) {
             }
         }
     } elseif ($step === 3 && is_authed()) {
-        $mode = post('mode', 'direct') === 'proxy' ? 'proxy' : 'direct';
+        // The radio is disabled in the form when the profile forbids it, but a
+        // disabled input is a hint to a browser, not a constraint on a POST.
+        // Clamp here too: picking the proxy on a login site is the one wrong
+        // answer that reports success (see the profile's `proxy` key).
+        $proxyAllowedHere = ($profile['proxy'] ?? true) !== false;
+        $mode = ($proxyAllowedHere && post('mode', 'direct') === 'proxy') ? 'proxy' : 'direct';
         set_cfg([
             'api_base'       => trim_url(post('api_base', 'https://api.tracht-digital.de')),
             'auth_base'      => trim_url(post('auth_base', 'https://api.tracht-digital.de/auth')),
@@ -1063,7 +1110,7 @@ $parentWritable = is_dir(dirname($DOCROOT)) && is_writable(dirname($DOCROOT));
 
   <?php if (!$profileOk): ?>
     <div class="note err">
-      <strong>Kein Site-Profil gefunden.</strong> Es fehlt <code>_setup/profile.php</code>.
+      <strong>Kein Site-Profil gefunden.</strong> Es fehlt <code>install/profile.php</code>.
       Diese Datei legt der Build-Schritt <code>scripts/sync-installer.mjs</code> an —
       der Assistent wurde also von Hand kopiert oder der <code>prebuild</code>-Schritt fehlt.
     </div>
@@ -1074,7 +1121,7 @@ $parentWritable = is_dir(dirname($DOCROOT)) && is_writable(dirname($DOCROOT));
       Dieses Frontend wurde am <code><?= h($lockInfo['INSTALLED_AT'] ?? '?') ?></code> verbunden
       (Modus <code><?= h($lockInfo['MODE'] ?? '?') ?></code>, API <code><?= h($lockInfo['API_BASE'] ?? '?') ?></code>).
       Der Assistent läuft aus Sicherheitsgründen nur noch im Diagnosemodus.
-      Zum Neu-Verbinden bitte <code>_setup/.tds-site-installed</code> löschen.
+      Zum Neu-Verbinden bitte <code>install/.tds-site-installed</code> löschen.
     </div>
     <h2>Aktueller Stand</h2>
     <?php
@@ -1106,23 +1153,38 @@ $parentWritable = is_dir(dirname($DOCROOT)) && is_writable(dirname($DOCROOT));
       }
       $docrootWritable = is_writable($DOCROOT);
       $checks[] = ['Docroot beschreibbar', $docrootWritable, 'für tds-runtime.json'];
-      $setupWritable = is_writable($SETUP_DIR);
-      $checks[] = ['_setup/ beschreibbar', $setupWritable, 'für die Sperre'];
+      $installWritable = is_writable($INSTALL_DIR);
+      $checks[] = ['install/ beschreibbar', $installWritable, 'für die Sperre'];
       $checks[] = ['Elternverzeichnis beschreibbar', $parentWritable,
-          $parentWritable ? 'Geheimnisse liegen außerhalb des Docroots' : 'Geheimnisse landen in _setup/ (mit .htaccess gesperrt)'];
+          $parentWritable ? 'Geheimnisse liegen außerhalb des Docroots' : 'Geheimnisse landen in install/ (mit .htaccess gesperrt)'];
       $distOk = is_file($DOCROOT . '/index.html');
       $checks[] = ['Gebaute Site vorhanden', $distOk, 'index.html im Docroot'];
       $rewriteOk = function_exists('apache_get_modules')
           ? in_array('mod_rewrite', apache_get_modules(), true)
           : is_file($DOCROOT . '/.htaccess');
-      $proxySource = is_file($SETUP_DIR . '/proxy.php');
-      $checks[] = ['proxy.php mitgeliefert', $proxySource, 'für den Same-Origin-Modus'];
+      // The shipped .htaccess is what makes /install/ resolve to this file at
+      // all (DirectoryIndex is inherited, and the landingpage's docroot sets it
+      // to index.html) AND the only thing denying the state files. Report it,
+      // but never fail on it: an nginx-only vhost honours no .htaccess and the
+      // wizard still has to run there.
+      $guardFile = $INSTALL_DIR . '/.htaccess';
+      $guardOk = is_file($guardFile)
+          && str_contains((string) @file_get_contents($guardFile), 'DirectoryIndex index.php');
+      $checks[] = ['install/.htaccess mitgeliefert', $guardOk,
+          'DirectoryIndex + Schutz der Zustandsdateien'];
+
+      $proxySource = is_file($INSTALL_DIR . '/proxy.php');
+      // A site that forbids the proxy must not show a red row for a file it is
+      // never going to use.
+      $checks[] = ($profile['proxy'] ?? true) !== false
+          ? ['proxy.php mitgeliefert', $proxySource, 'für den Same-Origin-Modus']
+          : ['Same-Origin-Proxy', true, 'für diese Site deaktiviert (Set-Cookie)'];
 
       $buildInfo = [];
       if (is_file($DOCROOT . '/.build-info')) {
           $buildInfo = read_env_kv($DOCROOT . '/.build-info');
       }
-      $hardFail = !$phpOk || !$httpOk || !$docrootWritable || !$setupWritable || !$distOk;
+      $hardFail = !$phpOk || !$httpOk || !$docrootWritable || !$installWritable || !$distOk;
       set_cfg(['rewrite_ok' => $rewriteOk ? '1' : '', 'proxy_source' => $proxySource ? '1' : '']);
     ?>
     <h2>Voraussetzungen</h2>
@@ -1171,7 +1233,12 @@ $parentWritable = is_dir(dirname($DOCROOT)) && is_writable(dirname($DOCROOT));
 
   <?php elseif ($step === 3): ?>
     <?php
-      $canProxy = cfg('proxy_source') === '1';
+      // A site may forbid the proxy outright. proxy.php drops Set-Cookie by
+      // design ("these sites read, they never log in"), so on a site whose
+      // whole job is logging in, the proxy mode would report a successful
+      // login and start no session at all.
+      $proxyAllowedHere = ($profile['proxy'] ?? true) !== false;
+      $canProxy = cfg('proxy_source') === '1' && $proxyAllowedHere;
       $defaultMode = ($canProxy && cfg('rewrite_ok') === '1') ? 'proxy' : 'direct';
       $mode = cfg('mode', $defaultMode);
     ?>
@@ -1197,7 +1264,8 @@ $parentWritable = is_dir(dirname($DOCROOT)) && is_writable(dirname($DOCROOT));
             <strong>Same-Origin-Proxy</strong> — die Site ruft <code>/api/…</code> auf dem eigenen Host auf,
             ein schlankes PHP-Skript reicht nur die freigegebenen Routen an die API weiter.
             Kein CORS, und das Site-Token verlässt den Server nie.
-            <?php if (!$canProxy): ?><br /><span style="color:var(--err)">Nicht verfügbar: <code>proxy.php</code> fehlt in <code>_setup/</code>.</span><?php endif; ?>
+            <?php if (!$proxyAllowedHere): ?><br /><span style="color:var(--err)">Für diese Site nicht möglich: der Proxy reicht <code>Set-Cookie</code> bewusst nicht durch, und diese Site meldet Besucher an. Die Anmeldung würde Erfolg melden, ohne eine Sitzung zu erzeugen.</span>
+            <?php elseif (!$canProxy): ?><br /><span style="color:var(--err)">Nicht verfügbar: <code>proxy.php</code> fehlt in <code>install/</code>.</span><?php endif; ?>
           </span>
         </label>
         <label class="cb">
@@ -1264,7 +1332,7 @@ $parentWritable = is_dir(dirname($DOCROOT)) && is_writable(dirname($DOCROOT));
         (Blogbeiträge, CMS-Blöcke, Rechtstexte), kommen weiterhin aus den Umgebungsvariablen der GitHub Action.
         Wird die API-Adresse dort anders gesetzt, laufen Laufzeit und Build auseinander.
       </div>
-      <p class="muted-line">Die Sperre <code>_setup/.tds-site-installed</code> ist gesetzt; ein erneuter Aufruf zeigt nur noch den Status.</p>
+      <p class="muted-line">Die Sperre <code>install/.tds-site-installed</code> ist gesetzt; ein erneuter Aufruf zeigt nur noch den Status.</p>
     </div>
 
     <noscript>

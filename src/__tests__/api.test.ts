@@ -11,6 +11,7 @@ import {
   primeRuntimeConfig,
   resetApiBase,
   resetRuntimeConfig,
+  runtimeAbsolute,
   runtimeConfig,
   runtimeConfigSync,
   runtimeSetting,
@@ -334,6 +335,38 @@ describe("runtimeConfig", () => {
     primeRuntimeConfig({ version: 1, site: "blog", mode: "direct", contactUrl: "" });
     expect(await runtimeSetting("contactUrl", "https://baked.test/contact")).toBe(
       "https://baked.test/contact",
+    );
+  });
+
+  it("runtimeAbsolute takes an absolute configured value", async () => {
+    primeRuntimeConfig({
+      version: 1,
+      site: "auth",
+      mode: "direct",
+      authBase: "https://staging-api.test/auth/",
+    });
+    // Trailing slash stripped, like every other base in this module.
+    expect(await runtimeAbsolute("authBase", "https://baked.test/auth")).toBe(
+      "https://staging-api.test/auth",
+    );
+  });
+
+  it("runtimeAbsolute REFUSES a relative value and keeps the baked one", async () => {
+    // This is the whole point of the helper. Proxy mode publishes `/api/auth`,
+    // and `install/proxy.php` drops `Set-Cookie` by design — so a login or a
+    // logout sent there answers 200 and starts or ends nothing at all. There is
+    // no error to catch downstream; refusing the value here is the only place
+    // the difference is still visible.
+    primeRuntimeConfig({ version: 1, site: "auth", mode: "proxy", authBase: "/api/auth" });
+    expect(await runtimeAbsolute("authBase", "https://baked.test/auth")).toBe(
+      "https://baked.test/auth",
+    );
+  });
+
+  it("runtimeAbsolute falls back when the host published nothing", async () => {
+    primeRuntimeConfig(null);
+    expect(await runtimeAbsolute("authBase", "https://baked.test/auth")).toBe(
+      "https://baked.test/auth",
     );
   });
 

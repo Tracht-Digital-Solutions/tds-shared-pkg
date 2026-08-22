@@ -108,7 +108,7 @@ export default function LiveChatCta({ frontend, apiBase, lang = "de" }: LiveChat
   // the one surface that omits it: the panel is a static site on its own host,
   // so every widget call went to `management.tracht-digital.de` and came back
   // as the SPA fallback HTML with a 200. Unset now means "resolve it" — through
-  // `apiFetch`, so a host reconfigured with `/_setup/install.php` is followed
+  // `apiFetch`, so a host reconfigured with `/install` is followed
   // too. An explicit `apiBase` still wins and skips that resolution entirely,
   // which is what keeps a caller that really does mean one fixed origin honest.
   const api = useCallback(

@@ -84,6 +84,16 @@ function toJsRegExp(phpPattern: string): RegExp {
   return new RegExp(body, flags);
 }
 
+/**
+ * Whether a profile offers the same-origin proxy at all.
+ *
+ * `proxy => false` is not a preference: `proxy.php` drops `Set-Cookie` by
+ * design, so on a site that signs people in the proxy would answer 200 and
+ * start no session. Every proxy-shaped rule below has to skip those profiles,
+ * or they fail for having correctly declared nothing.
+ */
+const proxyEnabled = (source: string): boolean => phpScalar(source, "proxy") !== "false";
+
 const profileFiles = readdirSync(PROFILE_DIR).filter((f) => f.endsWith(".php"));
 const profiles = profileFiles.map((file) => ({
   file,
@@ -91,11 +101,48 @@ const profiles = profileFiles.map((file) => ({
 }));
 
 describe("installer files", () => {
-  it("ships the wizard, the proxy and at least the three site profiles", () => {
+  it("ships the wizard, the proxy, the .htaccess and every site profile", () => {
     const entries = readdirSync(INSTALL_DIR);
     expect(entries).toContain("install.php");
     expect(entries).toContain("proxy.php");
-    expect(profileFiles.sort()).toEqual(["blog.php", "landingpage.php", "tools.php"]);
+    // Stored without the leading dot and renamed by `sync-installer.mjs`.
+    // It carries the `DirectoryIndex index.php` that makes `/install/`
+    // resolve to the wizard at all — DirectoryIndex is inherited from the
+    // docroot, and the landingpage's own .htaccess sets it to index.html.
+    // Without this file the deployed wizard answers 403, and nothing in the
+    // build or the tests would have said so.
+    expect(entries).toContain("htaccess");
+    expect(profileFiles.sort()).toEqual([
+      "auth.php",
+      "blog.php",
+      "landingpage.php",
+      "tools.php",
+    ]);
+  });
+
+  it("ships an Apache config that makes /install/ resolve to the wizard", () => {
+    const htaccess = readFileSync(join(INSTALL_DIR, "htaccess"), "utf8");
+    // The whole routing contract lives in this one line and nothing else can
+    // see it: the landingpage's docroot .htaccess declares
+    // `DirectoryIndex index.html` globally, so without the override Apache
+    // finds no index in install/ and answers 403.
+    expect(htaccess).toMatch(/^\s*DirectoryIndex\s+index\.php\s*$/m);
+    // The state files carry no extension Apache denies by default —
+    // `.tds-site-installed` was served as plain text under the old layout.
+    expect(htaccess).toContain("tds-site-secrets.php");
+    expect(htaccess).toContain(".tds-");
+  });
+
+  it("never writes install/.htaccess at runtime", () => {
+    // write_secrets used to drop a blanket `Require all denied` into the setup
+    // directory. Under the directory layout that overwrites the DirectoryIndex
+    // above and 403s every remaining task of the run that wrote it — including
+    // the one that sets the lock.
+    // Scoped to $installDir on purpose: write_proxy legitimately writes
+    // <docroot>/api/.htaccess (the /api/* rewrite), and a blanket ban on the
+    // string would forbid that too.
+    const src = readFileSync(join(INSTALL_DIR, "install.php"), "utf8");
+    expect(src).not.toMatch(/file_put_contents\(\s*\$installDir\s*\.\s*'\/\.htaccess'/);
   });
 
   it("is declared in package.json files, or npm would not publish it", () => {
@@ -137,6 +184,19 @@ describe.each(profiles)("profile $file", ({ source }) => {
     expect(phpStrings(phpArrayValue(source, "runtime_keys") ?? "")).toContain("apiBase");
   });
 
+  it("probes its public routes against a base it also configures", () => {
+    // `probe_base: 'auth'` sends the content smoke test to the Auth-API-URL
+    // instead of the gateway. A profile that does that but never writes
+    // `authBase` would check one host at install time and have the site call
+    // another one forever after.
+    const base = phpScalar(source, "probe_base");
+    if (base === null) return;
+    expect(["api", "auth"]).toContain(base);
+    if (base === "auth") {
+      expect(phpStrings(phpArrayValue(source, "runtime_keys") ?? "")).toContain("authBase");
+    }
+  });
+
   it("smoke-tests real routes with a count key", () => {
     const routes = routeTriples(phpArrayValue(source, "public_routes") ?? "");
     expect(routes.length).toBeGreaterThan(0);
@@ -150,6 +210,14 @@ describe.each(profiles)("profile $file", ({ source }) => {
 
   it("has a proxy allowlist of valid patterns, anchored at both ends", () => {
     const pairs = proxyPairs(phpArrayValue(source, "proxy_allow") ?? "");
+    if (!proxyEnabled(source)) {
+      // A site that forbids the proxy must not carry an allowlist anyway: a
+      // list nothing reads is a standing invitation to conclude the proxy is
+      // available here, which is the one wrong conclusion on a login site.
+      expect(pairs).toEqual([]);
+      expect(phpScalar(source, "proxy_probe")).toBeNull();
+      return;
+    }
     expect(pairs.length).toBeGreaterThan(0);
     for (const pair of pairs) {
       expect(() => toJsRegExp(pair.pattern)).not.toThrow();
@@ -185,6 +253,7 @@ describe.each(profiles)("profile $file", ({ source }) => {
     // verify_proxy calls this path through the freshly written proxy. If the
     // allowlist does not permit it the proxy answers 404 and the wizard reports
     // a broken install that is in fact fine.
+    if (!proxyEnabled(source)) return;
     const probe = phpScalar(source, "proxy_probe");
     expect(probe).toBeTruthy();
     const path = (probe ?? "").split("?")[0] ?? "";
@@ -217,6 +286,37 @@ describe("across profiles", () => {
         `${file} proxies /auth/me but does not carry loginUrl`,
       ).toContain("loginUrl");
     }
+  });
+
+  it("install.php REFUSES the proxy server-side, not just in the form", () => {
+    // A `disabled` radio is a hint to a browser, not a constraint on a POST.
+    // The auth profile's entire reason for the key is that a hand-built
+    // `mode=proxy` would produce a login that reports success and ends nothing,
+    // so the refusal has to be in PHP.
+    //
+    // This asserts the key is READ, not merely declared. That distinction is
+    // not hypothetical here: `PermissionResolver` was registered in the
+    // container and injected nowhere for a whole release, and nothing was red
+    // because nothing looked.
+    const src = readFileSync(join(INSTALL_DIR, "install.php"), "utf8");
+    const reads = src.match(/\$profile\['proxy'\]\s*\?\?\s*true/g) ?? [];
+    // Two: the $canProxy that paints the form, and the clamp on the step-3 POST.
+    expect(reads.length).toBeGreaterThanOrEqual(2);
+    expect(src).toContain("$proxyAllowedHere");
+  });
+
+  it("install.php reads cors_probe with /contact as the documented default", () => {
+    const src = readFileSync(join(INSTALL_DIR, "install.php"), "utf8");
+    expect(src).toMatch(/\$profile\['cors_probe'\]\s*\?\?\s*\['POST',\s*'\/contact'\]/);
+  });
+
+  it("install.php resolves public_routes against the profile's probe_base", () => {
+    const src = readFileSync(join(INSTALL_DIR, "install.php"), "utf8");
+    expect(src).toMatch(/\$profile\['probe_base'\]\s*\?\?\s*'api'/);
+    // The smoke test must use the resolved base, not the raw gateway one —
+    // otherwise the key parses, the test passes and the check still hits the
+    // wrong host.
+    expect(src).toContain("http_request($probeBase . $path");
   });
 
   it("install.php can supply every key a profile may request", () => {

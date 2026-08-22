@@ -1,0 +1,51 @@
+# Served as <docroot>/install/.htaccess. Written by each site's
+# `scripts/sync-installer.mjs`, never committed in a consuming repo
+# (`public/install/` is gitignored there).
+#
+# Stored WITHOUT the leading dot in this package: npm's handling of dotfiles
+# inside a published `files` directory is the one thing here that would fail
+# silently on all four sites at once. The copy step renames it, exactly as it
+# renames `profiles/<id>.php` to `profile.php`.
+
+# --- Why this file has to exist at all ---------------------------------------
+#
+# The wizard is `index.php`, and `DirectoryIndex` is INHERITED from the docroot.
+# The landingpage's own `public/.htaccess` declares `DirectoryIndex index.html`
+# to get clean URLs, so without this override Apache finds no index here and
+# answers 403 — with nothing red in the build, the tests or the logs.
+#
+# This could not have shown up under the old `/_setup/install.php`: a direct
+# file request consults no DirectoryIndex. The directory form does.
+DirectoryIndex index.php
+
+# The landingpage turns Passenger off at its docroot; blog, tools and auth ship
+# no docroot .htaccess at all, so they need it here. With Passenger enabled on
+# the domain it intercepts sub-path requests and answers with its own generic
+# error page instead of handing the file to PHP.
+<IfModule mod_passenger.c>
+  PassengerEnabled off
+</IfModule>
+
+# --- Everything in here except the wizard is data, not a page ----------------
+#
+# `.tds-site-installed` does NOT match Apache's default `^\.ht` deny, and it
+# carries INSTALLED_AT / SITE / MODE / API_BASE — it was served as plain text
+# under the old `_setup/` layout. `tds-site-secrets.php` is inert when fetched
+# (its first line is `<?php exit; ?>`), but denying it costs nothing.
+#
+# `proxy.php` is denied over HTTP and still copyable: `write_proxy()` uses
+# `copy()` on the filesystem, never a request.
+#
+# This deny is the reason the wizard does NOT write an .htaccess at runtime.
+# It used to, in the secrets fallback — which would now overwrite the
+# DirectoryIndex above and 403 every remaining task of the very run that wrote
+# it, one step before finishing.
+<FilesMatch "^(proxy\.php|profile\.php|tds-site-secrets\.php|\.tds-.*)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>

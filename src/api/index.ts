@@ -42,7 +42,7 @@ export const API_BASE_META = "tds-api-base";
 export const DEFAULT_API_BASE = "https://api.tracht-digital.de";
 
 /**
- * Where {@link runtimeConfig} looks. Written by `_setup/install.php` into the
+ * Where {@link runtimeConfig} looks. Written by `install/index.php` into the
  * deployed docroot, so it is always same-origin and always a plain static file.
  */
 export const RUNTIME_CONFIG_PATH = "/tds-runtime.json";
@@ -69,7 +69,7 @@ export type RuntimeKey = (typeof RUNTIME_KEYS)[number];
 /**
  * What the host-side setup wizard published for this site.
  *
- * Present only on a deployed host whose operator ran `/_setup/install.php`;
+ * Present only on a deployed host whose operator ran `/install`;
  * everywhere else (dev, CI, a site nobody has configured) it is simply absent
  * and every consumer keeps its build-time value.
  */
@@ -141,7 +141,7 @@ let runtimeValue: RuntimeConfig | null = null;
  * cannot be re-pointed at a different API without a full CI rebuild. That makes
  * an operator on the host powerless over the one thing they most need to fix —
  * and it fails silently, because every content fetch is deliberately fail-soft.
- * `_setup/install.php` writes `tds-runtime.json` beside `index.html`; this
+ * `install/index.php` writes `tds-runtime.json` beside `index.html`; this
  * function is what makes the deployed site read it.
  *
  * ### Contract
@@ -247,6 +247,30 @@ export async function runtimeSetting(key: RuntimeKey, fallback: string): Promise
   return typeof value === "string" && value !== "" ? value : fallback;
 }
 
+/**
+ * One configured value, but only when it is an ABSOLUTE origin.
+ *
+ * For anything whose response must set or clear a cookie.
+ * `install/proxy.php` deliberately drops `Set-Cookie` ("these sites read, they
+ * never log in"), and proxy mode publishes a RELATIVE base (`/api`,
+ * `/api/auth`). Honouring a relative value for a login or a logout therefore
+ * yields a request that answers **200 and changes nothing** — success reported,
+ * no session started or ended, and nothing in any log.
+ *
+ * A relative value is not an error here, it is simply not usable for this
+ * purpose: the caller falls back to its absolute build-time default. Keeping
+ * the rule in one exported function is what stops it being re-derived — and
+ * forgotten — at the next call site.
+ *
+ * ```ts
+ * const base = await runtimeAbsolute("authBase", AUTH_API_URL);
+ * ```
+ */
+export async function runtimeAbsolute(key: RuntimeKey, fallback: string): Promise<string> {
+  const value = await runtimeSetting(key, "");
+  return trimEnd(/^https?:\/\//i.test(value) ? value : fallback);
+}
+
 /** Test seam — production code never calls this. {@see resetApiBase}. */
 export function resetRuntimeConfig(): void {
   runtimePromise = null;
@@ -336,7 +360,7 @@ export function setRequestHeadersProvider(provider: HeadersProvider | null): voi
  */
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
   // Resolve the host-side config FIRST, so a site the operator re-pointed with
-  // /_setup/install.php is followed by every existing call site without one of
+  // /install is followed by every existing call site without one of
   // them being edited. It is a single memoised request; every call after the
   // first awaits an already-settled promise.
   await runtimeConfig();

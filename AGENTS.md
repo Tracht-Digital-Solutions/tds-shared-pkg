@@ -726,25 +726,46 @@ src/
 │                             #   surfaces show people)
 └── astro/                    # build presets (cssTarget / tdsViteBuild) +
                               #   themeBootstrapScript (the no-flash <head> script)
-install/                      # host-side setup wizard for the PUBLIC sites —
-├── install.php               #   PHP, shipped verbatim, never built. See below.
+install/                      # host-side setup wizard, served at /install —
+├── install.php               #   PHP, shipped verbatim, never built. Lands on
+│                             #   the host as install/index.php. See below.
 ├── proxy.php
-└── profiles/{landingpage,blog,tools}.php
+├── htaccess                  #   DirectoryIndex index.php; copied as .htaccess
+└── profiles/{landingpage,blog,tools,auth}.php
 ```
 
 `src/__tests__/` holds the vitest suite (`npm run test` / `test:run`).
 
 ## `install/` — the host-side setup wizard
 
-**This is PHP inside an npm package, and that is deliberate.** The three public
-sites (`tds-landingpage-frontend`, `tds-blog-frontend`, `tds-tools-frontend`)
-already depend on this package, so shipping the wizard here gives all three one
-source instead of three copies that drift — the lesson the gateway's three `.env`
-writers taught the hard way. Nothing here is compiled or exported; `install` is
-listed in `package.json` `files` so npm publishes it, and each site's
-`prebuild` step (`scripts/sync-installer.mjs`) copies `install.php`, `proxy.php`
-and its own profile into `public/_setup/`. Astro copies `public/` into `dist/`,
-the build workflow pushes `dist/` to the `release` branch, Plesk pulls it.
+**This is PHP inside an npm package, and that is deliberate.** Four sites
+(`tds-landingpage-frontend`, `tds-blog-frontend`, `tds-tools-frontend` and
+`tds-auth-frontend`) already depend on this package, so shipping the wizard here
+gives all four one source instead of four copies that drift — the lesson the
+gateway's three `.env` writers taught the hard way. Nothing here is compiled or
+exported; `install` is listed in `package.json` `files` so npm publishes it, and
+each site's `prebuild` step (`scripts/sync-installer.mjs`) copies `install.php`
+as `index.php`, plus `proxy.php`, `htaccess` as `.htaccess` and its own profile,
+into `public/install/`. Astro copies `public/` into `dist/`, the build workflow
+pushes `dist/` to the `release` branch, Plesk pulls it.
+
+**It answers at `/install`, and the directory form is what needs the**
+**`.htaccess`.** The wizard used to be `/_setup/install.php` — an internal path
+nobody guesses. It is now a directory, so `/install/` resolves through
+`DirectoryIndex`. That index is INHERITED from the docroot, and the
+landingpage's own `public/.htaccess` sets it to `index.html`; without the
+shipped `install/.htaccess` overriding it locally, `/install/` answers **403**
+with nothing red anywhere. The old direct-file URL never met a DirectoryIndex,
+which is why this could not have shown up before. Two consequences:
+
+- **`install/.htaccess` is load-bearing, not decoration.** `write_secrets`'s
+  in-docroot fallback used to overwrite it with a bare `Require all denied` —
+  which would now lock the operator out of the wizard they are standing in, one
+  step before it finishes. It goes through `htaccess_body($denyFile)`, which
+  re-renders the DirectoryIndex and denies only the secrets FILE.
+- **`/install/index.php` is the fallback URL** for any vhost that honours no
+  `.htaccess` at all (nginx-only). It belongs beside `/install` in each site's
+  INSTALL.md, because there is no way to detect the difference from inside.
 
 **Why the sites need it at all.** They are static: Vite inlines every `PUBLIC_*`
 at build time, so a deployed `dist/` cannot be re-pointed at another API without
@@ -754,7 +775,7 @@ fallbacks. The wizard verifies the connection with real assertions ("12 Blöcke"
 not "HTTP 200"), runs a CORS preflight per origin, and writes
 `tds-runtime.json`, which `src/api/` prefers over the baked value.
 
-Four things to keep true when touching it:
+Five things to keep true when touching it:
 
 - **It is admin-gated, not lock-gated.** The gateway's installer guards itself
   with "not yet installed" plus a self-delete button. Neither works here: these
@@ -777,6 +798,34 @@ Four things to keep true when touching it:
   `src/__tests__/installer.test.ts` compares all three. Without it, a profile
   saying `contactURL` instead of `contactUrl` produces valid JSON, a green
   build, and a form that quietly ignores everything the operator configured.
+- **A site that SIGNS PEOPLE IN must set `proxy => false`.** `proxy.php`
+  deliberately drops `Set-Cookie` — these sites read, they never log in. On
+  `tds-auth-frontend`, whose entire job is logging in, the proxy mode would
+  answer `POST /login` with a 200 and never let the session cookie reach the
+  browser: a success message, no session, and nothing to find in any log. The
+  radio is disabled AND the POST is clamped server-side, because a disabled
+  input is a hint to a browser, not a constraint on a request.
+
+Three optional profile keys, all defaulting to what the content sites need:
+
+| Key | Default | Why it exists |
+|---|---|---|
+| `proxy` | `true` | `false` removes the same-origin proxy as a choice — see above |
+| `probe_base` | `'api'` | `'auth'` sends `public_routes` to the Auth-API-URL instead of the gateway. Today auth sits under the gateway and both agree; the day it does not, the check would go green against a host the site never calls |
+| `cors_probe` | `['POST','/contact']` | the preflight has to name a route this site really calls. `/contact` is meaningless on the login site, and a preflight against a route that does not exist proves nothing about the one that does |
+
+`installer.test.ts` pins the pairings: a `proxy => false` profile must declare
+an EMPTY `proxy_allow` and no `proxy_probe` (a list nothing reads invites the
+next reader to conclude the proxy works here), and `probe_base: 'auth'` requires
+`authBase` in `runtime_keys` — otherwise the wizard checks one host and the site
+calls another one forever after.
+
+**The `auth` profile is the only one with no `loginUrl`**, deliberately: that
+site *is* the login page, so the key would point at itself. Its single
+`public_routes` entry is `GET /.well-known/jwks.json` counting `keys`, which is
+diagnostic rather than decorative — `keys: 0` means `composer keygen` never ran
+on the API host, every login then fails signature verification everywhere, and
+the endpoint still answers a perfectly valid 200.
 
 ## `src/api/` — runtime config
 
