@@ -1829,6 +1829,25 @@ describe("profile chrome", () => {
     expect(rule).toMatch(/color:\s*var\(--color-muted\)/);
   });
 
+  it("lets the dropdown panel keep its shadow on a FLAT surface", () => {
+    // The panel is the one primitive here that hangs over arbitrary content,
+    // and on `[data-flat]` its outline is gone — so the shadow is the whole
+    // separator. Verified in a browser on the tools site: 8% navy at 12px
+    // blur, which reads against the page canvas and against a card beneath it.
+    //
+    // It deliberately gets NO fill counterpart in the FLAT section. The other
+    // counterparts wash toward `--color-ink`, and the panel's usual ground is
+    // `--color-paper`, which that wash moves it TOWARD — it would trade a rare
+    // overlap (panel over a same-fill card) for the common case (panel over
+    // the page). What must never happen is the shadow being neutralised,
+    // because then the panel really would have nothing left.
+    const rule = primitives.match(/\.tds-dropdown__panel \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toMatch(/box-shadow:\s*var\(--tds-shadow-md\)/);
+    expect(primitives).not.toMatch(
+      /\[data-flat\][^{]*\.tds-dropdown__panel[^{]*\{[^}]*box-shadow:\s*none/,
+    );
+  });
+
   it("keeps the avatar and the dropdown free of any surface scope", () => {
     // This was incidental until the account menu shipped; now the blog and the
     // tools site both mount that menu on `data-surface="blog"`, so a
