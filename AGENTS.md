@@ -800,6 +800,54 @@ so every existing call site follows a reconfigured host without being edited.
   the one request the test is making. Any suite that mocks `fetch` and inspects
   `mock.calls[0]` needs it.
 
+## `src/components/AccountMenu.tsx` — the session on a PUBLIC site
+
+The blog and the tools site now carry the same identity control the panel has:
+avatar, name, dropdown, top right. The session cookie is
+`Domain=.tracht-digital.de`, so it was always there — both sites simply showed a
+signed-in customer exactly what they show a stranger.
+
+It is the public twin of `tds-core-frontend-pkg`'s `UserMenu`, and every
+difference follows from one fact: **a public page is fully usable signed out.**
+
+- **Reads may follow `apiBase`; writes that set a cookie may NOT.** This is the
+  rule to carry to the next island that talks to auth-api from a public site.
+  `install/proxy.php` deliberately drops `Set-Cookie` ("these sites read, they
+  never log in"), so a `DELETE /logout` routed through the same-origin proxy
+  answers **200 and ends nothing** — the button reports success, the page
+  reloads, and the header comes back signed in. `accountEndpoints()` therefore
+  returns two bases and accepts a configured `authBase` **only when it is
+  absolute**; the relative `/api/auth` a proxy install publishes is rejected on
+  purpose. Pinned by the "goes to the ABSOLUTE auth origin" test.
+- **Logout is `DELETE`.** auth-api registers `DELETE /logout`; a POST answers
+  405, which is a *resolved* fetch, so a `catch` around it sees nothing. That
+  exact bug shipped once in the panel already.
+- **Signing out reloads; it does not redirect to the login form.** The panel
+  redirects because it has nothing to show a signed-out visitor. Here the
+  visitor came to read an article. A reload rather than a local `setMe(null)`
+  because `ToolGate` may already have revealed a premium tool's body from the
+  old session.
+- **A signed-out visitor is a first-class state**, and which one is the caller's
+  call: `loggedOut="nothing"` (the blog) or `loggedOut="login"` (the tools site,
+  where a session unlocks something). The sign-in link is painted **immediately**,
+  before the probe — on a public site the anonymous visitor is the common case,
+  and making them wait a round trip would shift the header for nearly everyone.
+- **`hasAccountHint()` gates the refresh, not just the placeholder.** Without it
+  every anonymous blog reader pays a `POST /refresh` plus a re-probe on every
+  page view. The key is `tds_pub_account` — deliberately not `tds_admin`/
+  `tds_customer`, so nobody reads it as something the host's pre-paint gate
+  consumes.
+- **No company switcher.** Acting as a company needs `X-Act-As-Company`, which is
+  not in auth-api's `Allow-Headers` — the preflight would fail, i.e. the request
+  is never sent and the control merely looks dead.
+- **The six labels live in the component**, not in `i18n/translations.ts`. That
+  bundle is the landing page's marketing copy with its own content rules, and
+  every `/i18n` consumer would ship these strings.
+
+Both public installer profiles need the pair `GET /auth/me` in `proxy_allow`
+**and** `loginUrl` in `runtime_keys`; `installer.test.ts` fails on one without
+the other, because half of that configuration fails silently.
+
 ## Publishing
 
 Two GitHub Actions workflows (the old tag-triggered `publish.yml` is gone):

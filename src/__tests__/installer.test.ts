@@ -201,6 +201,24 @@ describe("across profiles", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  it("a profile that can probe the session also knows where to send a stranger", () => {
+    // The account menu needs both halves: `GET /auth/me` to discover a session
+    // and `loginUrl` to offer one to a visitor who has none. Half of that pair
+    // fails silently — the probe 404s through the proxy, or the sign-in link
+    // quietly falls back to the baked default and ignores the host entirely.
+    for (const { file, source } of profiles) {
+      const probesSession = proxyPairs(phpArrayValue(source, "proxy_allow") ?? "")
+        .filter((pair) => pair.method === "GET")
+        .some((pair) => toJsRegExp(pair.pattern).test("/auth/me"));
+      if (!probesSession) continue;
+
+      expect(
+        phpStrings(phpArrayValue(source, "runtime_keys") ?? ""),
+        `${file} proxies /auth/me but does not carry loginUrl`,
+      ).toContain("loginUrl");
+    }
+  });
+
   it("install.php can supply every key a profile may request", () => {
     // The third writer. `runtime_config()` builds an `$all` map and the profile
     // picks from it; a key present in a profile but missing there silently

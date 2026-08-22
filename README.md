@@ -260,6 +260,43 @@ The panel host (`tds-core-frontend-pkg`) is deliberately **not** a consumer: a
 dashboard shell with ~30 entries in 6 colour-coded zones keeps its off-canvas
 drawer.
 
+## Account menu
+
+The signed-in visitor, top right, on a **public** site. The session cookie is
+`Domain=.tracht-digital.de`, so a login at `auth.tracht-digital.de` is already
+valid on `blog.` and `tools.` — this is what makes it visible there.
+
+```astro
+---
+import { AccountMenu } from "@tracht-digital-solutions/tds-shared/components";
+---
+<div class="flex items-center">
+  <AccountMenu client:idle lang={lang} loggedOut="login" />
+</div>
+```
+
+Wrap it. Utilities go on the wrapper, never on the island: tds-shared's CSS is
+unlayered and Tailwind's utilities sit in `@layer utilities`, so a `hidden` on
+the element itself would lose to `.tds-dropdown`'s own `display`.
+
+| Prop | Default | What it does |
+|---|---|---|
+| `lang` | `"de"` | UI language (`de` \| `en`). |
+| `loggedOut` | `"nothing"` | `"login"` renders a sign-in link with `?next=` back to this page. |
+| `afterLogout` | `"reload"` | `"stay"` leaves the page standing — only safe when nothing else on it depends on the session. |
+| `compact` | `false` | Avatar-only trigger at every width. |
+| `links` | portal + management | Rows above *Passwort ändern*; `adminOnly` rows need `isAdmin`. |
+| `apiBase` / `authApi` / `loginUrl` | production | Build-time fallbacks; `tds-runtime.json` overrides them. |
+
+Two things the host has to provide, and they come as a pair — the site's
+installer profile needs `['GET', '#^/auth/me$#']` in `proxy_allow` **and**
+`loginUrl` in `runtime_keys`. A profile with only the first can find a session
+but has nowhere to send a visitor who lacks one, and neither half fails loudly.
+
+Signing out issues **`DELETE`** against the *absolute* auth origin, never
+through the same-origin proxy: `install/proxy.php` does not forward
+`Set-Cookie`, so a proxied logout answers 200 and leaves the session alive.
+
 ## Design system (CSS, in each frontend)
 
 **One library, three surfaces.** The CSS ships as layers, not as one blob. An

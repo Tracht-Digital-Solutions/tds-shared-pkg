@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **`AccountMenu` — the signed-in visitor, top right, on a PUBLIC site.** The
+  session cookie is `Domain=.tracht-digital.de`, so a login at
+  `auth.tracht-digital.de` was always valid on `blog.` and `tools.` — and both
+  sites showed a signed-in customer exactly what they show a stranger, with no
+  way back into the portal. The island is the public twin of the frontend
+  host's `UserMenu` and reuses the existing `.tds-dropdown*` / `.tds-avatar*`
+  primitives, which needed no change: they carry no `[data-surface]` scope, so
+  they already rendered correctly on `data-surface="blog"` (now pinned by
+  `design.test.ts`).
+  - `src/components/accountAuth.ts` is the transport half:
+    `accountEndpoints`/`fetchAccount`/`tryRefreshAccount`/`logoutAccount` plus
+    the hint and `?next=` helpers, all exported from `/components`.
+  - **Reads may follow `apiBase`; writes that set a cookie may not.**
+    `install/proxy.php` deliberately drops `Set-Cookie`, so a `DELETE /logout`
+    through the same-origin proxy answers 200 and ends nothing — success
+    reported, session alive, header signed back in after the reload. A
+    configured `authBase` is therefore accepted **only when absolute**, and the
+    relative `/api/auth` a proxy install publishes is rejected on purpose.
+  - Logout is **`DELETE`** (a POST answers 405, which a `catch` cannot see) and
+    **reloads** rather than redirecting to a login form the reader did not ask
+    for — the panel's redirect exists only because the panel has nothing to
+    show a signed-out visitor.
+  - A signed-out visitor is a first-class state: `loggedOut="nothing"` (blog) or
+    `loggedOut="login"` (tools). The sign-in link paints immediately rather than
+    after the probe, because on a public site the anonymous visitor is the
+    common case.
+  - The `tds_pub_account` hint gates the remember-me refresh, not just the
+    placeholder width: without it every anonymous reader would pay a
+    `POST /refresh` plus a re-probe on every page view.
+  - `install/profiles/blog.php` gained `GET /auth/me` and `loginUrl`;
+    `installer.test.ts` now fails a profile that has one without the other.
+  - `Me` gained the five optional fields `/me` really returns (`displayName`,
+    `label`, `hasAvatar`, `mustChangePassword`, `expiresAt`).
 - **A fluid layout scale: `.tds-shell`, `.tds-grid-auto`, and seven tokens.**
   Page width was not a decision anywhere — it was a container utility copied
   per call site (`tds-blog-frontend` carried `max-w-5xl mx-auto px-6` in **22**

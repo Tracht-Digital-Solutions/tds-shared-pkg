@@ -28,6 +28,30 @@ export {
   type AdConsent,
 } from "./CookieNotice";
 
+export { default as AccountMenu } from "./AccountMenu";
+export type { AccountMenuProps, AccountMenuLink } from "./AccountMenu";
+/* The transport half, exported beside the island so a site that already probes
+   the session (the tools site's ToolGate) can share one memoised `/me` instead
+   of opening a second one. `DEFAULT_API_BASE` is NOT re-exported here — the api
+   module below already owns that name. */
+export {
+  accountEndpoints,
+  fetchAccount,
+  invalidateAccount,
+  logoutAccount,
+  tryRefreshAccount,
+  hasAccountHint,
+  setAccountHint,
+  clearAccountHint,
+  loginHref,
+  passwordHref,
+  ACCOUNT_HINT_KEY,
+  DEFAULT_AUTH_ORIGIN,
+  DEFAULT_LOGIN_URL,
+  type AccountEndpoints,
+  type AccountEndpointFallbacks,
+} from "./accountAuth";
+
 export { default as ToastHost } from "./ToastHost";
 export type { ToastHostProps } from "./ToastHost";
 /* The bus is re-exported here so a React island needs ONE import path; a

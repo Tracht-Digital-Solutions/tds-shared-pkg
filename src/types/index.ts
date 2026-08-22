@@ -94,12 +94,29 @@ export interface Me {
   userId: number;
   email: string;
   name: string | null;
+  /** Self-chosen display name, when the user set one. */
+  displayName?: string | null;
+  /**
+   * What a UI should print: `displayName ?? name ?? email`, resolved by
+   * auth-api so every consumer does not invent its own fallback chain.
+   */
+  label?: string | null;
   isAdmin: boolean;
   isSupportAgent: boolean;
   /** Whether the login may author blog posts (see `AppUser.isBlogAuthor`). */
   isBlogAuthor: boolean;
   /** Public avatar URL (absolute) or null. */
   avatarUrl: string | null;
+  /**
+   * Whether an avatar actually exists — NOT the same question as
+   * `avatarUrl !== null`, which can still name a dead legacy upload path.
+   * Render the image only when this is true.
+   */
+  hasAvatar?: boolean;
+  /** The login must change its password before it can do anything else. */
+  mustChangePassword?: boolean;
+  /** Session expiry, Unix seconds, from the token's `exp` claim. */
+  expiresAt?: number;
   companies: PortalMembership[];
   /** @deprecated default company id — prefer the active company from `companies`. */
   customerId: number | null;

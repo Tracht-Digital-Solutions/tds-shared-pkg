@@ -1829,6 +1829,23 @@ describe("profile chrome", () => {
     expect(rule).toMatch(/color:\s*var\(--color-muted\)/);
   });
 
+  it("keeps the avatar and the dropdown free of any surface scope", () => {
+    // This was incidental until the account menu shipped; now the blog and the
+    // tools site both mount that menu on `data-surface="blog"`, so a
+    // panel-scoped rule here would leave their header menu unstyled — and an
+    // unstyled `.tds-dropdown__panel` is not merely plain, it loses
+    // `position: absolute` and pushes the whole header apart.
+    for (const selector of ["tds-avatar", "tds-dropdown"]) {
+      const scoped = primitives
+        .split("\n")
+        .filter((line) => line.includes(`.${selector}`) && line.includes("[data-surface="));
+      expect(
+        scoped,
+        `.${selector} must stay surface-neutral: ${scoped.join(" / ")}`,
+      ).toHaveLength(0);
+    }
+  });
+
   it("keeps the top bar in app.css and out of primitives.css", () => {
     // Panel-only-by-name chrome, same class of thing as .portal-sidebar.
     expect(app).toContain(".panel-topbar {");
