@@ -96,7 +96,6 @@ describe("translations", () => {
       const t = translations[lang];
       expect(t.hero.headline.trim().length).toBeGreaterThan(0);
       expect(t.hero.headlineAccent.trim().length).toBeGreaterThan(0);
-      expect(t.hero.tagline.trim().length).toBeGreaterThan(0);
       expect(t.about.headline.trim().length).toBeGreaterThan(0);
       expect(t.services.headline.trim().length).toBeGreaterThan(0);
       expect(t.tech.headline.trim().length).toBeGreaterThan(0);

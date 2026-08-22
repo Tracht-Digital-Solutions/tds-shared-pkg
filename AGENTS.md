@@ -17,12 +17,19 @@ import this — they duplicate the small bit of validation they need, by design.
   businesses and local trades — the audience the Kleinanzeigen speak to — so
   Framework names stay out of `services.items[].tags` (they belong in the
   `tech` section) and "Mittelstand"/"SaaS" stay out entirely. And:
-  - **No free or time-boxed initial consultation.** The classified ads offer
-    one; the website deliberately does not. Nothing in `hero.cta1`,
-    `consulting.*`, `about.stat*` or the landingpage's `lib/faq.ts` may promise
-    "kostenlos"/"kostenfrei"/"30 Minuten". (`pricing.items[0].includes` still
-    names one — that is a separate, pre-existing commercial decision on the
-    rates page, not a licence to reintroduce it elsewhere.)
+  - **No free or time-boxed initial consultation — now WITHOUT exception.**
+    The classified ads offer one; the website deliberately does not. Nothing
+    in `hero.cta1`, `consulting.*`, `about.stat*`, `pricing.*` or the
+    landingpage's `lib/faq.ts` may promise
+    "kostenlos"/"kostenfrei"/"30 Minuten"/"free". The carve-out that used to
+    stand here (`pricing.items[0].includes` naming a free 60-minute intro
+    call, plus `pricing.ctaSub`) was **removed on 2026-08-22**: it undercut
+    the rule at the one place the visitor is thinking about money.
+    `pricing.ctaButton` is now "Unverbindlich anfragen" / "Get in touch",
+    matching every other call to action.
+    The one legitimate "free" left in the bundle is
+    `cookieNotice.consentText` ("your choice is free and can be changed at
+    any time") — consent voluntariness, not an offer.
   - **No customer references.** Capabilities are described, clients are not
     named — not even anonymised as a "case study". `portfolio.*` exists in the
     bundle but the section is not mounted.
@@ -669,8 +676,14 @@ src/
 │   ├── translations.ts       # DE/EN copy (no React). `footer.slogan` is the
 │                             #   brand lead claim ("Digitale Lösungen, die
 │                             #   wirklich passen." / "Digital solutions that
-│                             #   truly fit.") — Hero renders it as its accent
-│                             #   title, so one edit drives Hero + Footer.
+│                             #   truly fit.") — the Hero renders it as its
+│                             #   LEADING line since 2026-08-22, so one edit
+│                             #   drives Hero + Footer + the OG card's copy.
+│                             #   NOTE: `hero.tagline` was removed in the same
+│                             #   change (it repeated `hero.sub` one line
+│                             #   below it). Its only consumers were the
+│                             #   landingpage Hero + both index pages; the
+│                             #   i18n shape test no longer asserts it.
 │   ├── index.ts              # re-exports translations
 │   └── react.tsx             # React Context provider + hook
 ├── motion/                   # animation presets
