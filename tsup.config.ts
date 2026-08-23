@@ -15,6 +15,7 @@ export default defineConfig({
     "toast/index": "src/toast/index.ts",
     "nav/index": "src/nav/index.ts",
     "api/index": "src/api/index.ts",
+    "install/index": "src/install/index.ts",
     "markdown/index": "src/markdown/index.ts",
   },
   format: ["esm", "cjs"],

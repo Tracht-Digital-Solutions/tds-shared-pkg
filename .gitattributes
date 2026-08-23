@@ -7,8 +7,3 @@
 *.yaml      text eol=lf
 *.md        text eol=lf
 
-# install/ is copied verbatim onto an Apache host by each site's prebuild step.
-# A CRLF checkout would travel into dist/ from a Windows build, and a trailing
-# \r on an Apache directive is the kind of thing that fails only on the host.
-*.php       text eol=lf
-install/htaccess text eol=lf

@@ -41,16 +41,6 @@ jobs:
       - name: Install
         run: npm ci
 
-      # install/ is PHP inside an npm package, so nothing else in this pipeline
-      # ever parses it — not tsc, not vitest, not the build. A syntax error
-      # there ships, and the first thing that reads it is an operator's browser
-      # on a production host. Ubuntu runners have PHP already.
-      - name: Lint installer PHP
-        run: |
-          for f in install/*.php install/profiles/*.php; do
-            php -l "$f"
-          done
-
       - name: Type check
         run: npm run type-check
 

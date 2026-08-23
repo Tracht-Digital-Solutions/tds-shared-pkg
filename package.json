@@ -11,7 +11,6 @@
   "files": [
     "dist",
     "styles",
-    "install",
     "README.md"
   ],
   "exports": {
@@ -81,6 +80,11 @@
       "types": "./dist/api/index.d.ts",
       "import": "./dist/api/index.js",
       "require": "./dist/api/index.cjs"
+    },
+    "./install": {
+      "types": "./dist/install/index.d.ts",
+      "import": "./dist/install/index.js",
+      "require": "./dist/install/index.cjs"
     },
     "./markdown": {
       "types": "./dist/markdown/index.d.ts",
