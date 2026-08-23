@@ -806,6 +806,31 @@ happened, all of them invisible to the test suite of the day and all now pinned:
   Worth remembering as a shape: when a probe here is red and the site's own
   traffic is fine, suspect the probe's target, not the probe.
 
+### Step 5 — the site key (0.28.0)
+
+The wizard now registers the site with the API: `POST /sites/handshake` with the
+key an admin issued under *Einstellungen → Site-Verbindungen*. This is the only
+moment the API learns a site exists at all — `tds-runtime.json` is placed by
+hand, so nothing else ever reports which `apiBase` a site published, from which
+origin, or whether it is still alive.
+
+- **The key must never enter `tds-runtime.json`.** That file is served publicly
+  from the docroot. `RUNTIME_KEYS` is deliberately not extended, and
+  `installer.test.ts` asserts no generated config contains a key — because
+  "shouldn't this live in the config too?" is the obvious future improvement and
+  it would publish the credential to the internet. It is a setup-time value
+  here, and a CI secret (`TDS_SITE_KEY`) in the build.
+- **It goes in the request BODY**, not a header (no custom header, no new
+  preflight) and not the query string (a credential in an access log, a referrer
+  or browser history outlives its use).
+- **`cors: "missing"` is reported as a warning, not a success.** The handshake
+  itself can succeed while the site's own calls from that origin cannot — the
+  key was accepted, the allow-list is a separate thing.
+- **`RegistrySync` (tools only) reuses the same key** and now reads `synced`, the
+  field the API actually returns. It read `count`, which is absent, so the number
+  came from the `?? tools.length` fallback: right by accident, and it would have
+  stayed right while reporting nothing about what the server stored.
+
 ### Four things to keep true
 
 - **Never claim a reason for a failed cross-origin fetch.** It rejects with a

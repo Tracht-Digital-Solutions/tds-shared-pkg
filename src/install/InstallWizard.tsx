@@ -133,6 +133,9 @@ export default function InstallWizard({ profile }: InstallWizardProps) {
   const [published, setPublished] = useState<RuntimeConfig | null>(null);
   const [verified, setVerified] = useState<"idle" | "match" | "mismatch" | "missing">("idle");
   const [copied, setCopied] = useState(false);
+  // Held here, not inside the step, so the tools site's registry sync can reuse
+  // the same key the operator just typed. It is never persisted anywhere.
+  const [siteKey, setSiteKey] = useState("");
 
   // Prefill from whatever this site is ACTUALLY using, not from the defaults —
   // on a host that already ran the wizard, the form should show the live values
@@ -339,8 +342,152 @@ export default function InstallWizard({ profile }: InstallWizardProps) {
         )}
       </section>
 
-      {profile.registrySync && <RegistrySync apiBase={endpoints.apiBase} />}
+      <SiteKeyStep
+        apiBase={endpoints.apiBase}
+        profile={profile}
+        siteKey={siteKey}
+        onSiteKey={setSiteKey}
+      />
+
+      {profile.registrySync && <RegistrySync apiBase={endpoints.apiBase} siteKey={siteKey} />}
     </div>
+  );
+}
+
+/**
+ * Register this site with the API using the key issued in the admin panel.
+ *
+ * This is the only moment the API learns a site exists. `tds-runtime.json` is
+ * placed by hand on the host, so nothing else ever reports which `apiBase` a
+ * site published, from which origin, or whether it is still alive — and because
+ * every build-time content fetch is fail-soft, a site pointed at the wrong host
+ * renders its baked fallbacks and looks perfectly healthy.
+ *
+ * **The key is never written into `tds-runtime.json`.** That file is served
+ * publicly from the docroot; anything in it is readable by anyone. It stays a
+ * setup-time credential here and a CI secret (`TDS_SITE_KEY`) in the build,
+ * which is also why `RUNTIME_KEYS` is deliberately not extended — "shouldn't
+ * this live in the config?" is the obvious future improvement and the answer is
+ * no.
+ *
+ * It goes in the request BODY, not a header: no custom header means no new
+ * preflight to get wrong. Not the query string either — a credential in an
+ * access log, a referrer or browser history outlives the request it was sent
+ * for.
+ */
+function SiteKeyStep({
+  apiBase: base,
+  profile,
+  siteKey,
+  onSiteKey,
+}: {
+  apiBase: string;
+  profile: SiteProfile;
+  siteKey: string;
+  onSiteKey: (value: string) => void;
+}) {
+  const [state, setState] = useState<{ tone: string; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const send = useCallback(async () => {
+    setBusy(true);
+    setState(null);
+    try {
+      const res = await fetch(`${trimUrl(base)}/sites/handshake`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: siteKey, site: profile.id, apiBase: trimUrl(base) }),
+      });
+      if (res.status === 401) {
+        setState({
+          tone: "tds-alert--danger",
+          text: "Site-Key abgelehnt (401). Gehört er zu dieser Site und wurde er nicht widerrufen?",
+        });
+        return;
+      }
+      if (res.status === 404) {
+        setState({
+          tone: "tds-alert--warning",
+          text: "Diese API kennt noch keine Site-Keys (404) — sie ist älter als das Feature.",
+        });
+        return;
+      }
+      if (!res.ok) {
+        setState({ tone: "tds-alert--danger", text: `Fehlgeschlagen (HTTP ${res.status}).` });
+        return;
+      }
+      const payload = (await res.json().catch(() => ({}))) as { label?: string; cors?: string };
+      if (payload.cors === "missing") {
+        // Reported as a warning, not a success: the handshake worked because
+        // the panel let it through, and the site's own calls from this origin
+        // will not.
+        setState({
+          tone: "tds-alert--warning",
+          text:
+            `Verbunden als „${payload.label ?? profile.id}“ — aber dieses Origin ` +
+            `(${typeof window === "undefined" ? "" : window.location.origin}) ist nicht ` +
+            "freigegeben. Im Admin-Portal unter Einstellungen → Site-Verbindungen nachholen.",
+        });
+        return;
+      }
+      setState({
+        tone: "tds-alert--success",
+        text: `Verbunden als „${payload.label ?? profile.id}“.`,
+      });
+    } catch {
+      // Never name a reason. A cross-origin failure rejects with a bare
+      // TypeError; DNS, TLS, a dead host and a CORS rejection are
+      // indistinguishable from a browser.
+      setState({
+        tone: "tds-alert--danger",
+        text: "Nicht erreichbar — CORS, Netz oder Host; der Browser nennt den Grund nicht.",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }, [base, profile.id, siteKey]);
+
+  return (
+    <section className="tds-card tds-stack p-5">
+      <h2>5. Site-Key hinterlegen</h2>
+      <p>
+        Der Key wird im Admin-Portal unter <em>Einstellungen → Site-Verbindungen</em>{" "}
+        erzeugt und dort nur einmal angezeigt. Er meldet diese Site bei der API an,
+        damit im Portal sichtbar ist, dass sie verbunden ist.
+      </p>
+      <div className="tds-field-row">
+        <label htmlFor="siteKey">Site-Key</label>
+        <input
+          id="siteKey"
+          className="field field-boxed"
+          value={siteKey}
+          onChange={(event) => onSiteKey(event.target.value)}
+          autoComplete="off"
+          spellCheck={false}
+          placeholder="tdsk_…"
+        />
+      </div>
+      <div className="tds-row">
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => void send()}
+          disabled={busy || siteKey.trim() === ""}
+        >
+          {busy ? "Meldet an …" : "Verbindung herstellen"}
+        </button>
+      </div>
+      {state !== null && (
+        <p className={`tds-alert ${state.tone}`}>
+          <span>{state.text}</span>
+        </p>
+      )}
+      <p className="muted-line">
+        Der Key gehört <strong>nicht</strong> in die <code>tds-runtime.json</code> —
+        die Datei ist öffentlich lesbar. Für die Inhalte zur Bauzeit gehört er als{" "}
+        <code>TDS_SITE_KEY</code> in die Secrets des Repositorys.
+      </p>
+    </section>
   );
 }
 
@@ -358,10 +505,15 @@ export default function InstallWizard({ profile }: InstallWizardProps) {
  * moved. Store it under *Einstellungen → Tools* FIRST — `/tools/registry`
  * answers **503** until it exists, and that error points nowhere near the cause.
  */
-function RegistrySync({ apiBase: base }: { apiBase: string }) {
-  const [token, setToken] = useState("");
+function RegistrySync({ apiBase: base, siteKey }: { apiBase: string; siteKey: string }) {
+  const [override, setOverride] = useState("");
   const [state, setState] = useState<{ tone: string; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // The site key from step 5 is the credential now; the legacy registry token
+  // still works for one release, so the field stays — pre-filled from the key so
+  // the common path is "press the button".
+  const token = override !== "" ? override : siteKey;
 
   const send = useCallback(async () => {
     setBusy(true);
@@ -381,13 +533,15 @@ function RegistrySync({ apiBase: base }: { apiBase: string }) {
         body: JSON.stringify({ token, tools }),
       });
       if (res.status === 401) {
-        setState({ tone: "tds-alert--danger", text: "Token abgelehnt (401)." });
+        setState({ tone: "tds-alert--danger", text: "Zugangsdatum abgelehnt (401)." });
         return;
       }
       if (res.status === 503) {
         setState({
           tone: "tds-alert--warning",
-          text: "Die Registry ist noch nicht konfiguriert (503). Zuerst unter Einstellungen → Tools ein Registry-Sync-Token speichern.",
+          text:
+            "Die Registry ist noch nicht konfiguriert (503). Entweder oben einen Site-Key " +
+            "für „tools“ anmelden oder unter Einstellungen → Tools ein Registry-Sync-Token speichern.",
         });
         return;
       }
@@ -395,10 +549,14 @@ function RegistrySync({ apiBase: base }: { apiBase: string }) {
         setState({ tone: "tds-alert--danger", text: `Fehlgeschlagen (HTTP ${res.status}).` });
         return;
       }
-      const payload = (await res.json().catch(() => ({}))) as { count?: number };
+      // The API answers `synced`. This used to read `count`, which is absent —
+      // so the number came from the `?? tools.length` fallback and was right by
+      // accident rather than by contract, and would have stayed right while
+      // reporting nothing about what the server actually stored.
+      const payload = (await res.json().catch(() => ({}))) as { synced?: number };
       setState({
         tone: "tds-alert--success",
-        text: `Übertragen: ${payload.count ?? tools.length} Tools.`,
+        text: `Übertragen: ${payload.synced ?? tools.length} Tools.`,
       });
     } catch {
       setState({
@@ -412,21 +570,22 @@ function RegistrySync({ apiBase: base }: { apiBase: string }) {
 
   return (
     <section className="tds-card tds-stack p-5">
-      <h2>5. Tool-Katalog übertragen</h2>
+      <h2>6. Tool-Katalog übertragen</h2>
       <p>
         Überträgt die gebauten Tools an <code>POST /tools/registry</code>, damit
-        sie im Admin-Panel erscheinen. Das Token vorher unter{" "}
-        <em>Einstellungen → Tools</em> speichern, sonst antwortet die Registry
-        mit 503.
+        sie im Admin-Panel erscheinen. Der Site-Key aus Schritt 5 genügt dafür;
+        ein älteres Registry-Sync-Token aus <em>Einstellungen → Tools</em> wird
+        weiterhin akzeptiert.
       </p>
       <div className="tds-field-row">
-        <label htmlFor="registryToken">Registry-Sync-Token</label>
+        <label htmlFor="registryToken">Site-Key oder Registry-Sync-Token</label>
         <input
           id="registryToken"
           className="field field-boxed"
           value={token}
-          onChange={(event) => setToken(event.target.value)}
+          onChange={(event) => setOverride(event.target.value)}
           autoComplete="off"
+          spellCheck={false}
         />
       </div>
       <div className="tds-row">

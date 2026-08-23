@@ -113,6 +113,20 @@ describe("buildRuntimeConfig", () => {
     expect(json.endsWith("\n")).toBe(true);
     expect(JSON.parse(json).site).toBe("tools");
   });
+
+  it("never carries a site key — tds-runtime.json is served publicly", () => {
+    // The file sits in the docroot next to index.html and anyone can GET it.
+    // "Shouldn't the key live in the config too?" is the obvious future
+    // improvement, and it would publish the credential to the internet. The key
+    // is a setup-time value in the wizard and a CI secret (TDS_SITE_KEY) in the
+    // build; it has no place in a generated artifact.
+    expect(RUNTIME_KEYS).not.toContain("siteKey");
+    for (const profile of Object.values(profiles)) {
+      const json = serializeRuntimeConfig(buildRuntimeConfig(profile, endpoints));
+      expect(json).not.toMatch(/tdsk_/);
+      expect(json.toLowerCase()).not.toMatch(/"[a-z]*key"/);
+    }
+  });
 });
 
 describe("countItems", () => {
