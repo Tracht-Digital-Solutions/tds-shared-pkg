@@ -98,7 +98,7 @@ function ProbeRow({ result }: { result: ProbeResult }) {
         )}
         {reachability === "ok" && !isHealth && count === null && (
           <p className="muted-line">
-            Antwort hat kein <code>{route.countKey}</code>-Array — unerwartetes Format.
+            Antwort enthält kein <code>{route.countKey}</code> — unerwartetes Format.
           </p>
         )}
         {reachability === "http-error" && <p className="muted-line">HTTP {status} auf {url}</p>}

@@ -13,10 +13,21 @@ import type { PublicRoute, SiteProfile } from "./profiles.js";
 export const trimUrl = (value: string): string => value.trim().replace(/\/+$/, "");
 
 /**
- * The length of the array at a dotted path, or `null` if it is not an array.
+ * How many entries sit at a dotted path — counting a LIST by its length and a
+ * MAP by its keys. `null` means there is nothing countable there at all.
  *
- * Ported from the PHP `count_items()` verbatim, including the `null` for a
- * missing or non-array node — "unerwartete Antwort" and "0 Einträge" are
+ * The two-shape rule is not convenience, it is the second time this exact trap
+ * has cost a false alarm. `probeHealth` already exists because `/healthz`
+ * answers `services` as a name→info map and the array-only count reported a
+ * perfectly healthy gateway as "unerwartetes Format". `/content/landing`
+ * (`blocks` = `section_key` → value) and `/content/legal` (`docs` = key →
+ * language map) are the same shape and produced the same false error on the
+ * blog and the landingpage — a red row on a working host, which is worse than
+ * no check, because the operator's first move is to "fix" something that is
+ * not broken.
+ *
+ * `null` is still reserved for the genuinely unexpected — a missing key, a
+ * scalar, an outright `null`. "unerwartete Antwort" and "0 Einträge" are
  * different findings and must not collapse into each other.
  */
 export function countItems(payload: unknown, key: string): number | null {
@@ -25,7 +36,9 @@ export function countItems(payload: unknown, key: string): number | null {
     if (node === null || typeof node !== "object" || !(segment in node)) return null;
     node = (node as Record<string, unknown>)[segment];
   }
-  return Array.isArray(node) ? node.length : null;
+  if (Array.isArray(node)) return node.length;
+  if (node !== null && typeof node === "object") return Object.keys(node).length;
+  return null;
 }
 
 /** What the operator typed into step 1. */

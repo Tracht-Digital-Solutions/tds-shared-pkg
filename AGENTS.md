@@ -774,6 +774,38 @@ What it gained is the thing it was always meant to measure: **the checks now run
 on the same path the site itself uses** — same origin, same CORS, same browser.
 PHP called from the server, which proved something else entirely.
 
+### A green route must not be able to report red
+
+Every one of these checks is read by someone deciding whether their deployment
+is broken, so a **false alarm costs more than a missing check**: the operator's
+first move is to "fix" something that was never wrong. Three ways it has already
+happened, all of them invisible to the test suite of the day and all now pinned:
+
+- **A payload node is counted as a LIST or as a MAP — the routes use both.**
+  `posts` is a list; `blocks` (`section_key` → value, `/content/landing`),
+  `docs` (key → language map, `/content/legal`) and `/healthz`'s `services` are
+  maps. `countItems` originally counted arrays only, so `null` — "unerwartetes
+  Format" — was the answer for three perfectly healthy routes. `/healthz` was
+  carved out first (hence `probeHealth` and the `kind` discriminator); the
+  content maps were fixed later, after the blog's wizard reported a red
+  `/content/landing` next to a green `/content/blog` on a working host.
+  `null` still means genuinely uncountable — missing key, scalar, `null` —
+  because "unexpected response" and "0 entries" send an operator to different
+  places.
+- **A route that can only ever be empty must not be a check.**
+  `/content/snippets` is a hard-coded `['snippets' => []]` in `BlogCmsModule`
+  (curated snippets were a `tds-content-api` feature with no port), so probing
+  it reported "Leer" on every healthy host — and a check that is always amber
+  teaches its reader to skip the ones where amber means something. It was
+  removed from the blog profile; `installer.test.ts` asserts it stays out.
+- **`/healthz` had no CORS at all**, which no amount of care in this package
+  could fix. It is answered by the gateway itself, not by an upstream, and the
+  gateway deliberately adds no CORS — so the wizard's first and most prominent
+  check reported "nicht erreichbar" for a healthy API. Fixed in the gateway
+  (`tds-gateway-api` 0.5.0, per-route middleware on `/` and `/healthz` only).
+  Worth remembering as a shape: when a probe here is red and the site's own
+  traffic is fine, suspect the probe's target, not the probe.
+
 ### Four things to keep true
 
 - **Never claim a reason for a failed cross-origin fetch.** It rejects with a

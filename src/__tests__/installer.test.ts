@@ -121,13 +121,35 @@ describe("countItems", () => {
     expect(countItems({ blocks: [] }, "blocks")).toBe(0);
   });
 
-  it("returns null rather than 0 when the key is missing or not an array", () => {
+  it("counts a MAP by its keys — `blocks` and `docs` are not lists", () => {
+    // `/content/landing` answers `blocks` as `section_key => value` and
+    // `/content/legal` answers `docs` as `key => language map`. Counting only
+    // arrays reported both as "unerwartetes Format" on a host serving them
+    // perfectly — a red row that sends the operator to fix nothing.
+    expect(countItems({ blocks: { hero: {}, pricing: {}, faq: {} } }, "blocks")).toBe(3);
+    expect(countItems({ blocks: {} }, "blocks")).toBe(0);
+    expect(countItems({ docs: { agb: { de: {}, en: {} } } }, "docs")).toBe(1);
+  });
+
+  it("returns null rather than 0 when there is nothing countable there", () => {
     // "unexpected response" and "reachable but empty" are different findings
     // and must not collapse: the first is a broken endpoint, the second is an
     // empty database, and they send an operator to different places.
-    expect(countItems({ blocks: {} }, "blocks")).toBeNull();
     expect(countItems({}, "blocks")).toBeNull();
     expect(countItems(null, "blocks")).toBeNull();
+    expect(countItems({ blocks: null }, "blocks")).toBeNull();
+    expect(countItems({ blocks: "hero" }, "blocks")).toBeNull();
+    expect(countItems({ blocks: 3 }, "blocks")).toBeNull();
+  });
+});
+
+describe("blog profile", () => {
+  it("does not probe /content/snippets", () => {
+    // The route is a hard-coded empty stub in BlogCmsModule (curated snippets
+    // were a tds-content-api feature with no port). Checking it could only ever
+    // report "Leer" on a healthy host, which trains the operator to ignore an
+    // empty result on the routes where it is a real finding.
+    expect(profiles.blog.publicRoutes.map((r) => r.path)).not.toContain("/content/snippets");
   });
 });
 

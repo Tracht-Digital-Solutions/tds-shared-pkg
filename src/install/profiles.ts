@@ -24,7 +24,14 @@ export interface PublicRoute {
   method: "GET";
   /** Path relative to the probe base, query string included. */
   path: string;
-  /** Dotted path to an array in the response; its length is reported. */
+  /**
+   * Dotted path to the countable node in the response; its size is reported.
+   *
+   * A list is counted by length and a map by its keys — the public content
+   * routes use both shapes (`posts` is a list, `blocks` and `docs` are maps),
+   * and assuming one of them is what made two working routes report
+   * "unerwartetes Format". See `countItems`.
+   */
   countKey: string;
 }
 
@@ -95,9 +102,15 @@ export const blog: SiteProfile = {
   // page: its cookie-banner switch and AdSense configuration live in that
   // site's content blocks (`src/lib/content-api.ts`). Leaving it out would hide
   // exactly the case where ads and the banner silently vanish.
+  //
+  // `/content/snippets` is deliberately NOT here, though the blog fetches it.
+  // `BlogCmsModule` answers it with a hard-coded `['snippets' => []]` — curated
+  // snippets were a `tds-content-api` feature with no port, and the empty shape
+  // exists only to keep the build green. So the check could never report
+  // anything but "Leer" on a perfectly configured host, which teaches the
+  // operator to ignore an empty result on the routes where it means something.
   publicRoutes: [
     { method: "GET", path: "/content/blog?limit=3&lang=de", countKey: "posts" },
-    { method: "GET", path: "/content/snippets", countKey: "snippets" },
     { method: "GET", path: "/content/landing?lang=de", countKey: "blocks" },
   ],
   probeBase: "api",
