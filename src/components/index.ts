@@ -103,3 +103,15 @@ export type { SkeletonProps } from "./Skeleton";
 
 export { default as SkeletonText } from "./SkeletonText";
 export type { SkeletonTextProps } from "./SkeletonText";
+
+/* Article covers. Shared because the blog and the landingpage's Journal row
+   must draw the SAME picture for the same slug — the variant is a hash of it,
+   so a second implementation is a second artwork. */
+export {
+  AbstractCover,
+  PostCover,
+  coverVariant,
+  hasPhotoCover,
+  type AbstractCoverProps,
+  type PostCoverProps,
+} from "./PostCover";

@@ -723,7 +723,9 @@ src/
 │                             #   base.css, not app.css, so the landingpage (base-only)
 │                             #   gets it too. Avatar is the exception: `.tds-avatar`
 │                             #   is in primitives.css, because only the panel
-│                             #   surfaces show people)
+│                             #   surfaces show people. PostCover/AbstractCover
+│                             #   are the odd ones out: pure inline-style markup,
+│                             #   rendered WITHOUT a client: directive — see below)
 ├── astro/                    # build presets (cssTarget / tdsViteBuild) +
 │                             #   themeBootstrapScript (the no-flash <head> script)
 └── install/                  # host-side setup wizard (React island) — the
@@ -892,6 +894,35 @@ so every existing call site follows a reconfigured host without being edited.
 - **`primeRuntimeConfig(null)` in a test's `beforeEach`** keeps assertions about
   the one request the test is making. Any suite that mocks `fetch` and inspects
   `mock.calls[0]` needs it.
+
+## `src/components/PostCover.tsx` — one article cover, two properties
+
+`AbstractCover` / `PostCover` / `coverVariant` / `hasPhotoCover` (0.29.0). The flat
+brand-geometry covers a post gets when nobody uploaded a picture — six drawings of
+solid blocks, hairline circles and the accent square. They lived in
+`tds-blog-frontend/src/components/Covers.tsx` until the landingpage's Journal row
+needed them too; that file is now a re-export of this one, and the landingpage's
+`BlogPostCard.astro` renders it directly.
+
+- **The variant is a hash of the SLUG, which is why this cannot be copied.** Two
+  implementations would draw two different pictures of the same article on the
+  two public properties. That is the whole reason it is here rather than in
+  either site.
+- **It renders with no `client:` directive.** Every drawing is inline-styled
+  markup with no state, so both consumers get it as static HTML and it costs no
+  JavaScript. Don't add hooks to it.
+- **`--tds-flat-tint` (variant 4) is declared in `styles/surfaces/blog.css`
+  ONLY.** A marketing- or panel-surface consumer never defines it, and an
+  undefined custom property in `background` paints *nothing* — a blank cover,
+  green build, green tests. The literal `color-mix()` fallback in the component
+  is what keeps variant 4 visible off the blog surface; `PostCover.test.tsx`
+  fails on a bare `var(--tds-flat-tint)`.
+- **`hasPhotoCover()` is the one rule for "is there a real picture".** It accepts
+  an absolute URL or a site-local image path. Consumers that render the `<img>`
+  themselves (the landingpage's Astro card) must ask it rather than writing their
+  own regex — a second rule is how the two surfaces drifted apart before.
+  Resolving a storage-relative `/uploads/…` path to an absolute one is the
+  *caller's* job, at its data layer, before the value gets here.
 
 ## `src/components/AccountMenu.tsx` — the session on a PUBLIC site
 
