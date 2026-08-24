@@ -28,6 +28,8 @@
  *   memos that are correct in a build and permanent in a server.
  * - {@link PageCacheStore} — the on-disk layout, mirroring what the static
  *   build produced so the web server can serve it with no special knowledge.
+ * - {@link resolveCacheDirs} — where that store lives, and the self-healing
+ *   symlink that lets the web server reach it across deploys.
  */
 
 export { pageCache } from "./middleware.js";
@@ -44,3 +46,6 @@ export type { CacheEntry, CacheMeta, StoredPage } from "./store.js";
 
 export { cacheLocation, isCacheableMethod } from "./key.js";
 export type { CacheLocation } from "./key.js";
+
+export { CACHE_LINK_NAME, resolveCacheDirs } from "./dirs.js";
+export type { CacheDirs, ResolveCacheDirsOptions } from "./dirs.js";
