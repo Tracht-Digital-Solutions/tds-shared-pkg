@@ -74,41 +74,67 @@ describe("resolveEvents", () => {
     tool: (e) => forLanguages(e, (lang) => (lang === "de" ? [`/tools/${e.id}`] : [`/en/tools/${e.id}`])),
   };
 
-  it("expands one event into every page it dates", () => {
-    expect(resolveEvents(map, [{ type: "post", id: "hallo", lang: "de" }]).paths).toEqual([
+  it("expands one event into every page it dates", async () => {
+    expect((await resolveEvents(map, [{ type: "post", id: "hallo", lang: "de" }])).paths).toEqual([
       "/",
       "/hallo",
     ]);
   });
 
-  it("covers both language trees when the event names no language", () => {
+  it("covers both language trees when the event names no language", async () => {
     // A tool switched off disappears from the German and the English catalog
     // at the same moment; a language-less event must not rebuild only one.
-    expect(resolveEvents(map, [{ type: "tool", id: "qr" }]).paths).toEqual([
+    expect((await resolveEvents(map, [{ type: "tool", id: "qr" }])).paths).toEqual([
       "/en/tools/qr",
       "/tools/qr",
     ]);
   });
 
-  it("deduplicates across events and returns a stable order", () => {
-    const { paths } = resolveEvents(map, [
+  it("deduplicates across events and returns a stable order", async () => {
+    const { paths } = await resolveEvents(map, [
       { type: "post", id: "b", lang: "de" },
       { type: "post", id: "a", lang: "de" },
     ]);
     expect(paths).toEqual(["/", "/a", "/b"]);
   });
 
-  it("reports an unknown event type instead of silently rebuilding nothing", () => {
+  it("reports an unknown event type instead of silently rebuilding nothing", async () => {
     // A module that starts sending a new type before a site learns it would
     // otherwise get a cheerful 200 and change no page at all.
-    const result = resolveEvents(map, [{ type: "widget", id: "x" }]);
+    const result = await resolveEvents(map, [{ type: "widget", id: "x" }]);
     expect(result.paths).toEqual([]);
     expect(result.unknown).toEqual(["widget"]);
   });
 
-  it("drops a resolver's non-absolute output rather than storing it", () => {
+  it("drops a resolver's non-absolute output rather than storing it", async () => {
     const sloppy: EventMap = { post: () => ["relative/path", "/good"] };
-    expect(resolveEvents(sloppy, [{ type: "post" }]).paths).toEqual(["/good"]);
+    expect((await resolveEvents(sloppy, [{ type: "post" }])).paths).toEqual(["/good"]);
+  });
+
+  it("awaits a resolver that has to look its subject up", async () => {
+    // The blog needs this: an article's category, tags and author are
+    // properties of the article, not of the event, so working out which
+    // taxonomy pages a save dates means fetching the article.
+    const async: EventMap = {
+      post: async (e) => [`/${e.id}`, "/kategorie/technik"],
+    };
+    expect((await resolveEvents(async, [{ type: "post", id: "x" }])).paths).toEqual([
+      "/kategorie/technik",
+      "/x",
+    ]);
+  });
+
+  it("loses only the failing event when a lookup throws", async () => {
+    // A resolver that fetches can fail when the API is unreachable. Losing one
+    // event's paths is far better than failing the whole rebuild — the operator
+    // can rebuild everything once the API is back.
+    const flaky: EventMap = {
+      post: async () => { throw new Error("API down"); },
+      block: () => ["/"],
+    };
+    const result = await resolveEvents(flaky, [{ type: "post", id: "x" }, { type: "block" }]);
+    expect(result.paths).toEqual(["/"]);
+    expect(result.unknown).toEqual([]);
   });
 });
 

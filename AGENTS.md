@@ -756,10 +756,11 @@ once. `dist/index.js` is asserted to contain no `node:` import.
 
 ### The four pieces
 
-- **`pageCache(options)`** — the middleware. Serves hits, stores misses, and
-  hosts the control plane. Returns a plain `(context, next)` function, so this
-  package never imports the `astro:middleware` virtual module; the site wraps it
-  with `defineMiddleware`.
+- **`pageCache(options)`** — returns TWO halves. `.middleware` serves hits and
+  stores misses (a plain `(context, next)` function, so this package never
+  imports the `astro:middleware` virtual module; the site wraps it with
+  `defineMiddleware`). `.control` answers `status`/`rebuild`/`purge` and is
+  mounted on a **real route** — see below.
 - **`resolveEvents(map, events)`** — the pure translation from *this content
   changed* to *these pages are stale*. Each site brings its own `EventMap`.
 - **`createGenerationCache()`** — the memo a rebuild can throw away.
@@ -768,10 +769,24 @@ once. `dist/index.js` is asserted to contain no `node:` import.
 
 ### Five things that are easy to get wrong
 
-- **The control plane MUST live in middleware.** Astro excludes any path segment
-  beginning with `_` from routing, so `src/pages/_cache/rebuild.ts` is not a
-  route and never will be. That turns out to be right anyway: the control
-  endpoints have to answer even when every page route is failing.
+- **The control plane must NOT live in middleware**, and the obvious reasoning
+  says otherwise. Astro excludes any path segment beginning with `_` from
+  routing, so `src/pages/_cache/rebuild.ts` really is impossible — but the fix
+  is a differently-named route, not middleware: **Astro does not run middleware
+  for a path no route matches.** `App.render()` matches first and short-circuits
+  into the 404 response, so a middleware-mounted control plane answered every
+  rebuild request with the site's own 404 page: HTML, no cache activity, and a
+  status code that reads like a typo in the URL. The sites mount `.control` at
+  `/tds/cache/{action}`.
+- **A POST to it must carry `Content-Type: application/json`.** Astro's
+  `security.checkOrigin` treats a cross-site POST with a form-ish content type as
+  CSRF and answers *"Cross-site POST form submissions are forbidden"* — a message
+  that names neither content types nor the fix.
+- **A resolver may be async, and the blog needs that.** An article's category,
+  tags and author are properties of the article, not of the event, so working
+  out which taxonomy pages a save dates means looking the article up. A throwing
+  resolver loses only its own event's paths; failing the whole rebuild over one
+  unreachable lookup would be worse.
 - **`purge` and `rebuild` are not the same thing**, and only `rebuild`
   (render, then swap atomically) is safe while the content API is unreachable.
   Every content fetch on these sites is deliberately fail-soft, so after a purge

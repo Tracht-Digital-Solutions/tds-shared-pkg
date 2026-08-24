@@ -2,13 +2,19 @@
  * The request half of the page cache: serve a hit, store a miss, and answer
  * the control plane the admin panel drives.
  *
- * ### Why the control plane lives in middleware and not in a route
+ * ### The control plane is a ROUTE, not middleware — learned the hard way
  *
- * Astro excludes any path segment beginning with `_` from routing, so
- * `src/pages/_cache/rebuild.ts` is not a route and never will be. That is
- * convenient rather than limiting: the control endpoints must be reachable
- * even when every page route is failing, and middleware is the only layer that
- * still runs then.
+ * The obvious design puts it in middleware: middleware runs on every request,
+ * and Astro excludes any path segment beginning with `_` from routing, so
+ * `src/pages/_cache/rebuild.ts` could never be a route anyway.
+ *
+ * **Astro does not run middleware for a path no route matches.** `App.render()`
+ * matches first and short-circuits into the 404 response, so a middleware-only
+ * control plane is unreachable: every rebuild request came back as the site's
+ * own 404 page — HTML, no cache activity, and a status code that looks like a
+ * misconfigured URL rather than a design mistake. Hence
+ * {@link PageCache.control}, which a real endpoint under a routable path (no
+ * leading underscore) delegates to.
  *
  * ### The two things a caller must not confuse
  *
@@ -26,13 +32,35 @@ import { resolveEvents, type CacheEvent, type EventMap } from "./events.js";
 export interface CacheContext {
   request: Request;
   url: URL;
+  /**
+   * Astro's `context.isPrerendered`.
+   *
+   * A prerendered route is already a file the web server hands out; it must
+   * never be stored, and during `astro build` there is no real request to
+   * read. But the ordering matters and is easy to get backwards: **the control
+   * plane has to be answered BEFORE this is consulted.** An unmatched path
+   * like `/_cache/status` falls through to the 404 route, which is itself
+   * prerendered — so a site that skipped the middleware on
+   * `isPrerendered` first got Astro's 404 page for every rebuild request,
+   * with a cheerful `200`-shaped HTML body and no cache activity at all.
+   */
+  isPrerendered?: boolean;
 }
 
 export type CacheNext = () => Promise<Response>;
 
 export interface PageCacheOptions {
-  /** Absolute path of the cache directory. */
+  /** Absolute path of the directory holding rendered pages. */
   dir: string;
+  /**
+   * Absolute path of the metadata directory. Defaults to `<dir>/.meta`.
+   *
+   * Production passes one OUTSIDE the web tree: `dir` is reachable from the
+   * web by construction — that is what makes a hit free — so a sidecar stored
+   * beside a rendered page would be public too. {@link resolveCacheDirs}
+   * returns both.
+   */
+  metaDir?: string;
   /** The site's route knowledge, keyed by event type. */
   events: EventMap;
   /**
@@ -46,8 +74,6 @@ export interface PageCacheOptions {
   token?: string;
   /** Master switch. `false` passes everything straight through. */
   enabled?: boolean;
-  /** Control-plane mount point. */
-  controlPrefix?: string;
   /**
    * Drop the site's own data memos. Called before any render a rebuild does.
    *
@@ -63,7 +89,15 @@ export interface PageCacheOptions {
   logger?: (message: string) => void;
 }
 
-/** Response content types worth storing. Anything else streams past. */
+/**
+ * Response content types worth storing. Anything else streams past.
+ *
+ * `application/pdf` is on the list because on these sites a PDF is not a
+ * static file: the landingpage's `/legal/agb.pdf` streams a blob out of the
+ * CMS on every request. Leaving it off meant the rebuild endpoint reported
+ * that path as rebuilt while the middleware quietly declined to store it —
+ * the sort of half-truth that makes a cache impossible to reason about.
+ */
 function isStorable(contentType: string): boolean {
   const t = contentType.toLowerCase();
   return (
@@ -71,7 +105,8 @@ function isStorable(contentType: string): boolean {
     t.includes("application/xml") ||
     t.includes("text/xml") ||
     t.includes("application/rss+xml") ||
-    t.includes("application/json")
+    t.includes("application/json") ||
+    t.includes("application/pdf")
   );
 }
 
@@ -82,34 +117,44 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+/** The two halves a site mounts. */
+export interface PageCache {
+  /**
+   * Serves hits and stores misses. The site wraps it with `defineMiddleware`;
+   * returning a plain `(context, next)` function is what keeps this package
+   * free of the `astro:middleware` virtual module.
+   */
+  middleware: (context: CacheContext, next: CacheNext) => Promise<Response>;
+  /**
+   * Answers `status` / `rebuild` / `purge`. Mount it on a REAL route — Astro
+   * never runs middleware for an unmatched path, and a path segment beginning
+   * with `_` is not routable at all, so the endpoint's directory must carry
+   * neither.
+   */
+  control: (action: string, request: Request, url: URL) => Promise<Response>;
+}
+
 /**
- * Build the middleware.
- *
- * Returns a plain `(context, next)` function rather than an Astro
- * `MiddlewareHandler`, so this package never imports the `astro:middleware`
- * virtual module. The consuming site wraps it with `defineMiddleware`.
+ * Build the page cache for one site.
  */
-export function pageCache(options: PageCacheOptions) {
+export function pageCache(options: PageCacheOptions): PageCache {
   const {
     dir,
+    metaDir,
     events,
     token = process.env.TDS_CACHE_TOKEN ?? "",
     enabled = true,
-    controlPrefix = "/_cache",
     onInvalidate,
     alwaysPaths = [],
     concurrency = 4,
     logger = (m: string) => console.warn(m),
   } = options;
 
-  const store = new PageCacheStore(dir);
+  const store = new PageCacheStore(dir, metaDir);
   /** Header that forces a fresh render, used by rebuild's own self-requests. */
   const REFRESH = "x-tds-cache-refresh";
 
-  async function control(context: CacheContext): Promise<Response> {
-    const { request, url } = context;
-    const action = url.pathname.slice(controlPrefix.length).replace(/^\/+/, "");
-
+  async function control(action: string, request: Request, url: URL): Promise<Response> {
     if (!token) {
       return json({ error: "cache_token_not_configured" }, 503);
     }
@@ -144,7 +189,7 @@ export function pageCache(options: PageCacheOptions) {
       return json({ error: "invalid_json" }, 400);
     }
 
-    const resolved = resolveEvents(events, payload.events ?? []);
+    const resolved = await resolveEvents(events, payload.events ?? []);
     const explicit = (payload.paths ?? []).filter((p) => typeof p === "string" && p.startsWith("/"));
 
     if (action === "purge") {
@@ -176,6 +221,7 @@ export function pageCache(options: PageCacheOptions) {
     onInvalidate?.();
 
     const rebuilt: string[] = [];
+    const skipped: string[] = [];
     const failed: Array<{ path: string; status: number | string }> = [];
     const queue = [...paths];
 
@@ -188,10 +234,19 @@ export function pageCache(options: PageCacheOptions) {
             headers: { [REFRESH]: token },
           });
           // Drain the body so the connection is released even when we do not
-          // need the bytes — the middleware below already stored them.
+          // need the bytes — the middleware already stored them.
           await res.arrayBuffer();
-          if (res.ok) rebuilt.push(path);
-          else failed.push({ path, status: res.status });
+          if (!res.ok) {
+            failed.push({ path, status: res.status });
+          } else if (res.headers.get("x-tds-cache") === "BYPASS") {
+            // Rendered fine, stored nothing: an unstorable content type, or a
+            // response the render marked `no-store`. Reported separately
+            // because calling it "rebuilt" is how a path stays permanently
+            // uncached while the panel shows a green result every time.
+            skipped.push(path);
+          } else {
+            rebuilt.push(path);
+          }
         } catch (err) {
           failed.push({ path, status: String(err) });
         }
@@ -202,25 +257,20 @@ export function pageCache(options: PageCacheOptions) {
 
     return json({
       rebuilt: rebuilt.sort(),
+      skipped: skipped.sort(),
       failed,
       unknownEvents: resolved.unknown,
     });
   }
 
-  return async function pageCacheMiddleware(
-    context: CacheContext,
-    next: CacheNext,
-  ): Promise<Response> {
+  async function middleware(context: CacheContext, next: CacheNext): Promise<Response> {
     const { request, url } = context;
 
-    if (url.pathname === controlPrefix || url.pathname.startsWith(controlPrefix + "/")) {
-      try {
-        return await control(context);
-      } catch (err) {
-        logger(`[tds-cache] control request failed: ${String(err)}`);
-        return json({ error: "internal" }, 500);
-      }
-    }
+    // A prerendered route is already a file the web server hands out, and
+    // during `astro build` there is no real request to read — touching
+    // `context.request` there warns per route and would store build-time
+    // renders as if a visitor had asked for them.
+    if (context.isPrerendered) return next();
 
     if (!enabled || !isCacheableMethod(request.method)) return next();
 
@@ -288,5 +338,17 @@ export function pageCache(options: PageCacheOptions) {
     if (etag) headers.set("etag", etag);
 
     return new Response(new Uint8Array(body), { status: 200, headers });
+  }
+
+  return {
+    middleware,
+    control: async (action, request, url) => {
+      try {
+        return await control(action, request, url);
+      } catch (err) {
+        logger(`[tds-cache] control request failed: ${String(err)}`);
+        return json({ error: "internal" }, 500);
+      }
+    },
   };
 }

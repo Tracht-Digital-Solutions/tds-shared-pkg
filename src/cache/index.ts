@@ -33,7 +33,7 @@
  */
 
 export { pageCache } from "./middleware.js";
-export type { CacheContext, CacheNext, PageCacheOptions } from "./middleware.js";
+export type { CacheContext, CacheNext, PageCache, PageCacheOptions } from "./middleware.js";
 
 export { forLanguages, resolveEvents } from "./events.js";
 export type { CacheEvent, EventMap, EventResolver, ResolvedEvents } from "./events.js";

@@ -35,8 +35,14 @@ export interface CacheEvent {
  * Return absolute, normalised paths (`/`, `/en/`, `/tag/astro`). Returning an
  * empty array is legitimate — a `block` event for a section that only appears
  * on the landingpage dates nothing on the blog.
+ *
+ * **May be async, and the blog needs that.** An article's category, tags and
+ * author are properties of the article, not of the event, so working out which
+ * taxonomy pages a save dates means looking the article up. Without it, saving
+ * an article would never refresh the category page listing it — a gap nobody
+ * would notice until a reader did.
  */
-export type EventResolver = (event: CacheEvent) => string[];
+export type EventResolver = (event: CacheEvent) => string[] | Promise<string[]>;
 
 /** The site's whole route knowledge: one resolver per event type. */
 export type EventMap = Record<string, EventResolver>;
@@ -63,7 +69,10 @@ export interface ResolvedEvents {
  * Sorting is not cosmetic: the rebuild endpoint reports the list back, and a
  * stable order makes two runs comparable in a log.
  */
-export function resolveEvents(map: EventMap, events: readonly CacheEvent[]): ResolvedEvents {
+export async function resolveEvents(
+  map: EventMap,
+  events: readonly CacheEvent[],
+): Promise<ResolvedEvents> {
   const paths = new Set<string>();
   const unknown = new Set<string>();
 
@@ -73,7 +82,16 @@ export function resolveEvents(map: EventMap, events: readonly CacheEvent[]): Res
       unknown.add(event.type);
       continue;
     }
-    for (const path of resolver(event)) {
+    let resolved: string[];
+    try {
+      resolved = await resolver(event);
+    } catch {
+      // A resolver that needs a lookup can fail when the API is unreachable.
+      // Losing the paths for one event is far better than failing the whole
+      // rebuild — the operator can rebuild everything once the API is back.
+      continue;
+    }
+    for (const path of resolved) {
       if (typeof path === "string" && path.startsWith("/")) paths.add(path);
     }
   }
