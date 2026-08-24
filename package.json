@@ -91,6 +91,11 @@
       "import": "./dist/markdown/index.js",
       "require": "./dist/markdown/index.cjs"
     },
+    "./cache": {
+      "types": "./dist/cache/index.d.ts",
+      "import": "./dist/cache/index.js",
+      "require": "./dist/cache/index.cjs"
+    },
     "./styles/primitives.css": "./styles/primitives.css",
     "./styles/prose.css": "./styles/prose.css",
     "./styles/surfaces/marketing.css": "./styles/surfaces/marketing.css",

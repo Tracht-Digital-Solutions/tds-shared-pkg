@@ -728,11 +728,79 @@ src/
 │                             #   rendered WITHOUT a client: directive — see below)
 ├── astro/                    # build presets (cssTarget / tdsViteBuild) +
 │                             #   themeBootstrapScript (the no-flash <head> script)
+├── cache/                    # SERVER-ONLY page cache for the three public SSR
+│                             #   sites (pageCache middleware, resolveEvents,
+│                             #   createGenerationCache, PageCacheStore). Imports
+│                             #   node:fs — its own entry point, NEVER re-exported
+│                             #   from index. See the note below.
 └── install/                  # host-side setup wizard (React island) — the
                               #   four sites mount it at /install. See below.
 ```
 
 `src/__tests__/` holds the vitest suite (`npm run test` / `test:run`).
+
+## `src/cache/` — the public sites' page cache
+
+The three public sites (`tracht-digital.de`, `blog.`, `tools.`) render on demand
+(Astro SSR) and store each rendered page as a plain file the web server serves
+directly. A hit therefore costs exactly what the old static build cost — it *is*
+a static file — while a content change costs one page render instead of one full
+CI deploy. This module is that mechanism; the sites supply only their own route
+knowledge.
+
+**Consume it as `@tracht-digital-solutions/tds-shared/cache`.** It imports
+`node:fs`, `node:path` and `node:crypto`, so it has its own entry point and is
+**never re-exported from `./index`** — the root entry is pulled into every
+browser bundle in the workspace, and one Node builtin there breaks all of them at
+once. `dist/index.js` is asserted to contain no `node:` import.
+
+### The four pieces
+
+- **`pageCache(options)`** — the middleware. Serves hits, stores misses, and
+  hosts the control plane. Returns a plain `(context, next)` function, so this
+  package never imports the `astro:middleware` virtual module; the site wraps it
+  with `defineMiddleware`.
+- **`resolveEvents(map, events)`** — the pure translation from *this content
+  changed* to *these pages are stale*. Each site brings its own `EventMap`.
+- **`createGenerationCache()`** — the memo a rebuild can throw away.
+- **`PageCacheStore`** — the on-disk layout, mirroring what the static build
+  produced (`preise/index.html`), so the web server needs no special knowledge.
+
+### Five things that are easy to get wrong
+
+- **The control plane MUST live in middleware.** Astro excludes any path segment
+  beginning with `_` from routing, so `src/pages/_cache/rebuild.ts` is not a
+  route and never will be. That turns out to be right anyway: the control
+  endpoints have to answer even when every page route is failing.
+- **`purge` and `rebuild` are not the same thing**, and only `rebuild`
+  (render, then swap atomically) is safe while the content API is unreachable.
+  Every content fetch on these sites is deliberately fail-soft, so after a purge
+  the replacement render *succeeds* and quietly bakes the fallbacks in — a purge
+  during an outage replaces the site with its own placeholder copy, with nothing
+  red anywhere.
+- **A module-level memo is correct in a build and permanent in a server.** Six
+  call sites across the three sites had that shape; unchanged, a rebuild
+  faithfully re-renders whatever the process read at boot and reports success.
+  `onInvalidate` is not optional — wire it to the site's own caches.
+- **Never store a response carrying `Set-Cookie`** (or `Cache-Control: no-store`).
+  It is per-visitor by definition, and serving it to the next visitor is the
+  worst failure this component can have. Today no public page renders anything
+  session-dependent server-side — `AccountMenu` is `client:idle` and reads `/me`
+  in the browser — and that is an invariant to keep, not a coincidence.
+- **The query string is not part of the key.** No public site reads
+  `Astro.url.searchParams` server-side, so a query cannot change the render, but
+  anyone can append one: keying on it would let `?1`, `?2`, `?3` … fill the disk
+  and turn every visit into a fresh render. A route that ever does read a
+  parameter must opt out of caching instead.
+
+### The token
+
+The control plane authenticates with `TDS_CACHE_TOKEN` (constant-time compare,
+hashed first so even the length leaks nothing). **With no token configured it
+answers `503` rather than running open** — an unauthenticated rebuild endpoint on
+a public origin is free render amplification. The token belongs in the host's
+Node environment and **never** in `tds-runtime.json`, which is served publicly
+from the docroot; same rule as the site key.
 
 ## `src/install/` — the host-side setup wizard
 

@@ -17,6 +17,10 @@ export default defineConfig({
     "api/index": "src/api/index.ts",
     "install/index": "src/install/index.ts",
     "markdown/index": "src/markdown/index.ts",
+    // Server-only: imports node:fs/node:crypto. Its own entry point on
+    // purpose — never re-exported from `index`, which every browser bundle in
+    // the workspace pulls in.
+    "cache/index": "src/cache/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,
