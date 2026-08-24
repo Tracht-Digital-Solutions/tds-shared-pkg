@@ -767,7 +767,27 @@ once. `dist/index.js` is asserted to contain no `node:` import.
 - **`PageCacheStore`** — the on-disk layout, mirroring what the static build
   produced (`preise/index.html`), so the web server needs no special knowledge.
 
-### Five things that are easy to get wrong
+### Six things that are easy to get wrong
+
+- **A cached page must never outlive its build, and everything about the store
+  is designed to make it survive one.** `resolveCacheDirs` keeps the store
+  outside the deploy tree and re-links it on every boot precisely so a deploy
+  cannot destroy it — which is right for the store and wrong for its contents.
+  A stored page is HTML, and that HTML names the build's assets by content hash
+  (`/_astro/Hero.CXaElEfT.js`); a deploy rotates every one of those names.
+  **This took `tracht-digital.de` down on 2026-08-24** (fixed in 0.32.0): every
+  `/_astro/*.js` 404ed, no island hydrated, and the hero section *vanished* —
+  its headline and slogan are motion elements whose SSR markup carries the
+  `initial` state (`opacity: 0`) and are revealed by hydration. Every other
+  section is plain Astro HTML and rendered normally, so the page looked complete
+  apart from one blank screenful. **Nothing was red anywhere:** `200` with
+  `x-tds-cache: HIT`, a healthy server, and all the new assets present under
+  their new names — the only broken thing was that the document asking for them
+  was older than they were. Apache serves a hit off disk without waking Node, so
+  the application could not have noticed. `resolveCacheDirs` now fingerprints
+  the asset filenames and empties the store when they change; an absent marker
+  counts as a mismatch, because provenance you cannot establish is provenance
+  you must not trust.
 
 - **The control plane must NOT live in middleware**, and the obvious reasoning
   says otherwise. Astro excludes any path segment beginning with `_` from
