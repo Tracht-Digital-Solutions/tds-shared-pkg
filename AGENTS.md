@@ -12,6 +12,17 @@ import this — they duplicate the small bit of validation they need, by design.
 
 ## Rules of thumb
 
+- **`vi.stubGlobal` is not undone by `vi.restoreAllMocks()` — stubs and spies
+  are separate mechanisms (learned on the vitest 4 upgrade, 2026-08-25).**
+  `vitest.config.ts` therefore sets `unstubGlobals: true`, and a new suite
+  should rely on that rather than remembering an `afterEach`. The failure this
+  fixes is close to undebuggable: `vi.spyOn` on a function that is *already* a
+  mock returns **that same mock** instead of wrapping it, so one leaked stub
+  gives every later test in the file a shared call history. `api.test.ts`
+  stubbed `fetch` in one `describe` and never unstubbed it — harmless under
+  vitest 2, and under vitest 4 two tests in a *different* `describe` counted six
+  calls they never made. **Both passed in isolation**, which is the tell: a
+  count assertion that only fails in the full file is contamination, not logic.
 - **The landingpage copy in `i18n/translations.ts` carries two standing
   constraints (set 2026-08-16).** The site addresses freelancers, small
   businesses and local trades — the audience the Kleinanzeigen speak to — so
@@ -1080,6 +1091,41 @@ difference follows from one fact: **a public page is fully usable signed out.**
 Both public installer profiles need the pair `GET /auth/me` in `proxy_allow`
 **and** `loginUrl` in `runtime_keys`; `installer.test.ts` fails on one without
 the other, because half of that configuration fails silently.
+
+## `scripts/` — the release spine for every SSR consumer
+
+`scripts/pack-release.mjs` assembles the deployable tree a Node app is checked
+out as on the Plesk host (`app.cjs` + `package.json` + `server/` + `client/` +
+a prebuilt `node_modules/` + `tmp/`), and `scripts/app.cjs` is the canonical
+Passenger startup file. Consumed **by path**, as a `postbuild`:
+
+```jsonc
+"postbuild": "node node_modules/@tracht-digital-solutions/tds-shared/scripts/pack-release.mjs"
+```
+
+- **No `exports` entry, and none is wanted.** `node <path>` is a filesystem
+  lookup; the `exports` map governs specifier resolution only. What the entry
+  *does* need is `"scripts"` in `files`, or npm never puts the directory in the
+  tarball — pinned by `src/__tests__/releaseScripts.test.ts`, because nothing
+  else in this repo so much as references these two files and the symptom lands
+  in a consumer's CI as a MODULE_NOT_FOUND naming a path inside `node_modules`.
+- **`root` is `process.cwd()`**, i.e. the consumer's. npm sets the cwd of every
+  lifecycle script to the package root. Deriving it from `import.meta.url` (what
+  the per-site copies did) would resolve into `node_modules/` once published and
+  read *this* package's `package.json`.
+- **The startup file is looked up in the consumer first.** The three public
+  sites keep their own byte-identical `app.cjs`; the two panel products have
+  none, for the same reason they have no `src/`.
+- **It arrived here because the instruction in its own header did not scale.**
+  It said "fix it once, copy it three times; do not fork it" — and the panel
+  products would have made it five. The three sites still carry their copies;
+  both paths behave identically, so they can drop them whenever it suits rather
+  than as part of a release.
+- **`verify()` runs on every build, not only in CI**, and it is the authority on
+  what a consumer's `vite.ssr.noExternal` and `tds.release.runtimeDependencies`
+  must contain: it fails the build naming any first-party import that survived
+  into `server/`, and any bare specifier that does not resolve in the packed
+  tree.
 
 ## Publishing
 

@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **`scripts/pack-release.mjs` + `scripts/app.cjs` — the release spine, now
+  published.** Both were byte-identical copies in the three public SSR sites,
+  under a header instruction ("fix it once, copy it three times") that the two
+  panel products would have turned into five copies. Consumed by path as a
+  `postbuild`; needs `"scripts"` in `files`, which
+  `src/__tests__/releaseScripts.test.ts` pins. Two backwards-compatible
+  changes: `root` is `process.cwd()` (identical for a repo-local copy, correct
+  from `node_modules`), and the startup file falls back to the packaged one for
+  a consumer that has none — the panel products own no application source.
+  Additive only; the three sites keep working unchanged.
+
+### Changed
+- **Toolchain: TypeScript 6.0.3, vitest 4.1.11, jsdom 30.0.1, tsup 8.5.1.**
+  `tsconfig.json` gains `"types": ["node"]` and `"ignoreDeprecations": "6.0"`
+  (tsup injects a deprecated `baseUrl`; without it the DTS build dies while
+  `tsc --noEmit` passes).
+- **`vitest.config.ts` sets `unstubGlobals: true`.** `vi.restoreAllMocks()`
+  does not undo `vi.stubGlobal`, and a leaked stub makes `vi.spyOn` return the
+  stub itself rather than a fresh wrapper — so one un-stubbed `fetch` gave two
+  unrelated tests in `api.test.ts` a shared call history under vitest 4. Both
+  passed in isolation.
+
+### Added (earlier, unreleased)
 - **`AccountMenu` — the signed-in visitor, top right, on a PUBLIC site.** The
   session cookie is `Domain=.tracht-digital.de`, so a login at
   `auth.tracht-digital.de` was always valid on `blog.` and `tools.` — and both
