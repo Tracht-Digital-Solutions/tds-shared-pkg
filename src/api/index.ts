@@ -80,7 +80,59 @@ export type RuntimeConfig = {
   generatedAt?: string;
 } & Partial<Record<RuntimeKey, string>>;
 
-let cached: string | null = null;
+/**
+ * This module's mutable state, parked on `globalThis` rather than in module
+ * scope.
+ *
+ * ### Why, and it is not a style choice
+ *
+ * `tsup` builds every entry point standalone (`splitting: false`, and the CJS
+ * half cannot split at all), so a *sibling* entry that imports `../api`
+ * gets its own **copy** of this file compiled into its bundle. Three entries do
+ * — `./components` (LiveChatCta, AccountMenu) and `./data` — and with the state
+ * in module scope each copy would have its own.
+ *
+ * Nothing about that fails loudly. What it costs:
+ *
+ *  - `onUnauthorized`: the frontend host registers the 401→`/me`-probe backstop
+ *    once, on the `./api` copy. Every call made through another copy silently
+ *    loses it and treats an expired session as a plain 401.
+ *  - `headersProvider`: the same registration carries `X-Act-As-Company`. A
+ *    call through another copy omits it, so an admin viewing another company's
+ *    data quietly gets their own — a wrong answer, not an error.
+ *  - `runtimePromise`: each copy re-probes `/tds-runtime.json` once.
+ *
+ * A `Symbol.for` key rather than a string property: it cannot collide with an
+ * unrelated global, and it is invisible to `JSON.stringify` and `Object.keys`
+ * on `globalThis`, which some environments enumerate.
+ */
+interface ApiState {
+  /** Memoised {@link apiBase}. */
+  cached: string | null;
+  runtimePromise: Promise<RuntimeConfig | null> | null;
+  runtimeValue: RuntimeConfig | null;
+  onUnauthorized: UnauthorizedHandler | null;
+  headersProvider: HeadersProvider | null;
+}
+
+const STATE_KEY = Symbol.for("@tracht-digital-solutions/tds-shared:api-state");
+
+type StateHost = typeof globalThis & { [STATE_KEY]?: ApiState };
+
+const state: ApiState = ((): ApiState => {
+  const host = globalThis as StateHost;
+  const existing = host[STATE_KEY];
+  if (existing !== undefined) return existing;
+  const fresh: ApiState = {
+    cached: null,
+    runtimePromise: null,
+    runtimeValue: null,
+    onUnauthorized: null,
+    headersProvider: null,
+  };
+  host[STATE_KEY] = fresh;
+  return fresh;
+})();
 
 const trimEnd = (value: string): string => value.replace(/\/+$/, "");
 
@@ -97,7 +149,7 @@ const trimEnd = (value: string): string => value.replace(/\/+$/, "");
  * poison the first client call in a shared module graph.
  */
 export function apiBase(): string {
-  if (cached !== null) return cached;
+  if (state.cached !== null) return state.cached;
 
   const env =
     typeof import.meta !== "undefined"
@@ -116,8 +168,8 @@ export function apiBase(): string {
     /* exotic document (jsdom teardown, sandboxed frame) — fall through */
   }
 
-  cached = trimEnd(meta.trim() || env || DEFAULT_API_BASE);
-  return cached;
+  state.cached = trimEnd(meta.trim() || env || DEFAULT_API_BASE);
+  return state.cached;
 }
 
 /**
@@ -125,11 +177,8 @@ export function apiBase(): string {
  * test that swaps the document out do, because {@link apiBase} memoises.
  */
 export function resetApiBase(): void {
-  cached = null;
+  state.cached = null;
 }
-
-let runtimePromise: Promise<RuntimeConfig | null> | null = null;
-let runtimeValue: RuntimeConfig | null = null;
 
 /**
  * The host-side runtime configuration, fetched once and memoised.
@@ -164,11 +213,11 @@ let runtimeValue: RuntimeConfig | null = null;
  * have, on every single navigation.
  */
 export async function runtimeConfig(): Promise<RuntimeConfig | null> {
-  if (runtimePromise !== null) return runtimePromise;
+  if (state.runtimePromise !== null) return state.runtimePromise;
 
   if (typeof document === "undefined" || typeof fetch !== "function") {
-    runtimePromise = Promise.resolve(null);
-    return runtimePromise;
+    state.runtimePromise = Promise.resolve(null);
+    return state.runtimePromise;
   }
 
   let declared = "";
@@ -178,11 +227,11 @@ export async function runtimeConfig(): Promise<RuntimeConfig | null> {
     /* exotic document — treat as "not declared" and go look for the file */
   }
   if (declared.trim() !== "") {
-    runtimePromise = Promise.resolve(null);
-    return runtimePromise;
+    state.runtimePromise = Promise.resolve(null);
+    return state.runtimePromise;
   }
 
-  runtimePromise = (async () => {
+  state.runtimePromise = (async () => {
     try {
       const res = await fetch(RUNTIME_CONFIG_PATH, {
         credentials: "same-origin",
@@ -208,9 +257,9 @@ export async function runtimeConfig(): Promise<RuntimeConfig | null> {
       const config = parsed as RuntimeConfig;
       if (typeof config.apiBase === "string" && config.apiBase !== "") {
         // Seed the memoised base so plain `apiUrl()` callers follow too.
-        cached = trimEnd(config.apiBase);
+        state.cached = trimEnd(config.apiBase);
       }
-      runtimeValue = config;
+      state.runtimeValue = config;
       return config;
     } catch {
       /* offline, blocked, malformed — the baked build value stands */
@@ -218,7 +267,7 @@ export async function runtimeConfig(): Promise<RuntimeConfig | null> {
     }
   })();
 
-  return runtimePromise;
+  return state.runtimePromise;
 }
 
 /**
@@ -229,7 +278,7 @@ export async function runtimeConfig(): Promise<RuntimeConfig | null> {
  * because the correct response to both is the same: use the build-time value.
  */
 export function runtimeConfigSync(): RuntimeConfig | null {
-  return runtimeValue;
+  return state.runtimeValue;
 }
 
 /**
@@ -273,8 +322,8 @@ export async function runtimeAbsolute(key: RuntimeKey, fallback: string): Promis
 
 /** Test seam — production code never calls this. {@see resetApiBase}. */
 export function resetRuntimeConfig(): void {
-  runtimePromise = null;
-  runtimeValue = null;
+  state.runtimePromise = null;
+  state.runtimeValue = null;
 }
 
 /**
@@ -288,10 +337,10 @@ export function resetRuntimeConfig(): void {
  * second discovery path.
  */
 export function primeRuntimeConfig(config: RuntimeConfig | null): void {
-  runtimeValue = config;
-  runtimePromise = Promise.resolve(config);
+  state.runtimeValue = config;
+  state.runtimePromise = Promise.resolve(config);
   if (config !== null && typeof config.apiBase === "string" && config.apiBase !== "") {
-    cached = trimEnd(config.apiBase);
+    state.cached = trimEnd(config.apiBase);
   }
 }
 
@@ -310,8 +359,6 @@ export function apiUrl(path: string): string {
 
 type UnauthorizedHandler = (url: string) => void | Promise<void>;
 
-let onUnauthorized: UnauthorizedHandler | null = null;
-
 /**
  * Register what happens on a 401 from {@link apiFetch}.
  *
@@ -322,12 +369,10 @@ let onUnauthorized: UnauthorizedHandler | null = null;
  * simply returned to the caller.
  */
 export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
-  onUnauthorized = handler;
+  state.onUnauthorized = handler;
 }
 
 type HeadersProvider = (url: string) => Record<string, string>;
-
-let headersProvider: HeadersProvider | null = null;
 
 /**
  * Register headers to add to every {@link apiFetch}.
@@ -346,7 +391,7 @@ let headersProvider: HeadersProvider | null = null;
  * A provider must not throw; one that does is ignored for that request.
  */
 export function setRequestHeadersProvider(provider: HeadersProvider | null): void {
-  headersProvider = provider;
+  state.headersProvider = provider;
 }
 
 /**
@@ -373,9 +418,9 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
   // header it does not allow fails the PREFLIGHT — which means the request is
   // never sent at all and the button just looks dead.
   let extra: Record<string, string> = {};
-  if (headersProvider !== null) {
+  if (state.headersProvider !== null) {
     try {
-      extra = headersProvider(url);
+      extra = state.headersProvider(url);
     } catch {
       /* a header provider must never be able to break the request */
     }
@@ -386,9 +431,9 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
     ...init,
     headers: { ...extra, ...(init.headers as Record<string, string> | undefined) },
   });
-  if (res.status === 401 && onUnauthorized !== null) {
+  if (res.status === 401 && state.onUnauthorized !== null) {
     try {
-      await onUnauthorized(url);
+      await state.onUnauthorized(url);
     } catch {
       /* the backstop must not turn a 401 into a thrown request */
     }

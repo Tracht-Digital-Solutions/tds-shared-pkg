@@ -389,3 +389,52 @@ describe("runtimeConfig", () => {
     );
   });
 });
+
+describe("cross-entry state sharing", () => {
+  /**
+   * tsup builds every entry standalone (`splitting: false`, and the CJS half
+   * cannot split at all), so `./components` and `./data` each compile their own
+   * COPY of this module into their bundle. With the state in module scope the
+   * copies would not see each other, and nothing about that fails loudly:
+   *
+   *  - the frontend host registers the 401→/me backstop once, on `./api` — every
+   *    call through another copy silently loses it;
+   *  - the same registration carries `X-Act-As-Company`, so an admin viewing
+   *    another company's data would quietly get their own.
+   *
+   * The state therefore lives on `globalThis` under a `Symbol.for` key. These
+   * tests pin that, because a refactor back to `let cached = null` type-checks,
+   * builds and passes every other test in this file.
+   */
+  const STATE_KEY = Symbol.for("@tracht-digital-solutions/tds-shared:api-state");
+
+  it("parks its mutable state on globalThis, not in module scope", () => {
+    const held = (globalThis as Record<symbol, unknown>)[STATE_KEY];
+    expect(held, "the api module must publish its state for sibling bundles").toBeTypeOf("object");
+  });
+
+  it("lets a second copy of the module see a registered handler", () => {
+    // Standing in for the second bundle: anything holding the same symbol is
+    // reading the same object.
+    const shared = (globalThis as Record<symbol, unknown>)[STATE_KEY] as {
+      onUnauthorized: unknown;
+      headersProvider: unknown;
+    };
+    const handler = () => {};
+    setUnauthorizedHandler(handler);
+    expect(shared.onUnauthorized).toBe(handler);
+
+    const provider = () => ({ "X-Act-As-Company": "7" });
+    setRequestHeadersProvider(provider);
+    expect(shared.headersProvider).toBe(provider);
+
+    setUnauthorizedHandler(null);
+    setRequestHeadersProvider(null);
+  });
+
+  it("keys the slot by Symbol.for so it cannot collide with an unrelated global", () => {
+    expect(STATE_KEY.description).toBe("@tracht-digital-solutions/tds-shared:api-state");
+    // Invisible to enumeration, which some environments do over globalThis.
+    expect(Object.keys(globalThis)).not.toContain("api-state");
+  });
+});

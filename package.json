@@ -82,6 +82,11 @@
       "import": "./dist/api/index.js",
       "require": "./dist/api/index.cjs"
     },
+    "./data": {
+      "types": "./dist/data/index.d.ts",
+      "import": "./dist/data/index.js",
+      "require": "./dist/data/index.cjs"
+    },
     "./install": {
       "types": "./dist/install/index.d.ts",
       "import": "./dist/install/index.js",

@@ -130,6 +130,7 @@ import { ThemeToggle, CookieNotice, LiveChatCta, ToastHost, Spinner, Skeleton, S
 import { toast } from "@tracht-digital-solutions/tds-shared/toast";
 import { mountMobileNav } from "@tracht-digital-solutions/tds-shared/nav";
 import { apiFetch, apiUrl } from "@tracht-digital-solutions/tds-shared/api";
+import { invalidate, staleClass, useCachedJson } from "@tracht-digital-solutions/tds-shared/data";
 import { renderMarkdown } from "@tracht-digital-solutions/tds-shared/markdown";
 import { tdsViteBuild, cssTarget } from "@tracht-digital-solutions/tds-shared/astro";
 ```
@@ -174,6 +175,44 @@ Anfragen." while the rows sat in the database.
 
 `apiUrl()` passes already-absolute URLs through unchanged, so wrapping an
 existing call site is safe either way.
+
+The transport's handlers and runtime config are shared across package entry
+points. This matters because `./components` and `./data` each bundle their own
+copy of the API module: a call through either still receives the host's 401
+backstop and active-company header.
+
+## Panel data cache (SWR)
+
+Panel islands that display GET data use the memory-only cache instead of
+starting from an empty `useState` after every ClientRouter navigation:
+
+```tsx
+import { invalidate, staleClass, useCachedJson } from
+  "@tracht-digital-solutions/tds-shared/data";
+
+const { data, loading, stale, error } =
+  useCachedJson<{ messages: Message[] }>("/contact/messages?status=new");
+
+return (
+  <section className={staleClass(stale, "tds-list")} aria-busy={loading || stale}>
+    {/* render data?.messages, a first-load skeleton, and error in flow */}
+  </section>
+);
+
+// After a successful mutation: keep the visible rows, mark them stale and
+// replace them in the background. Prefixes invalidate a whole resource family.
+invalidate("/contact/messages");
+```
+
+Fresh values are reused for 30 seconds; older values paint immediately and are
+dimmed/pulsed while one de-duplicated request revalidates them. Invalidating a
+key never removes its visible value, and an older in-flight GET cannot overwrite
+the save that triggered the invalidation. A failed refresh keeps the last good
+data beside the error instead of turning a 403/503 into a false empty state.
+
+Nothing is written to browser storage: these are authenticated customer
+payloads, and a full reload deliberately starts cold. This `./data` entry is
+unrelated to the Node-only `./cache` page cache used by public SSR sites.
 
 ## Toasts
 

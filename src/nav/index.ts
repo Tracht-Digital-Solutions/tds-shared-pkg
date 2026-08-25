@@ -305,3 +305,77 @@ export function mountMobileNav(options: MobileNavOptions): MobileNavHandle {
     },
   };
 }
+
+/* === Client-side navigation progress ==============================
+   The visible half of Astro's `ClientRouter`. See `.tds-nav-progress` in
+   primitives.css for the rules this drives.
+   ================================================================== */
+
+/** The element id the bar is mounted on, so a page can style or find it. */
+export const NAV_PROGRESS_ID = "tds-nav-progress";
+
+/**
+ * Show a thin indeterminate bar while a client-side navigation is in flight.
+ *
+ * A router swap still costs a server render. Without feedback, a click that
+ * takes a few hundred milliseconds reads as a click that did nothing — which
+ * is how an otherwise fast SPA gets reported as unresponsive. This is the
+ * cheapest honest answer: appear on `astro:before-preparation`, hold at 75%
+ * (never pretend to know the remainder), and fade out on `astro:page-load`.
+ *
+ * Safe to call on a site with no router: the events simply never fire.
+ * Idempotent — calling it twice reuses the same element and replaces nothing,
+ * which matters because the panel shell's scripts are re-run per page load.
+ *
+ * @returns a teardown function, mostly for tests.
+ */
+export function mountNavProgress(): () => void {
+  if (typeof document === "undefined") return () => {};
+
+  const existing = document.getElementById(NAV_PROGRESS_ID) as HTMLElement | null;
+  const bar = existing ?? document.createElement("div");
+  if (bar.dataset.tdsNavProgressBound === "true") return () => {};
+
+  bar.id = NAV_PROGRESS_ID;
+  bar.className = "tds-nav-progress";
+  // Decoration, not status: the region actually being replaced carries
+  // `aria-busy`, and announcing the same thing twice is worse than once.
+  bar.setAttribute("aria-hidden", "true");
+  bar.dataset.state ??= "idle";
+  bar.dataset.tdsNavProgressBound = "true";
+  if (existing === null) document.body.appendChild(bar);
+
+  const start = (): void => {
+    bar.dataset.state = "loading";
+  };
+  const finish = (): void => {
+    // Only ever wind down from a run. Without the guard, the `astro:page-load`
+    // that fires on the INITIAL load would flash the bar's done-state across
+    // the top of every cold page view.
+    if (bar.dataset.state === "loading") bar.dataset.state = "done";
+  };
+  const settle = (event: TransitionEvent): void => {
+    // Leave `done` in place for the fade, then reset the transform while the
+    // bar is invisible. Without this, the next navigation starts at scale(1)
+    // and visibly SHRINKS to the 75% loading state instead of growing from 0.
+    if (event.propertyName === "opacity" && bar.dataset.state === "done") {
+      bar.dataset.state = "idle";
+    }
+  };
+
+  document.addEventListener("astro:before-preparation", start);
+  document.addEventListener("astro:page-load", finish);
+  // A navigation the user aborts (or one the router refuses) never reaches
+  // page-load, so the bar would otherwise sit at 75% forever.
+  window.addEventListener("popstate", finish);
+  bar.addEventListener("transitionend", settle);
+
+  return () => {
+    document.removeEventListener("astro:before-preparation", start);
+    document.removeEventListener("astro:page-load", finish);
+    window.removeEventListener("popstate", finish);
+    bar.removeEventListener("transitionend", settle);
+    delete bar.dataset.tdsNavProgressBound;
+    bar.remove();
+  };
+}

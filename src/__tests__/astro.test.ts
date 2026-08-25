@@ -74,15 +74,24 @@ describe("themeBootstrapScript", () => {
     storageThrows?: boolean;
     prefersDark?: boolean;
     noMatchMedia?: boolean;
-  }): { attr: string | null; name: string | null } {
+  }): {
+    attr: string | null;
+    name: string | null;
+    /** Fire `astro:before-swap` with an incoming document and report its root. */
+    swap: () => { attr: string | null; name: string | null };
+  } {
     let attr: string | null = null;
     let name: string | null = null;
+    const listeners = new Map<string, (event: unknown) => void>();
     const documentStub = {
       documentElement: {
         setAttribute(key: string, value: string) {
           name = key;
           attr = value;
         },
+      },
+      addEventListener(type: string, handler: (event: unknown) => void) {
+        listeners.set(type, handler);
       },
     };
     const localStorageStub = {
@@ -101,7 +110,22 @@ describe("themeBootstrapScript", () => {
       documentStub,
       localStorageStub,
     );
-    return { attr, name };
+    const swap = () => {
+      let swapped: string | null = null;
+      let swappedName: string | null = null;
+      listeners.get("astro:before-swap")?.({
+        newDocument: {
+          documentElement: {
+            setAttribute(key: string, value: string) {
+              swappedName = key;
+              swapped = value;
+            },
+          },
+        },
+      });
+      return { attr: swapped, name: swappedName };
+    };
+    return { attr, name, swap };
   }
 
   it("is safe to inject raw — no unresolved interpolation, no </script>", () => {
@@ -148,5 +172,23 @@ describe("themeBootstrapScript", () => {
 
   it("survives a missing matchMedia and still commits a theme", () => {
     expect(run({ stored: null, noMatchMedia: true }).attr).toBe("light");
+  });
+
+  it("re-applies the theme onto the INCOMING document before a router swap", () => {
+    // Astro's ClientRouter clears every attribute from <html> and copies the
+    // new document's back, so a data-theme set at load time is gone after the
+    // first client-side navigation. Writing it onto `newDocument` before the
+    // swap is what makes the copy bring it along — without this the panel
+    // flips to light on the first click.
+    const swapped = run({ stored: "dark" }).swap();
+    expect(swapped.name).toBe(THEME_ATTRIBUTE);
+    expect(swapped.attr).toBe("dark");
+  });
+
+  it("registers exactly one swap listener, on `astro:before-swap`", () => {
+    // `astro:after-swap` would also work but paints one frame of the wrong
+    // theme first, which is the flash this whole script exists to prevent.
+    expect(themeBootstrapScript).toContain('addEventListener("astro:before-swap"');
+    expect(themeBootstrapScript).not.toContain("astro:after-swap");
   });
 });

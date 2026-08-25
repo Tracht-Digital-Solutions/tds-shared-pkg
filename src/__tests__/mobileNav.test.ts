@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { lockBodyScroll, mountMobileNav, MOBILE_NAV_DESKTOP_QUERY } from "../nav";
+import {
+  lockBodyScroll,
+  mountMobileNav,
+  mountNavProgress,
+  MOBILE_NAV_DESKTOP_QUERY,
+  NAV_PROGRESS_ID,
+} from "../nav";
 
 /**
  * Mobile navigation mechanics.
@@ -272,5 +278,78 @@ describe("mountMobileNav", () => {
     handle.open();
     handle.close();
     expect(onOpenChange.mock.calls).toEqual([[true], [false]]);
+  });
+});
+
+describe("mountNavProgress", () => {
+  afterEach(() => {
+    document.getElementById("tds-nav-progress")?.remove();
+  });
+
+  it("mounts one decorative bar and nothing more", () => {
+    const teardown = mountNavProgress();
+    const bar = document.getElementById(NAV_PROGRESS_ID);
+    expect(bar).not.toBeNull();
+    expect(bar?.className).toBe("tds-nav-progress");
+    // The swapped region already announces itself with aria-busy; a second
+    // announcement for the same event is noise.
+    expect(bar?.getAttribute("aria-hidden")).toBe("true");
+    expect(bar?.dataset.state).toBe("idle");
+    teardown();
+    expect(document.getElementById(NAV_PROGRESS_ID)).toBeNull();
+  });
+
+  it("is idempotent — the shell re-runs its scripts on every page load", () => {
+    const teardown = mountNavProgress();
+    mountNavProgress();
+    expect(document.querySelectorAll(".tds-nav-progress")).toHaveLength(1);
+    teardown();
+  });
+
+  it("binds the server-rendered persisted bar instead of treating it as already wired", () => {
+    document.body.innerHTML = `<div id="${NAV_PROGRESS_ID}" class="tds-nav-progress" data-state="idle"></div>`;
+    const teardown = mountNavProgress();
+    const bar = document.getElementById(NAV_PROGRESS_ID);
+
+    document.dispatchEvent(new Event("astro:before-preparation"));
+    expect(bar?.dataset.state).toBe("loading");
+    teardown();
+  });
+
+  it("runs on navigation and winds down on arrival", () => {
+    const teardown = mountNavProgress();
+    const bar = document.getElementById(NAV_PROGRESS_ID);
+
+    document.dispatchEvent(new Event("astro:before-preparation"));
+    expect(bar?.dataset.state).toBe("loading");
+
+    document.dispatchEvent(new Event("astro:page-load"));
+    expect(bar?.dataset.state).toBe("done");
+    teardown();
+  });
+
+  it("ignores the page-load of the INITIAL page view", () => {
+    // That event fires on a cold load too, and without the guard the bar
+    // would flash its done-state across the top of every first paint.
+    const teardown = mountNavProgress();
+    const bar = document.getElementById(NAV_PROGRESS_ID);
+    document.dispatchEvent(new Event("astro:page-load"));
+    expect(bar?.dataset.state).toBe("idle");
+    teardown();
+  });
+
+  it("resets invisibly after completion so the next run grows forwards", () => {
+    const teardown = mountNavProgress();
+    const bar = document.getElementById(NAV_PROGRESS_ID);
+    document.dispatchEvent(new Event("astro:before-preparation"));
+    document.dispatchEvent(new Event("astro:page-load"));
+    expect(bar?.dataset.state).toBe("done");
+
+    bar?.dispatchEvent(new TransitionEvent("transitionend", { propertyName: "opacity" }));
+    expect(bar?.dataset.state).toBe("idle");
+
+    document.dispatchEvent(new Event("astro:before-preparation"));
+    expect(bar?.dataset.state).toBe("loading");
+    teardown();
   });
 });

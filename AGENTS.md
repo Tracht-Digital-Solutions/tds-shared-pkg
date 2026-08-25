@@ -85,6 +85,13 @@ import this — they duplicate the small bit of validation they need, by design.
     exactly the flash it exists to prevent. In the frontend host it must also
     stay **before** the pre-paint auth gate, whose spinner paints in theme
     colours.
+  - **A `ClientRouter` host also needs the `astro:before-swap` half.** Astro
+    replaces the attributes on `<html>` from the incoming document, and that
+    document never carries the runtime-only `data-theme`. The bootstrap writes
+    the preference onto `event.newDocument.documentElement` before the swap so
+    the theme survives without one light frame. Do not move this listener into
+    the host: the bootstrap is the one place that knows how stored/system theme
+    resolution works, and `astro:after-swap` is already one paint too late.
   - `THEME_STORAGE_KEY` / `THEME_ATTRIBUTE` (src/design) are the contract
     between the bootstrap (reads), `ThemeToggle` (writes) and `base.css`
     (selects). All three used to hardcode the literals independently. Import
@@ -702,8 +709,9 @@ src/
 │                             #   showToast + toast.*). React-free on purpose:
 │                             #   plain-TS callers (the host's dashboardLayout.ts)
 │                             #   import it without pulling in the runtime.
-├── nav/                      # mobile navigation MECHANICS (mountMobileNav +
-│                             #   the counted lockBodyScroll). React-free, because
+├── nav/                      # browser navigation mechanics (mountMobileNav,
+│                             #   counted lockBodyScroll, mountNavProgress).
+│                             #   React-free, because
 │                             #   the three public headers are .astro markup over
 │                             #   three different link sources — there is shared
 │                             #   behaviour here, no shared markup. Pairs with
@@ -714,6 +722,10 @@ src/
 │                             #   Also React-free. Every tds-ext-* island calls
 │                             #   the composed backend through it — see the
 │                             #   "relative fetch" gotcha below.
+├── data/                     # CLIENT-ONLY in-memory SWR data cache for panel
+│                             #   islands (useCachedJson/useCachedResource,
+│                             #   invalidate/put). Own React-bearing entry point;
+│                             #   never persisted to browser storage.
 ├── theme/                    # the theme RUNTIME (read/apply/observe the
 │                             #   preference, incl. "system"). React-free, and
 │                             #   separate from design/ because that file is
@@ -994,6 +1006,15 @@ wizard) → `<meta name="tds-api-base">` → `import.meta.env.PUBLIC_API_BASE` �
 `DEFAULT_API_BASE`. `apiFetch` awaits `runtimeConfig()` before resolving a URL,
 so every existing call site follows a reconfigured host without being edited.
 
+**The mutable transport state lives on `globalThis` under a `Symbol.for` key.**
+This is required by the published bundle shape, not a preference: tsup builds
+each entry point independently (`splitting: false`), so `./components` and
+`./data` each contain another compiled copy of `src/api/index.ts`. Module-local
+handlers would make calls through those copies lose the host's 401 backstop and
+`X-Act-As-Company` provider, silently returning the wrong company's data. Keep
+`cached`, runtime config, `onUnauthorized` and `headersProvider` in the shared
+state object; `api.test.ts` pins the cross-entry contract.
+
 - **A missing or broken file is not an error.** 404, HTML from the SPA fallback,
   malformed JSON, offline, a timeout — all resolve to `null` and the caller keeps
   its build-time value. A site nobody ran the installer on behaves exactly as it
@@ -1008,6 +1029,41 @@ so every existing call site follows a reconfigured host without being edited.
 - **`primeRuntimeConfig(null)` in a test's `beforeEach`** keeps assertions about
   the one request the test is making. Any suite that mocks `fetch` and inspects
   `mock.calls[0]` needs it.
+
+## `src/data/` — the panel's in-memory SWR cache
+
+Consume it as `@tracht-digital-solutions/tds-shared/data`. It is a separate
+entry point because it imports React; plain API/nav consumers must not acquire
+React by importing the root. This cache is **per tab and memory-only**. Panel
+payloads can contain invoices, tickets and customer messages, so neither
+`localStorage` nor `sessionStorage` is an acceptable persistence layer; a full
+reload intentionally starts cold.
+
+- **The key is the request identity.** Current consumers use absolute API-path
+  strings (including query parameters) and GET only. Concurrent readers of the
+  same key share one request; a fresh entry skips the request for 30 seconds.
+- **Stale means old data stays on screen.** On an expired mount or after
+  `invalidate(prefix)`, the previous `entries` value is retained while a new
+  request runs. Consumers pair `staleClass(stale)` with `aria-busy` so it is
+  dimmed/pulsing rather than blank or presented as confidently current.
+  Deleting the entry inside `invalidate` is not invalidation — it regresses the
+  save flow to a first-load skeleton and defeats SWR.
+- **Invalidation also supersedes an in-flight answer.** Removing the request's
+  identity makes its eventual result fail the store guard; the older GET can
+  never overwrite the save that triggered the invalidation. `put()` applies
+  the same rule before storing a mutation's known value.
+- **A failed refresh keeps the previous value and exposes the error.** Never
+  turn a 403/503 into an empty list. `useCachedJson` throws `ApiError` with the
+  status while preserving the last good data.
+- **This is not `./cache`.** `./data` is browser data for authenticated panel
+  islands; `./cache` is Node-only, file-backed page HTML for public SSR sites.
+
+`styles/primitives.css` owns both visual signals: `.tds-stale` delays its pulse
+so a fast refresh produces no flash, and `.tds-nav-progress` is driven by
+`mountNavProgress()`. A ClientRouter host must render the progress node in every
+incoming document with the same `transition:persist` key; otherwise the body
+swap discards the live node and leaves its event listeners pointing at a
+detached bar.
 
 ## `src/components/PostCover.tsx` — one article cover, two properties
 

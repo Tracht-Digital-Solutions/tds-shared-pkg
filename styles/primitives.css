@@ -2205,3 +2205,116 @@ button.tds-row:focus-visible {
     transition: none;
   }
 }
+
+/* === Stale data + navigation progress ==============================
+   The two halves of "this panel does not reload".
+
+   The panel products navigate with Astro's ClientRouter, so the shell stays
+   put and only the page swaps; their React islands read through
+   `@tracht-digital-solutions/tds-shared/data`, which paints the previously
+   fetched answer immediately and refreshes it behind the user's back. Both
+   of those need a way to say "what you are looking at is not final yet", and
+   the whole point is that it looks the SAME on every screen — somebody who
+   learns what the dimming means on the ticket list must not have to relearn
+   it on the CMS.
+   ================================================================== */
+
+/* A container whose contents are a previous answer, being replaced.
+
+   Deliberately NOT `pointer-events: none`: the rows on screen are real data
+   the user may legitimately want to click, scroll or copy while the refresh
+   runs. Blocking interaction would turn a 200 ms revalidation into a panel
+   that feels locked — the exact opposite of what this exists to achieve.
+
+   Pair it with `aria-busy="true"` on the same element; the dimming is the
+   sighted half of that announcement, not a replacement for it. */
+.tds-stale {
+  animation: tds-stale-pulse var(--tds-dur-pulse) var(--tds-ease-in-out) infinite;
+  /* The refresh usually lands in well under 200 ms. Fading IN the dimming over
+     that window means a fast answer never flickers at all, and only a genuinely
+     slow one ever reads as "loading". */
+  animation-delay: var(--tds-dur-base);
+}
+
+/* Symmetric on purpose, exactly like `.tds-skeleton`: base.css clamps every
+   animation to one 0.01ms iteration under reduced motion, so the frame the
+   element lands on is 100%. Keeping 0% and 100% equal makes that end state the
+   resting dimmed value instead of an arbitrary mid-pulse. */
+@keyframes tds-stale-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The clamp above already stops the pulse; this only removes the delay, so
+     the dimming appears at once rather than after a beat of nothing. */
+  .tds-stale {
+    animation-delay: var(--tds-dur-none);
+  }
+}
+
+/* The client-side navigation indicator.
+
+   A page swap still costs a server render, and without any feedback a click
+   that takes 300 ms reads as a click that did nothing — which is how a
+   perfectly fast SPA gets described as unresponsive. Fixed to the very top of
+   the viewport, above the sticky mobile bar and below the pre-paint auth gate.
+
+   It is decoration: it takes no click, holds no focus and says nothing to a
+   screen reader, because the region actually being replaced already carries
+   `aria-busy`. */
+.tds-nav-progress {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 2147483645;
+  height: 2px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-accent) 40%,
+    var(--color-primary) 100%
+  );
+  /* Anchored left so the bar grows rightwards out of the corner. */
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition:
+    opacity var(--tds-dur-fast) var(--tds-ease-out),
+    transform var(--tds-dur-slow) var(--tds-ease-out);
+}
+
+/* Indeterminate: run most of the way and wait there. Pretending to know the
+   remaining progress is what makes a progress bar feel like a lie when the
+   response is slow. */
+.tds-nav-progress[data-state="loading"] {
+  opacity: 1;
+  transform: scaleX(0.75);
+}
+
+.tds-nav-progress[data-state="done"] {
+  opacity: 0;
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Reset the end state, not just the duration: a bar that still slides across
+     in 0.01ms is a flash of movement at the top of every page. It appears and
+     disappears at full width instead. */
+  .tds-nav-progress {
+    transition: none;
+    transform: none;
+  }
+  .tds-nav-progress[data-state="loading"] {
+    transform: none;
+  }
+  .tds-nav-progress[data-state="done"] {
+    transform: none;
+  }
+}

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **`@tracht-digital-solutions/tds-shared/data` — an in-memory SWR cache for
+  panel islands.** `useCachedResource` / `useCachedJson` de-duplicate GETs,
+  reuse fresh values across ClientRouter page swaps, keep old values visible
+  during revalidation, and surface HTTP failures without replacing data with a
+  false empty state. `invalidate(prefix)` and `put()` supersede older in-flight
+  answers; `.tds-stale` supplies the delayed dim/pulse treatment.
+- **Client-navigation signals.** `mountNavProgress()` drives the persisted
+  `.tds-nav-progress` bar, and `themeBootstrapScript` now writes the active
+  theme onto the incoming document during `astro:before-swap` so a router swap
+  cannot flash light mode.
 - **`scripts/pack-release.mjs` + `scripts/app.cjs` — the release spine, now
   published.** Both were byte-identical copies in the three public SSR sites,
   under a header instruction ("fix it once, copy it three times") that the two
@@ -19,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Additive only; the three sites keep working unchanged.
 
 ### Changed
+- **API transport state is shared across independently-built subpath entries.**
+  The runtime config, 401 handler and request-header provider now live under a
+  `globalThis` `Symbol.for` slot, so calls bundled through `./components` or
+  `./data` retain the host's refresh backstop and `X-Act-As-Company` header.
 - **Toolchain: TypeScript 6.0.3, vitest 4.1.11, jsdom 30.0.1, tsup 8.5.1.**
   `tsconfig.json` gains `"types": ["node"]` and `"ignoreDeprecations": "6.0"`
   (tsup injects a deprecated `baseUrl`; without it the DTS build dies while

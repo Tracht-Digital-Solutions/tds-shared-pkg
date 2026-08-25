@@ -15,6 +15,10 @@ export default defineConfig({
     "toast/index": "src/toast/index.ts",
     "nav/index": "src/nav/index.ts",
     "api/index": "src/api/index.ts",
+    // The browser-side stale-while-revalidate data cache. Its own entry rather
+    // than a re-export from `index`, so a non-React consumer never drags React
+    // into its bundle.
+    "data/index": "src/data/index.ts",
     "install/index": "src/install/index.ts",
     "markdown/index": "src/markdown/index.ts",
     // Server-only: imports node:fs/node:crypto. Its own entry point on

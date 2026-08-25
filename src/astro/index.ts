@@ -65,16 +65,32 @@ export const tdsViteBuild = {
  * Built from `THEME_STORAGE_KEY`/`THEME_ATTRIBUTE` so it cannot drift from
  * `ThemeToggle` (which writes the key) or `base.css` (which selects on the
  * attribute).
+ *
+ * **It also re-applies on `astro:before-swap`, and that is not optional on a
+ * site using `ClientRouter`.** Astro's swap clears *every* attribute from
+ * `<html>` and copies the incoming document's back, so a `data-theme` this
+ * script put there at load time is simply gone after the first client-side
+ * navigation — the server-rendered document never carried it. The panel would
+ * flip to light on the first click, and back to dark on the next full reload.
+ * Writing the attribute onto `event.newDocument` *before* the swap means the
+ * copy brings it along, so there is no frame in between. On the sites without
+ * a router the listener never fires and this costs nothing.
  */
 export const themeBootstrapScript: string = `(function () {
-  try {
-    var saved = localStorage.getItem("${THEME_STORAGE_KEY}");
-    if (saved === "light" || saved === "dark") {
-      document.documentElement.setAttribute("${THEME_ATTRIBUTE}", saved);
-      return;
-    }
-  } catch (e) { /* storage disabled — fall through to OS */ }
-  var dark = window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches;
-  document.documentElement.setAttribute("${THEME_ATTRIBUTE}", dark ? "dark" : "light");
+  function apply(root) {
+    try {
+      var saved = localStorage.getItem("${THEME_STORAGE_KEY}");
+      if (saved === "light" || saved === "dark") {
+        root.setAttribute("${THEME_ATTRIBUTE}", saved);
+        return;
+      }
+    } catch (e) { /* storage disabled — fall through to OS */ }
+    var dark = window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+    root.setAttribute("${THEME_ATTRIBUTE}", dark ? "dark" : "light");
+  }
+  apply(document.documentElement);
+  document.addEventListener("astro:before-swap", function (event) {
+    apply(event.newDocument.documentElement);
+  });
 })();`;
