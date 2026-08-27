@@ -47,6 +47,12 @@ describe("release scripts", () => {
     expect(src).toMatch(/fileURLToPath\(new URL\("app\.cjs", import\.meta\.url\)\)/);
   });
 
+  it("ships a changing Passenger restart signal with every release tree", () => {
+    const src = read("scripts/pack-release.mjs");
+    expect(src).toContain('join(out, "tmp", "restart.txt")');
+    expect(src).toContain("new Date().toISOString()");
+  });
+
   it("keeps the startup file CommonJS", () => {
     // Passenger loads the app with `require(startupFile)`. A static `import`
     // makes the file ESM, and `require` of ESM throws ERR_REQUIRE_ESM — which

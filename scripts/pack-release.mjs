@@ -120,6 +120,10 @@ cpSync(appEntry, join(out, "app.cjs"));
 
 mkdirSync(join(out, "tmp"), { recursive: true });
 writeFileSync(join(out, "tmp", ".gitkeep"), "");
+// Passenger watches this conventional file. A unique value on every build
+// makes a Git pull recycle the worker instead of serving the previous SSR
+// manifest beside freshly deployed client assets.
+writeFileSync(join(out, "tmp", "restart.txt"), `built_at=${new Date().toISOString()}\n`);
 
 // This tree IS the deployable artefact, node_modules included — the host must
 // not have to install anything. The un-ignore is insurance against a global
