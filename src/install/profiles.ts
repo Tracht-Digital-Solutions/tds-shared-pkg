@@ -71,8 +71,8 @@ export interface SiteProfile {
    * reads and never gets falls back to the baked value silently.
    */
   runtimeKeys: RuntimeKey[];
-  /** Offer the tool-catalog transfer step. Only the tools site has one. */
-  registrySync: boolean;
+  /** Whether this SSR site accepts one-time API pairing at `/tds/connect`. */
+  pairing: boolean;
 }
 
 /** `tracht-digital.de` — the public marketing site. */
@@ -90,7 +90,7 @@ export const landingpage: SiteProfile = {
   ],
   probeBase: "api",
   runtimeKeys: ["apiBase", "contactUrl", "liveChatFrontend"],
-  registrySync: false,
+  pairing: true,
 };
 
 /** `blog.tracht-digital.de`. */
@@ -115,7 +115,7 @@ export const blog: SiteProfile = {
   ],
   probeBase: "api",
   runtimeKeys: ["apiBase", "loginUrl", "contactUrl", "liveChatFrontend"],
-  registrySync: false,
+  pairing: true,
 };
 
 /** `tools.tracht-digital.de` — the public tools platform. */
@@ -126,11 +126,7 @@ export const tools: SiteProfile = {
   publicRoutes: [{ method: "GET", path: "/tools/catalog", countKey: "tools" }],
   probeBase: "api",
   runtimeKeys: ["apiBase", "loginUrl", "liveChatFrontend"],
-  // The only profile with one. The site's build is supposed to POST its
-  // composed catalog to `/tools/registry`, but no workflow ever exported a
-  // token, so the sync has never run once and the admin panel has never seen
-  // the tool list. The wizard does it instead.
-  registrySync: true,
+  pairing: true,
 };
 
 /** `auth.tracht-digital.de` — the central login. */
@@ -149,7 +145,7 @@ export const auth: SiteProfile = {
   // No `loginUrl` — this site IS the login page, so the key would point at
   // itself.
   runtimeKeys: ["apiBase", "authBase"],
-  registrySync: false,
+  pairing: false,
 };
 
 /** Every profile, by id. Used by the tests; sites import their own by name. */

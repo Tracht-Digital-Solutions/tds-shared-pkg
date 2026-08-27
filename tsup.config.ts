@@ -25,6 +25,9 @@ export default defineConfig({
     // purpose — never re-exported from `index`, which every browser bundle in
     // the workspace pulls in.
     "cache/index": "src/cache/index.ts",
+    // Server-only: private credentials and the filesystem-backed pairing
+    // state. Never re-export from the browser-safe root entry.
+    "connection/index": "src/connection/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,

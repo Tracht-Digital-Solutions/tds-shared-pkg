@@ -72,6 +72,13 @@ export interface PageCacheOptions {
    * than a default nobody changes.
    */
   token?: string;
+  /**
+   * Dynamic token source for sites paired at runtime.
+   *
+   * Takes precedence over `token` and is evaluated for every control or
+   * refresh request, so a reconnect works without restarting Node.
+   */
+  tokenProvider?: () => string;
   /** Master switch. `false` passes everything straight through. */
   enabled?: boolean;
   /**
@@ -106,7 +113,10 @@ function isStorable(contentType: string): boolean {
     t.includes("text/xml") ||
     t.includes("application/rss+xml") ||
     t.includes("application/json") ||
-    t.includes("application/pdf")
+    t.includes("application/pdf") ||
+    // The blog renders per-post social cards on demand. They use the same
+    // file-backed cache as HTML so publishing content never requires a build.
+    t.includes("image/png")
   );
 }
 
@@ -143,6 +153,7 @@ export function pageCache(options: PageCacheOptions): PageCache {
     metaDir,
     events,
     token = process.env.TDS_CACHE_TOKEN ?? "",
+    tokenProvider,
     enabled = true,
     onInvalidate,
     alwaysPaths = [],
@@ -154,15 +165,24 @@ export function pageCache(options: PageCacheOptions): PageCache {
   /** Header that forces a fresh render, used by rebuild's own self-requests. */
   const REFRESH = "x-tds-cache-refresh";
 
+  const currentToken = (): string => {
+    try {
+      return (tokenProvider?.() ?? token).trim();
+    } catch {
+      return token.trim();
+    }
+  };
+
   async function control(action: string, request: Request, url: URL): Promise<Response> {
-    if (!token) {
+    const activeToken = currentToken();
+    if (!activeToken) {
       return json({ error: "cache_token_not_configured" }, 503);
     }
     const given =
       request.headers.get("x-tds-cache-token") ??
       request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
       null;
-    if (!tokenMatches(token, given)) {
+    if (!tokenMatches(activeToken, given)) {
       return json({ error: "unauthorized" }, 401);
     }
 
@@ -231,7 +251,7 @@ export function pageCache(options: PageCacheOptions): PageCache {
         if (path === undefined) return;
         try {
           const res = await fetch(new URL(path, url.origin), {
-            headers: { [REFRESH]: token },
+            headers: { [REFRESH]: activeToken },
           });
           // Drain the body so the connection is released even when we do not
           // need the bytes — the middleware already stored them.
@@ -274,7 +294,8 @@ export function pageCache(options: PageCacheOptions): PageCache {
 
     if (!enabled || !isCacheableMethod(request.method)) return next();
 
-    const refreshing = token !== "" && tokenMatches(token, request.headers.get(REFRESH));
+    const activeToken = currentToken();
+    const refreshing = activeToken !== "" && tokenMatches(activeToken, request.headers.get(REFRESH));
 
     if (!refreshing) {
       const hit = await store.read(url.pathname);

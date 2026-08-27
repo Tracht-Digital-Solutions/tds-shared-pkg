@@ -54,6 +54,165 @@ export interface InstallWizardProps {
   profile: SiteProfile;
 }
 
+type PairingState =
+  | { kind: "checking"; text: string }
+  | { kind: "idle"; text: string }
+  | { kind: "success"; text: string }
+  | { kind: "warning"; text: string }
+  | { kind: "error"; text: string };
+
+/**
+ * The fallback half of one-click pairing.
+ *
+ * The admin normally calls the site's server endpoint directly. If the host
+ * cannot be reached from the API, it supplies `/install#pairing_token=…`.
+ * Fragments never reach a server or a referrer; this island consumes it once,
+ * removes it from the address bar, and forwards it to the same-origin server.
+ */
+function PairingInstallWizard({ profile }: InstallWizardProps) {
+  const [state, setState] = useState<PairingState>({
+    kind: "checking",
+    text: "Verbindungsstatus wird gelesen …",
+  });
+  const [status, setStatus] = useState<{
+    connected?: boolean;
+    origin?: string | null;
+    api_base?: string | null;
+    resource?: { type?: string; id?: string | number } | null;
+    connected_at?: string | null;
+    legacy_environment?: boolean;
+  } | null>(null);
+
+  const readStatus = useCallback(async () => {
+    const response = await fetch("/tds/connect/status", {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) throw new Error(`status_${response.status}`);
+    const body = (await response.json()) as NonNullable<typeof status>;
+    setStatus(body);
+    setState(
+      body.connected
+        ? { kind: "success", text: "Diese Site ist mit der API verbunden." }
+        : body.legacy_environment
+          ? {
+              kind: "warning",
+              text: "Die Site verwendet noch die Übergangs-Konfiguration des Hosts. Bitte im CMS neu verbinden.",
+            }
+          : {
+              kind: "idle",
+              text: "Noch nicht verbunden. Starte die Verbindung in den Einstellungen des zugehörigen CMS.",
+            },
+    );
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const pairingToken = fragment.get("pairing_token") ?? fragment.get("pairing") ?? "";
+      const apiBase = fragment.get("api_base") ?? fragment.get("api") ?? "";
+      const fragmentProfile = fragment.get("profile");
+
+      if (pairingToken !== "" || apiBase !== "") {
+        // Remove the credential before doing network work. Reload, screenshots
+        // and copied URLs can no longer carry it after this point.
+        window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+      }
+
+      if (pairingToken === "" && apiBase === "") {
+        try {
+          await readStatus();
+        } catch {
+          if (!cancelled) setState({ kind: "error", text: "Der Verbindungsstatus konnte nicht gelesen werden." });
+        }
+        return;
+      }
+
+      if (pairingToken === "" || apiBase === "" || (fragmentProfile && fragmentProfile !== profile.id)) {
+        if (!cancelled) setState({ kind: "error", text: "Der Einrichtungslink ist unvollständig oder gehört zu einer anderen Site." });
+        return;
+      }
+
+      if (!cancelled) setState({ kind: "checking", text: "Die sichere Verbindung wird eingerichtet …" });
+      try {
+        const response = await fetch("/tds/connect", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ pairing_token: pairingToken, api_base: apiBase }),
+        });
+        const body = (await response.json().catch(() => ({}))) as { error?: string; warning?: string };
+        if (!response.ok) {
+          const expired = response.status === 401 || response.status === 410;
+          if (!cancelled) {
+            setState({
+              kind: "error",
+              text: expired
+                ? "Der Einrichtungslink ist abgelaufen oder wurde bereits verwendet. Bitte im CMS einen neuen erzeugen."
+                : `Die Verbindung konnte nicht hergestellt werden (HTTP ${response.status}${body.error ? `, ${body.error}` : ""}).`,
+            });
+          }
+          return;
+        }
+        await readStatus();
+        if (!cancelled && body.warning === "post_connect_failed") {
+          setState({
+            kind: "warning",
+            text: "Die API-Verbindung steht. Eine nachgelagerte Synchronisierung wird beim nächsten Aufruf erneut versucht.",
+          });
+        }
+      } catch {
+        if (!cancelled) setState({ kind: "error", text: "Die API war während der Einrichtung nicht erreichbar. Bitte einen neuen Link erzeugen." });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile.id, readStatus]);
+
+  const tone =
+    state.kind === "success"
+      ? "tds-alert--success"
+      : state.kind === "warning"
+        ? "tds-alert--warning"
+        : state.kind === "error"
+          ? "tds-alert--danger"
+          : "";
+
+  return (
+    <div className="tds-page tds-stack">
+      <div className="tds-stack tds-stack--tight">
+        <h1 className="tds-page__title">API-Verbindung — {profile.name}</h1>
+        <p className="tds-page__lede">
+          Die Verbindung wird im CMS unter den Einstellungen dieser Site gestartet.
+          Zugangsdaten bleiben ausschließlich auf dem Server und werden nicht in
+          GitHub oder eine öffentlich erreichbare Konfigurationsdatei geschrieben.
+        </p>
+      </div>
+
+      <section className="tds-card tds-stack p-5">
+        <h2>Status</h2>
+        <p className={`tds-alert ${tone}`} role={state.kind === "error" ? "alert" : "status"}>
+          <span>{state.text}</span>
+        </p>
+        {status?.connected && (
+          <dl className="tds-list">
+            <div className="tds-list__row"><dt>Site</dt><dd><code>{status.origin}</code></dd></div>
+            <div className="tds-list__row"><dt>API</dt><dd><code>{status.api_base}</code></dd></div>
+            <div className="tds-list__row"><dt>Inhalt</dt><dd>{status.resource?.type} · {status.resource?.id}</dd></div>
+            <div className="tds-list__row"><dt>Verbunden</dt><dd>{status.connected_at ? new Date(status.connected_at).toLocaleString("de-DE") : "—"}</dd></div>
+          </dl>
+        )}
+        <div className="tds-row">
+          <button type="button" className="btn btn-ghost" onClick={() => void readStatus()}>
+            Status aktualisieren
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 /** One probe, rendered as a row the operator can act on. */
 function ProbeRow({ result }: { result: ProbeResult }) {
   const { reachability, status, url, route } = result;
@@ -121,7 +280,7 @@ function ProbeRow({ result }: { result: ProbeResult }) {
   );
 }
 
-export default function InstallWizard({ profile }: InstallWizardProps) {
+function LegacyInstallWizard({ profile }: InstallWizardProps) {
   const [endpoints, setEndpoints] = useState<Endpoints>({
     apiBase: DEFAULT_API_BASE,
     authBase: `${DEFAULT_API_BASE}/auth`,
@@ -349,9 +508,12 @@ export default function InstallWizard({ profile }: InstallWizardProps) {
         onSiteKey={setSiteKey}
       />
 
-      {profile.registrySync && <RegistrySync apiBase={endpoints.apiBase} siteKey={siteKey} />}
     </div>
   );
+}
+
+export default function InstallWizard(props: InstallWizardProps) {
+  return props.profile.pairing ? <PairingInstallWizard {...props} /> : <LegacyInstallWizard {...props} />;
 }
 
 /**
@@ -505,99 +667,3 @@ function SiteKeyStep({
  * moved. Store it under *Einstellungen → Tools* FIRST — `/tools/registry`
  * answers **503** until it exists, and that error points nowhere near the cause.
  */
-function RegistrySync({ apiBase: base, siteKey }: { apiBase: string; siteKey: string }) {
-  const [override, setOverride] = useState("");
-  const [state, setState] = useState<{ tone: string; text: string } | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  // The site key from step 5 is the credential now; the legacy registry token
-  // still works for one release, so the field stays — pre-filled from the key so
-  // the common path is "press the button".
-  const token = override !== "" ? override : siteKey;
-
-  const send = useCallback(async () => {
-    setBusy(true);
-    setState(null);
-    try {
-      const catalogRes = await fetch("/tools-catalog.json", { cache: "no-store" });
-      if (!catalogRes.ok) {
-        setState({ tone: "tds-alert--danger", text: "tools-catalog.json nicht gefunden — wurde die Site gebaut?" });
-        return;
-      }
-      const doc: unknown = await catalogRes.json();
-      const tools = Array.isArray(doc) ? doc : ((doc as { tools?: unknown[] }).tools ?? []);
-
-      const res = await fetch(`${trimUrl(base)}/tools/registry`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, tools }),
-      });
-      if (res.status === 401) {
-        setState({ tone: "tds-alert--danger", text: "Zugangsdatum abgelehnt (401)." });
-        return;
-      }
-      if (res.status === 503) {
-        setState({
-          tone: "tds-alert--warning",
-          text:
-            "Die Registry ist noch nicht konfiguriert (503). Entweder oben einen Site-Key " +
-            "für „tools“ anmelden oder unter Einstellungen → Tools ein Registry-Sync-Token speichern.",
-        });
-        return;
-      }
-      if (!res.ok) {
-        setState({ tone: "tds-alert--danger", text: `Fehlgeschlagen (HTTP ${res.status}).` });
-        return;
-      }
-      // The API answers `synced`. This used to read `count`, which is absent —
-      // so the number came from the `?? tools.length` fallback and was right by
-      // accident rather than by contract, and would have stayed right while
-      // reporting nothing about what the server actually stored.
-      const payload = (await res.json().catch(() => ({}))) as { synced?: number };
-      setState({
-        tone: "tds-alert--success",
-        text: `Übertragen: ${payload.synced ?? tools.length} Tools.`,
-      });
-    } catch {
-      setState({
-        tone: "tds-alert--danger",
-        text: "Nicht erreichbar — CORS, Netz oder Host; der Browser nennt den Grund nicht.",
-      });
-    } finally {
-      setBusy(false);
-    }
-  }, [base, token]);
-
-  return (
-    <section className="tds-card tds-stack p-5">
-      <h2>6. Tool-Katalog übertragen</h2>
-      <p>
-        Überträgt die gebauten Tools an <code>POST /tools/registry</code>, damit
-        sie im Admin-Panel erscheinen. Der Site-Key aus Schritt 5 genügt dafür;
-        ein älteres Registry-Sync-Token aus <em>Einstellungen → Tools</em> wird
-        weiterhin akzeptiert.
-      </p>
-      <div className="tds-field-row">
-        <label htmlFor="registryToken">Site-Key oder Registry-Sync-Token</label>
-        <input
-          id="registryToken"
-          className="field field-boxed"
-          value={token}
-          onChange={(event) => setOverride(event.target.value)}
-          autoComplete="off"
-          spellCheck={false}
-        />
-      </div>
-      <div className="tds-row">
-        <button type="button" className="btn btn-primary" onClick={() => void send()} disabled={busy || token === ""}>
-          {busy ? "Überträgt …" : "Übertragen"}
-        </button>
-      </div>
-      {state !== null && (
-        <p className={`tds-alert ${state.tone}`}>
-          <span>{state.text}</span>
-        </p>
-      )}
-    </section>
-  );
-}
