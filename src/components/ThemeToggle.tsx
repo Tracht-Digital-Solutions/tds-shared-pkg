@@ -22,8 +22,11 @@ export interface ThemeToggleProps {
  * When the View Transitions API is available (and the user hasn't asked
  * for reduced motion) the incoming theme wipes in as a circle growing
  * from the centre of the button; the supporting CSS ships in
- * `@tracht-digital-solutions/tds-shared/styles/base.css`. Otherwise it
- * flips instantly and the token transition gives a soft colour crossfade.
+ * `@tracht-digital-solutions/tds-shared/styles/base.css`. On a coarse
+ * pointer the same snapshot fades and settles instead, because the circle
+ * is driven by `clip-path` and that is not composited — see the note at
+ * the branch. Otherwise it flips instantly and the token transition gives
+ * a soft colour crossfade.
  *
  * Icons show the *target* state — moon in light mode (tap to go dark),
  * sun in dark mode (tap to go light), matching the Material/iOS
@@ -73,6 +76,43 @@ export default function ThemeToggle({
     // soft colour crossfade.
     if (!startViewTransition || prefersReduced) {
       apply();
+      return;
+    }
+
+    // Touch devices get a DIFFERENT reveal, and the reason is the
+    // compositor, not taste: `clip-path` is not a compositor-animatable
+    // property in Chromium, so every frame of the circular wipe repaints a
+    // full-viewport layer. On a desktop GPU that disappears; on a phone the
+    // wipe visibly stutters — and it is worst on exactly the pages that
+    // earn it, the ones with a frosted fixed header and large soft fields
+    // underneath. `opacity` and `transform` ARE composited, so the same
+    // "new theme arrives over the old" reading costs no repaint at all.
+    //
+    // Chosen on pointer, not on width: a small window on a desktop has the
+    // GPU to spare, and a large tablet does not.
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+
+    if (coarsePointer) {
+      const transition = startViewTransition.call(document, () => {
+        flushSync(apply);
+      });
+
+      transition.ready.then(() => {
+        document.documentElement.animate(
+          {
+            opacity: [0, 1],
+            // A hair of scale so it reads as the new theme settling in
+            // rather than as a plain crossfade. Deliberately small — the
+            // whole viewport is moving.
+            transform: ["scale(1.02)", "scale(1)"],
+          },
+          {
+            duration: 320,
+            easing: cssEase.out,
+            pseudoElement: "::view-transition-new(root)",
+          },
+        );
+      });
       return;
     }
 

@@ -638,17 +638,24 @@ input[type="radio"] {
 
 /* === Theme switch animation ======================================= */
 
-/* Circular-reveal theme switch (see the shared ThemeToggle component).
-   The incoming theme is captured as the `::view-transition-new(root)`
-   snapshot and clipped to an expanding circle in JS; here we only
-   disable the default cross-fade and stack the new snapshot above the
-   old one so the circle wipes the new theme in over the old. Browsers
-   without the View Transitions API ignore this block and the toggle
-   falls back to an instant flip. */
+/* Theme switch (see the shared ThemeToggle component). The incoming theme
+   is captured as the `::view-transition-new(root)` snapshot and animated
+   in JS; here we only disable the default cross-fade and stack the new
+   snapshot above the old one, so whatever JS animates reveals the new
+   theme over the old. Browsers without the View Transitions API ignore
+   this block and the toggle falls back to an instant flip.
+
+   TWO animations run against these rules, chosen by pointer type:
+   a `clip-path` circle growing from the button (fine pointer) and an
+   `opacity` + `scale` settle (coarse pointer, where `clip-path` repaints
+   a full-viewport layer every frame). The origin below only matters to
+   the second one, and it is stated rather than inherited because the
+   default depends on the snapshot's own box. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
+  transform-origin: center;
 }
 ::view-transition-old(root) {
   z-index: 1;
