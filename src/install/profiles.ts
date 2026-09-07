@@ -129,6 +129,26 @@ export const tools: SiteProfile = {
   pairing: true,
 };
 
+/** `shop.tracht-digital.de` — TDShop, the products-and-affiliate property. */
+export const shop: SiteProfile = {
+  id: "shop",
+  name: "TDShop",
+  origins: ["https://shop.tracht-digital.de"],
+  // Two routes, and the second one is the interesting half. `/content/shop` on
+  // its own answers 200 with an empty list on a host whose shop module is
+  // enabled but whose catalog is still empty — which is the *normal* state right
+  // after go-live and says nothing. `/content/legal` is served by the website-CMS
+  // module, so a count there proves the composed API is actually reachable and
+  // the site key is accepted, separating "no products yet" from "not connected".
+  publicRoutes: [
+    { method: "GET", path: "/content/shop?limit=3&lang=de", countKey: "products" },
+    { method: "GET", path: "/content/legal", countKey: "docs" },
+  ],
+  probeBase: "api",
+  runtimeKeys: ["apiBase", "loginUrl", "contactUrl", "liveChatFrontend"],
+  pairing: true,
+};
+
 /** `auth.tracht-digital.de` — the central login. */
 export const auth: SiteProfile = {
   id: "auth",
@@ -149,6 +169,6 @@ export const auth: SiteProfile = {
 };
 
 /** Every profile, by id. Used by the tests; sites import their own by name. */
-export const profiles = { landingpage, blog, tools, auth } as const;
+export const profiles = { landingpage, blog, tools, shop, auth } as const;
 
 export type ProfileId = keyof typeof profiles;

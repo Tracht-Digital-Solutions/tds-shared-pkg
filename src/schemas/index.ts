@@ -7,6 +7,7 @@ import {
 } from "../permissions";
 
 export * from "./blogBlocks";
+export * from "./shopBlocks";
 
 /**
  * Contact form payload — used by the landing page contact section

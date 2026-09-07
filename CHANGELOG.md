@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **TDShop — the shared half of the new shop property (`shop.tracht-digital.de`).**
+  A fourth public site, with product placement embedded into the journal and the
+  customer portal. Everything three surfaces must agree on lives here; nothing
+  else does.
+  - `src/schemas/shopBlocks.ts` — the public READ model (`ShopOffer`,
+    `ShopProductRef`, `ShopProduct`, `ShopPlacement`), exported from
+    `/schemas`. Not the write payload: no draft flag, no Stripe id, no cost
+    price. A field that never reaches a browser is not in the shape three
+    browsers share.
+  - **`isPriceStale()` / `displayPrice()` and `PRICE_MAX_AGE_MS`.** Amazon's
+    Product Advertising API licence allows a fetched price to be shown for 24
+    hours. `displayPrice()` returns `null` past that so a consumer cannot read
+    `priceCents` without passing the check — the failure it prevents is silent
+    (yesterday's price renders perfectly) and its cost is the partner
+    programme, not a layout glitch. `now` is injectable so every card in one
+    grid ages a quote identically.
+  - **`ProductCard`** (`/components`) — one card for the shop, the journal's
+    inline product blocks and the portal's placement widget. Two things are
+    deliberately not the caller's decision: the advertising label an affiliate
+    offer requires (§ 5a Abs. 4 UWG — passing an empty string still renders
+    the default), and the staleness check above. `rel="sponsored nofollow
+    noopener"` on every affiliate link. It fetches nothing and transports no
+    click; the three callers get their data three different ways and the click
+    endpoint wants a site key this component has no business holding.
+  - **`product` block type** in `BlogBlockSchema` + `BLOG_BLOCKS`, gated on the
+    new `integration: "shop"`. This is the "shortcode": the blog-cms editor
+    picks the command up from the catalog with no change of its own, and the
+    body stays opaque JSON server-side, so there is no PHP validator to mirror.
+    Referenced by slug rather than row id — an author can see a slug in a URL,
+    and it survives a reseed.
+  - **Product primitives** in `styles/primitives.css` (`.tds-product-card`,
+    `.tds-product-offer`, `.tds-product-price`, `.tds-product-badge`,
+    `.tds-affiliate-note`, `.tds-product-grid`, `.tds-product-strip`). Through
+    the semantic geometry tokens, so the card is square on `data-surface="blog"`
+    and rounded on `panel` with no override in either consumer. **No fourth
+    surface**: TDShop renders the blog surface, as `tds-tools-frontend` already
+    does — a `surfaces/shop.css` would be a second copy of the blog's geometry,
+    which is the drift the split exists to prevent.
+  - **`shop` site profile** in `install/profiles.ts` and `PairableSiteProfile`
+    in `connection/types.ts`. The profile probes `/content/legal` alongside
+    `/content/shop`, because an empty catalog is the normal state right after
+    go-live and a count of zero there would not distinguish "no products yet"
+    from "not connected".
 - **`@tracht-digital-solutions/tds-shared/data` — an in-memory SWR cache for
   panel islands.** `useCachedResource` / `useCachedJson` de-duplicate GETs,
   reuse fresh values across ClientRouter page swaps, keep old values visible

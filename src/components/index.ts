@@ -104,6 +104,14 @@ export type { SkeletonProps } from "./Skeleton";
 export { default as SkeletonText } from "./SkeletonText";
 export type { SkeletonTextProps } from "./SkeletonText";
 
+/* The TDShop product card. Shared because THREE surfaces render a product — the
+   shop, the journal's inline blocks, and the portal's placement widget — and two
+   of the things it does must not be re-decided per surface: the advertising
+   label an affiliate offer legally requires, and dropping a price quote once it
+   is older than 24 hours (the Amazon partner-programme term). See the class doc. */
+export { default as ProductCard } from "./ProductCard";
+export type { ProductCardProps } from "./ProductCard";
+
 /* Article covers. Shared because the blog and the landingpage's Journal row
    must draw the SAME picture for the same slug — the variant is a hash of it,
    so a second implementation is a second artwork. */

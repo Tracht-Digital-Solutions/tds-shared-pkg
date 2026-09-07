@@ -95,6 +95,26 @@ const CustomBlock = z.object({
   snippetId: z.number().int().positive(),
 });
 
+/**
+ * A TDShop product placed inline in the article body — the "shortcode" half of
+ * product placement (`/content/shop/{slug}` resolves it at render time).
+ *
+ * Referenced by `slug`, NOT by numeric id, for the same reason the block editor
+ * stores a snippet id and this one does not: a product's row id is meaningless
+ * to an author, while the slug is the thing they can see in the shop URL and
+ * paste. It also survives a reseed of the catalog, which an id does not.
+ *
+ * The language is deliberately absent: the renderer asks for the product in the
+ * language of the ARTICLE it sits in. Pinning a language here would strand the
+ * block the moment the article is translated.
+ */
+const ProductBlock = z.object({
+  type: z.literal("product"),
+  slug: z.string().max(120),
+  /** `card` = full product card, `inline` = one compact row, `list` = card + all offers. */
+  variant: z.enum(["card", "inline", "list"]),
+});
+
 export const BlogBlockSchema = z.discriminatedUnion("type", [
   HeadingBlock,
   ParagraphBlock,
@@ -108,6 +128,7 @@ export const BlogBlockSchema = z.discriminatedUnion("type", [
   VideoBlock,
   AdsenseBlock,
   CustomBlock,
+  ProductBlock,
 ]);
 
 export type BlogBlock = z.infer<typeof BlogBlockSchema>;
@@ -150,8 +171,15 @@ export interface BlockCatalogItem {
   /** Short glyph / emoji shown left of the label. */
   icon: string;
   group: "text" | "media" | "embed";
-  /** Gate: the command is only usable when this integration is configured. */
-  integration?: "ads";
+  /**
+   * Gate: the command is only usable when this integration is configured.
+   *
+   * `ads` = AdSense is set up; `shop` = TDShop is reachable and has products.
+   * The gate is about CONFIGURATION, not permission — an editor who may write
+   * the post may place either block; the command simply has nothing to insert
+   * when the integration behind it is absent.
+   */
+  integration?: "ads" | "shop";
   /** The block inserted when this command is chosen (with default values). */
   block: BlogBlock;
 }
@@ -261,5 +289,14 @@ export const BLOG_BLOCKS: BlockCatalogItem[] = [
     group: "embed",
     integration: "ads",
     block: { type: "adsense", placement: "inline", slot: null },
+  },
+  {
+    id: "product",
+    label: "Produkt (TDShop)",
+    keywords: ["shop", "produkt", "empfehlung", "affiliate", "werbung", "tdshop"],
+    icon: "🛒",
+    group: "embed",
+    integration: "shop",
+    block: { type: "product", slug: "", variant: "card" },
   },
 ];

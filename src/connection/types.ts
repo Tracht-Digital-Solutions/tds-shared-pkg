@@ -1,7 +1,13 @@
 import type { RuntimeConfig } from "../api/index.js";
 
-/** Public sites that can be paired with the composed API. */
-export type PairableSiteProfile = "blog" | "landingpage" | "tools";
+/**
+ * Public sites that can be paired with the composed API.
+ *
+ * Keep in step with `install/profiles.ts` (the wizard's side of the same list)
+ * and with `SiteKeyPolicy::KNOWN` in tds-core-frontend-api (the server's side).
+ * `auth` is absent on purpose: it runs the wizard but pairs nothing.
+ */
+export type PairableSiteProfile = "blog" | "landingpage" | "tools" | "shop";
 
 /** The CMS object a public site is connected to. */
 export interface ConnectionResource {
