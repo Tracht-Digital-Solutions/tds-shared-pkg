@@ -17,6 +17,8 @@ export {
 } from "./service.js";
 export type { ConnectBody, ConnectResult, SiteConnectionOptions } from "./service.js";
 
+export { PAIRABLE_SITE_PROFILES, isPairableSiteProfile } from "./types.js";
+
 export type {
   ConnectionResource,
   PairableSiteProfile,

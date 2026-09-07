@@ -1,3 +1,5 @@
+import { PAIRABLE_SITE_PROFILES } from "./types.js";
+import { profiles } from "../install/profiles.js";
 import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -223,5 +225,39 @@ describe("SiteConnectionService", () => {
     ).rejects.toMatchObject({ code: "untrusted_api_origin", status: 422 });
     expect(fetcher).not.toHaveBeenCalled();
     expect(await service.store.read()).toBeNull();
+  });
+});
+
+/**
+ * The profile list, and the drift it used to allow.
+ *
+ * `PairableSiteProfile` was a hand-written union sitting beside a hand-written
+ * regex in `store.ts`. Adding `shop` to the union left the regex behind, so the
+ * new site type-checked, built cleanly, produced a release tree — and threw
+ * `invalid_connection_profile` on its very first request. Nothing before that
+ * point could have caught it.
+ *
+ * The type is derived from the array now, so these assertions guard the
+ * remaining gap: that the validator and the wizard's profile list agree with it.
+ */
+describe("pairable site profiles", () => {
+  it("accepts every profile in the list and nothing else", () => {
+    for (const profile of PAIRABLE_SITE_PROFILES) {
+      expect(() =>
+        resolveConnectionDirectory({ profile, root: "/app", env: {} }),
+      ).not.toThrow();
+    }
+    expect(() =>
+      resolveConnectionDirectory({ profile: "nope" as never, root: "/app", env: {} }),
+    ).toThrow(/invalid_connection_profile/);
+  });
+
+  it("covers every site the setup wizard can pair", () => {
+    // `auth` is deliberately absent: it runs the wizard but pairs nothing.
+    const pairable = Object.values(profiles)
+      .filter((p) => p.pairing)
+      .map((p) => p.id)
+      .sort();
+    expect([...PAIRABLE_SITE_PROFILES].sort()).toEqual(pairable);
   });
 });

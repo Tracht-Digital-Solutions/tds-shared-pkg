@@ -3,11 +3,26 @@ import type { RuntimeConfig } from "../api/index.js";
 /**
  * Public sites that can be paired with the composed API.
  *
- * Keep in step with `install/profiles.ts` (the wizard's side of the same list)
- * and with `SiteKeyPolicy::KNOWN` in tds-core-frontend-api (the server's side).
- * `auth` is absent on purpose: it runs the wizard but pairs nothing.
+ * A runtime array, with the type derived from it — NOT a hand-written union
+ * beside a hand-written validator. Those were two lists: adding `shop` to the
+ * union type left `store.ts`'s `PROFILE` regex behind, so the site type-checked
+ * and built cleanly and then threw `invalid_connection_profile` on its first
+ * request. One list cannot drift from itself.
+ *
+ * Still keep in step with `install/profiles.ts` (the wizard's side) and with
+ * `SiteKeyPolicy::KNOWN` in tds-core-frontend-api (the server's side); those
+ * genuinely live in other places. `auth` is absent on purpose: it runs the
+ * wizard but pairs nothing.
  */
-export type PairableSiteProfile = "blog" | "landingpage" | "tools" | "shop";
+export const PAIRABLE_SITE_PROFILES = ["blog", "landingpage", "tools", "shop"] as const;
+
+export type PairableSiteProfile = (typeof PAIRABLE_SITE_PROFILES)[number];
+
+export function isPairableSiteProfile(value: unknown): value is PairableSiteProfile {
+  return (
+    typeof value === "string" && (PAIRABLE_SITE_PROFILES as readonly string[]).includes(value)
+  );
+}
 
 /** The CMS object a public site is connected to. */
 export interface ConnectionResource {

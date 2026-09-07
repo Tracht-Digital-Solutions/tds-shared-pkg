@@ -16,6 +16,7 @@ import {
 } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
 
+import { isPairableSiteProfile } from "./types.js";
 import type { PairableSiteProfile, SiteConnection } from "./types.js";
 
 export interface ConnectionStoreOptions {
@@ -28,7 +29,11 @@ export interface ConnectionStoreOptions {
   env?: NodeJS.ProcessEnv;
 }
 
-const PROFILE = /^(blog|landingpage|tools)$/;
+// The profile list lives in `types.ts` as ONE array that the type is derived
+// from. A regex here that repeats it is a second list, and a second list is a
+// list that gets forgotten — this one was, when `shop` was added to the union
+// type: the site type-checked, built, and threw `invalid_connection_profile`
+// on its first request.
 
 function cleanBase(value: string, root: string): string {
   return isAbsolute(value) ? resolve(value) : resolve(root, value);
@@ -41,7 +46,7 @@ function cleanBase(value: string, root: string): string {
  * level above it means a deploy can neither publish nor remove it.
  */
 export function resolveConnectionDirectory(options: ConnectionStoreOptions): string {
-  if (!PROFILE.test(options.profile)) throw new Error("invalid_connection_profile");
+  if (!isPairableSiteProfile(options.profile)) throw new Error("invalid_connection_profile");
   const root = resolve(options.root ?? process.cwd());
   const env = options.env ?? process.env;
   const configured = (options.stateDir ?? env.TDS_STATE_DIR ?? "").trim();
