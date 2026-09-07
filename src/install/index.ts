@@ -18,6 +18,7 @@ export {
   blog,
   landingpage,
   profiles,
+  shop,
   tools,
   type ProfileId,
   type PublicRoute,

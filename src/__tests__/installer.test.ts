@@ -194,3 +194,21 @@ describe("diffPublished", () => {
     expect(diffPublished(profiles.landingpage, lp, actual)).toEqual([]);
   });
 });
+
+/**
+ * Every profile must be reachable by NAME, not only through the `profiles` map.
+ *
+ * A site's `install.astro` imports its own profile directly
+ * (`import { shop } from ".../install"`), so a profile added to `profiles.ts`
+ * and forgotten in `index.ts`'s re-export list exists, type-checks inside this
+ * package, and breaks only in the consuming site — which is where the shop
+ * profile was in fact caught.
+ */
+describe("the package surface", () => {
+  it("re-exports every profile by name", async () => {
+    const surface = (await import("../install")) as Record<string, unknown>;
+    for (const id of Object.keys(profiles)) {
+      expect(surface[id], `${id} is in profiles but not exported by name`).toBeDefined();
+    }
+  });
+});
