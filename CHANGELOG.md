@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **The consent manager (`/consent`).** A category-based, keyboard-operable
+  replacement for the informational `CookieNotice`, which stays and still works
+  — it is mounted on five live sites that do not release in lockstep with this
+  package. New call sites use `ConsentBanner`; it covers the informational case
+  too (mount it with no `categories`).
+  - `ConsentBanner` — the first layer. **Not a modal, deliberately**: a dialog
+    with a backdrop makes the imprint and the privacy policy unreachable until
+    the visitor answers, and a banner that blocks the very pages it points at is
+    itself the defect. The two decisions ("Alle akzeptieren" / "Nur notwendige")
+    carry the **same class, size and fill**; only "Einstellungen" is quieter,
+    because it decides nothing. A filled accept beside an outlined reject is the
+    single most frequently criticised construction in German consent-banner
+    enforcement, and `consent.test.tsx` fails if someone "improves" it.
+  - `ConsentSettings` — the second layer, a native `<dialog>` + `showModal()`
+    following the `ConfirmDialog` pattern, so the browser supplies the focus
+    trap, `Escape`, the `inert` background and focus restoration. Initial focus
+    goes to the **heading**, not a button: `showModal()` would otherwise arm the
+    first focusable element and a stray Enter would decide something about the
+    visitor's data before they had read a word. Carries a visible close —
+    `Escape` does not exist on a touch device and a backdrop click is
+    undiscoverable, so without it the only ways out of a dialog about someone's
+    data are two nobody can see.
+  - `ConsentLink` — the footer's way back in. Not decoration: Art. 7 Abs. 3
+    DSGVO requires withdrawing to be as easy as giving, and a banner that
+    appears once leaves no route back. A `<button>`, because it acts on this
+    page rather than navigating.
+  - `ConsentPlaceholder` — click-to-load gate in front of a third-party embed.
+    Takes its child as a **thunk**, not an element: an `<iframe>` contacts its
+    origin the moment it mounts, and `youtube-nocookie.com` narrows what is
+    stored without stopping the connection. "Inhalt laden" loads that one embed
+    and deliberately stores nothing — the visitor agreed to one video, not to a
+    standing permission.
+  - `store.ts` — `readConsent` / `writeConsent` / `consentGranted` /
+    `onConsentChange` / `openConsentSettings`. The record carries a version and
+    an ISO timestamp, because Art. 7 Abs. 1 DSGVO puts the burden of
+    *demonstrating* a consent on us and a boolean demonstrates nothing. Four
+    things read as undecided — nothing stored, unparseable bytes, an older
+    `CONSENT_VERSION`, and storage that throws — and undecided means nothing
+    optional runs. A tampered `necessary: false` is ignored.
+  - **Backwards compatibility is a contract, not a courtesy.** `writeConsent`
+    keeps writing `tds-ad-consent` and firing its event, because the blog's
+    AdSense loader reads that key and ships on its own cadence; and a
+    pre-existing ad choice is carried into the category model on read, so
+    returning readers are not asked twice. The carried-over record is *not*
+    written back — stamping it with today's date would manufacture a proof of
+    something that never happened, so its `ts` stays `null`.
+  - The advertising bus moved from `components/CookieNotice.tsx` to
+    `consent/adConsent.ts`. Every name is re-exported from both old paths;
+    nothing to change at a call site.
+- **`.tds-skip-link` (base.css) and `a11y.skipToContent` (i18n).** The skip link
+  is deliberately **not** a React island: it has to be the first focusable
+  element on the page, and an island mounted `client:idle` hydrates after that.
+  Each layout writes the two lines itself. The class moves the link out of view
+  with a transform rather than `display: none`, because a hidden element cannot
+  take focus and a skip link that cannot take focus is not a skip link; the
+  target needs `tabindex="-1"` or the jump only scrolls.
 - **TDShop — the shared half of the new shop property (`shop.tracht-digital.de`).**
   A fourth public site, with product placement embedded into the journal and the
   customer portal. Everything three surfaces must agree on lives here; nothing

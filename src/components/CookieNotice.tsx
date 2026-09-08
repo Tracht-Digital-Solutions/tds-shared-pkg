@@ -1,42 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { translations, type Language } from "../i18n/translations";
+import { getAdConsent, setAdConsent } from "../consent/adConsent";
 
 const DEFAULT_STORAGE_KEY = "tds-cookie-notice";
 const DEFAULT_PRIVACY_URL = "https://tracht-digital.de/legal/datenschutz";
 
-/** localStorage key holding the advertising-consent choice (consent mode). */
-export const AD_CONSENT_KEY = "tds-ad-consent";
-/** Window event fired when the ad-consent choice changes, so ad loaders can
- *  react without a page reload. `detail` is the new value. */
-export const AD_CONSENT_EVENT = "tds-ad-consent";
-export type AdConsent = "granted" | "denied" | null;
-
-/** Read the stored advertising-consent choice (null = undecided). SSR-safe. */
-export function getAdConsent(): AdConsent {
-  if (typeof window === "undefined") return null;
-  try {
-    const v = window.localStorage.getItem(AD_CONSENT_KEY);
-    return v === "granted" || v === "denied" ? v : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Persist the advertising-consent choice and notify listeners (the blog's ad
- *  loader listens for {@link AD_CONSENT_EVENT}). */
-export function setAdConsent(value: "granted" | "denied"): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(AD_CONSENT_KEY, value);
-  } catch {
-    /* private mode — the choice won't persist across visits */
-  }
-  try {
-    window.dispatchEvent(new CustomEvent(AD_CONSENT_EVENT, { detail: value }));
-  } catch {
-    /* ignore */
-  }
-}
+/* The advertising-consent bus MOVED to `src/consent/adConsent.ts` when the
+   consent manager arrived — `consent/store.ts` writes through to it, and a
+   store importing a React component file to reach a localStorage helper is
+   backwards. Re-exported from here unchanged, so
+   `@tracht-digital-solutions/tds-shared/components` still resolves every one
+   of these names and no consumer had to change. */
+export {
+  AD_CONSENT_KEY,
+  AD_CONSENT_EVENT,
+  getAdConsent,
+  setAdConsent,
+  type AdConsent,
+} from "../consent/adConsent";
 
 export interface CookieNoticeProps {
   /** UI language for the notice copy. Defaults to German. */
@@ -65,6 +46,14 @@ export interface CookieNoticeProps {
 }
 
 /**
+ * SUPERSEDED by `ConsentBanner` in `src/consent`. Kept because it is mounted on
+ * five live sites that are not released in lockstep with this package, and its
+ * behaviour here is unchanged. `ConsentBanner` covers this informational case
+ * too — mount it with no `categories` — and adds what this one cannot do:
+ * purpose categories, a settings dialog, a proof record with a timestamp and a
+ * version, and a way back in from the footer. Move a call site over; do not
+ * add new ones here.
+ *
  * Cookie / privacy notice shown once per browser (per origin).
  *
  * Two modes:

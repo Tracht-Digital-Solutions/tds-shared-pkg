@@ -9,6 +9,11 @@ export default defineConfig({
     "i18n/react": "src/i18n/react.tsx",
     "motion/index": "src/motion/index.ts",
     "components/index": "src/components/index.ts",
+    // The consent manager. Its own entry rather than a re-export from
+    // `components`: a non-React consumer (an inline script deciding whether to
+    // inject a tag) imports `/consent` for `consentGranted` and must not drag
+    // the whole component barrel — and React — in behind it.
+    "consent/index": "src/consent/index.ts",
     "astro/index": "src/astro/index.ts",
     "design/index": "src/design/index.ts",
     "theme/index": "src/theme/index.ts",

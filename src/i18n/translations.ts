@@ -369,6 +369,64 @@ export const translations = {
       consentAccept: "Akzeptieren",
       consentDecline: "Ablehnen",
     },
+    /* The consent manager (src/consent). Separate from `cookieNotice` above,
+       which stays for the legacy informational banner: the two never render at
+       the same time, but their wording differs in kind. The notice STATES a
+       fact; this one ASKS a question, and every string here is read by someone
+       deciding. Keep it plain — a consent text nobody understands is not an
+       informed consent (Art. 4 Nr. 11 DSGVO). */
+    consent: {
+      label: "Datenschutz-Einstellungen",
+      title: "Ihre Auswahl",
+      intro:
+        "Wir verwenden nur die Speicherung, die diese Seite zum Funktionieren braucht. Alles darüber hinaus setzen wir erst ein, wenn Sie zustimmen. Sie können Ihre Wahl jederzeit ändern.",
+      privacy: "Datenschutzerklärung",
+      imprint: "Impressum",
+      acceptAll: "Alle akzeptieren",
+      necessaryOnly: "Nur notwendige",
+      settings: "Einstellungen",
+      save: "Auswahl speichern",
+      close: "Schließen",
+      /* The footer entry point. Must exist on every page that can show the
+         banner: a consent that cannot be withdrawn as easily as it was given
+         is not a valid consent (Art. 7 Abs. 3 DSGVO). */
+      manage: "Cookie-Einstellungen",
+      alwaysOn: "Immer aktiv",
+      categories: {
+        necessary: {
+          label: "Notwendig",
+          description:
+            "Speichert, was die Seite zum Betrieb braucht: Ihr Farbschema, Ihre Sprache, den Inhalt Ihres Warenkorbs und diese Auswahl selbst. Ohne diese Speicherung funktioniert die Seite nicht, deshalb ist sie nicht abwählbar (§ 25 Abs. 2 Nr. 2 TDDDG).",
+        },
+        functional: {
+          label: "Komfort",
+          description:
+            "Merkt sich Einstellungen, die die Bedienung angenehmer machen, für den Betrieb aber nicht nötig sind — etwa eine eingeklappte Seitenleiste oder eine zuletzt gewählte Ansicht.",
+        },
+        analytics: {
+          label: "Statistik",
+          description:
+            "Hilft uns zu verstehen, welche Seiten gelesen werden und wo Besucher abbrechen. Die Auswertung ist anonym und wird nicht mit Ihrer Person verknüpft.",
+        },
+        marketing: {
+          label: "Werbung",
+          description:
+            "Erlaubt Werbeanzeigen und die dafür nötigen Cookies unserer Werbepartner. Ohne Ihre Einwilligung wird kein Werbeskript geladen.",
+        },
+      },
+      /* The click-to-load card in front of a third-party embed. It names the
+         recipient BEFORE the request happens, because that is the only moment
+         at which a decision is still possible. */
+      placeholder: {
+        title: "Externer Inhalt",
+        body: "Dieser Inhalt wird von {provider} geladen. Dabei werden Ihre IP-Adresse und Angaben zu Ihrem Gerät an {provider} übertragen.",
+        load: "Inhalt laden",
+        settings: "Dauerhaft entscheiden",
+      },
+    },
+    a11y: {
+      skipToContent: "Zum Inhalt springen",
+    },
     /* Only the chrome. A toast's TEXT always comes from the caller — a
        catalogue of canned messages here would be a second source of truth for
        copy the call sites already own. */
@@ -738,6 +796,64 @@ export const translations = {
         "This blog shows advertising from Google AdSense. With your consent — and only then — cookies and similar technologies are set for advertising. Your choice is free and can be changed at any time.",
       consentAccept: "Accept",
       consentDecline: "Decline",
+    },
+    /* The consent manager (src/consent). Separate from `cookieNotice` above,
+       which stays for the legacy informational banner: the two never render at
+       the same time, but their wording differs in kind. The notice STATES a
+       fact; this one ASKS a question, and every string here is read by someone
+       deciding. Keep it plain — a consent text nobody understands is not an
+       informed consent (Art. 4 no. 11 GDPR). */
+    consent: {
+      label: "Privacy settings",
+      title: "Your choice",
+      intro:
+        "We only use the storage this site needs to work. Anything beyond that we use once you agree. You can change your choice at any time.",
+      privacy: "Privacy policy",
+      imprint: "Legal notice",
+      acceptAll: "Accept all",
+      necessaryOnly: "Necessary only",
+      settings: "Settings",
+      save: "Save choice",
+      close: "Close",
+      /* The footer entry point. Must exist on every page that can show the
+         banner: a consent that cannot be withdrawn as easily as it was given
+         is not a valid consent (Art. 7(3) GDPR). */
+      manage: "Cookie settings",
+      alwaysOn: "Always on",
+      categories: {
+        necessary: {
+          label: "Necessary",
+          description:
+            "Stores what the site needs to operate: your colour scheme, your language, the contents of your basket and this choice itself. The site does not work without it, which is why it cannot be switched off (sec. 25(2) no. 2 TDDDG).",
+        },
+        functional: {
+          label: "Convenience",
+          description:
+            "Remembers settings that make the site nicer to use but are not required to operate it — a collapsed sidebar, say, or the view you last picked.",
+        },
+        analytics: {
+          label: "Statistics",
+          description:
+            "Helps us understand which pages get read and where visitors drop off. The evaluation is anonymous and is not linked to you as a person.",
+        },
+        marketing: {
+          label: "Advertising",
+          description:
+            "Allows advertisements and the cookies our advertising partners need for them. Without your consent no advertising script is loaded.",
+        },
+      },
+      /* The click-to-load card in front of a third-party embed. It names the
+         recipient BEFORE the request happens, because that is the only moment
+         at which a decision is still possible. */
+      placeholder: {
+        title: "External content",
+        body: "This content is loaded from {provider}. Doing so transmits your IP address and details about your device to {provider}.",
+        load: "Load content",
+        settings: "Decide permanently",
+      },
+    },
+    a11y: {
+      skipToContent: "Skip to content",
     },
     toast: {
       dismiss: "Dismiss",

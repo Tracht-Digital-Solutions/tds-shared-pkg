@@ -50,6 +50,11 @@
       "import": "./dist/components/index.js",
       "require": "./dist/components/index.cjs"
     },
+    "./consent": {
+      "types": "./dist/consent/index.d.ts",
+      "import": "./dist/consent/index.js",
+      "require": "./dist/consent/index.cjs"
+    },
     "./astro": {
       "types": "./dist/astro/index.d.ts",
       "import": "./dist/astro/index.js",

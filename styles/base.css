@@ -793,6 +793,224 @@ input[type="radio"] {
   background: color-mix(in srgb, var(--color-ink) 8%, transparent);
 }
 
+/* === Consent manager ==============================================
+   The second layer and its satellites (src/consent). The FIRST layer
+   reuses `.cookie-notice` above unchanged — it is the same object in
+   the same place, so a second block for it would be a second truth
+   about one bar.
+
+   Everything here is token-driven, so the flat surfaces (blog, shop,
+   tools) get square corners and the marketing surface gets its pills
+   without a per-surface fork. Do not hand-author a radius here. */
+
+/* The footer's way back in. A <button> that reads as a link — the look
+   is a look; the element is what it does. */
+.consent-link {
+  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.consent-link:hover {
+  color: var(--color-accent);
+}
+
+/* --- the settings dialog ---------------------------------------- */
+/* Geometry comes from `.tds-modal` in primitives.css; only the inner
+   rhythm is set here. The panel is capped and scrolls internally: four
+   purposes with their explanations is taller than a phone in landscape,
+   and a dialog whose actions sit below the fold is a dialog whose
+   reject button cannot be found. */
+.consent-dialog__panel {
+  max-width: 34rem;
+  max-height: min(80vh, 44rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* Top-right close. Sits in the panel's padding rather than in the flow,
+   so the heading keeps the full measure; the panel is position:relative
+   via .tds-modal__panel in primitives.css. 44px square for WCAG 2.5.8 —
+   a 16px glyph with a 14px hit area is the classic failing close button. */
+.consent-dialog__close {
+  position: absolute;
+  top: 0.25rem;
+  inset-inline-end: 0.25rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  border: 0;
+  border-radius: var(--tds-radius-btn);
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.consent-dialog__close:hover {
+  color: var(--color-ink);
+  background: color-mix(in srgb, var(--color-ink) 8%, transparent);
+}
+
+.consent-dialog__intro {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+.consent-dialog__list {
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.875rem;
+}
+.consent-dialog__links {
+  margin: 0 0 1rem;
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+.consent-dialog__links a {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.consent-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* --- one purpose ------------------------------------------------- */
+.consent-row {
+  padding: 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--tds-radius-card);
+  background: var(--color-card);
+}
+.consent-row__head {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  /* The whole row is the label, so the hit area is the row and not a
+     14px box — WCAG 2.5.8 target size, and the reason nobody misses it
+     on a phone. */
+  min-height: 2.75rem;
+  cursor: pointer;
+}
+.consent-row__input {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+/* `necessary` is checked and disabled. It is dimmed only slightly: the
+   browser's own disabled rendering plus a heavy dim would read as
+   "broken" rather than "not yours to decide", and the badge beside it
+   already says which. */
+.consent-row__input:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+.consent-row__label {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--color-ink);
+}
+.consent-row__badge {
+  margin-inline-start: auto;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+.consent-row__desc {
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--color-muted);
+}
+
+/* --- click-to-load gate ------------------------------------------ */
+/* Sits where the embed would be, at the embed's own width. No fixed
+   height: the card is shorter than most videos, and reserving the
+   video's box would leave a hole under the buttons on a phone. */
+.consent-placeholder {
+  display: grid;
+  gap: 0.625rem;
+  justify-items: start;
+  padding: 1.25rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--tds-radius-card);
+  background: var(--tds-flat-tint, var(--color-soft));
+}
+.consent-placeholder__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.consent-placeholder__body {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-muted);
+  max-width: var(--tds-measure, 65ch);
+}
+.consent-placeholder__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* === Skip link ====================================================
+   The first focusable element on the page. Off-screen until focused,
+   then pinned to the top-left.
+
+   NOT a React island: it has to be reachable on the very first Tab,
+   and an island mounted `client:idle` hydrates after that. Each layout
+   writes the two lines of markup itself and takes the string from
+   `translations[lang].a11y.skipToContent`:
+
+     <a class="tds-skip-link" href="#main">{t.a11y.skipToContent}</a>
+     …
+     <main id="main" tabindex="-1">
+
+   `tabindex="-1"` on the target is what makes the jump actually MOVE
+   focus rather than only scroll — without it, the next Tab continues
+   from the skip link and the whole header is still in the way, which
+   is the failure mode that makes skip links look implemented and not
+   be. */
+.tds-skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  padding: 0.625rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: var(--color-surface-navy);
+  color: #fff;
+  border-radius: 0 0 var(--tds-radius-btn) 0;
+  /* Moved out of view rather than hidden: `display: none` and
+     `visibility: hidden` both make it unfocusable, and a skip link that
+     cannot take focus is not a skip link. */
+  transform: translateY(-120%);
+  transition: transform var(--tds-dur-fast) var(--tds-ease-out);
+}
+.tds-skip-link:focus-visible,
+.tds-skip-link:focus {
+  transform: translateY(0);
+}
+
 /* === Toast notifications ==========================================
    Transient outcome feedback (components/ToastHost, bus in src/toast).
    In base.css with the other floating shell components — not app.css —
