@@ -1992,6 +1992,27 @@ button.tds-row:focus-visible {
     min-height: 44px;
     padding-inline: 0.875rem;
   }
+
+  /* A product card's headline is a LINK, and it was a 21px-high one: the line
+     box and nothing more. Measured at 390px on the shop, where it is often the
+     only way into the product. WCAG 2.2's 24px floor has an exception for a
+     link inline in a sentence — a card headline is not that, it is a
+     standalone target.
+     `inline-block` so the padding actually grows the hit area; on an inline
+     element vertical padding paints but does not affect layout or hit
+     testing. */
+  .tds-product-card__title {
+    display: inline-block;
+    min-height: 44px;
+    padding-block: 0.5rem;
+  }
+
+  /* The merchant CTA already carries `.btn`, which is lifted above. The
+     offer row itself gains breathing space so two stacked offers are not
+     two 44px targets sharing an edge. */
+  .tds-product-offer {
+    row-gap: 0.75rem;
+  }
 }
 
 /* === The FLAT variant ==============================================
