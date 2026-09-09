@@ -2401,6 +2401,48 @@ button.tds-row:focus-visible {
   color: var(--color-accent);
 }
 
+/* The whole card is interactive, not just the title. A 2px accent bar on the
+   leading edge says so — colour only, no lift, because the flat variant has no
+   elevation to lend and a hover shadow would be the brochure's gesture rather
+   than this kit's.
+
+   `focus-within` rather than `focus`: the focusable thing is the title link
+   inside, so keyboard users get the same signal at the same moment.
+
+   The bar is DECLARED here, outside the motion query, and only its GROWTH is
+   opted into below. A reader with reduced motion still needs to know the card
+   is a link; what they do not need is the two-tenths of a second of travel.
+   Switching the whole rule off would take away the affordance to make it
+   calmer, which is the wrong trade. */
+.tds-product-card::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  /* Inset by the card's OWN radius rather than clipping the card. The four
+     surfaces set `--tds-radius-card` differently — 0 on the journal (and so on
+     the shop), rounded in the panels — and a square 2px bar drawn to `top: 0`
+     pokes past a rounded corner. This lands flush at radius 0 and pulls in
+     exactly enough everywhere else, with no per-surface override. Clipping the
+     card instead would have cut off whatever a caller stacks on top of it. */
+  top: var(--tds-radius-card);
+  bottom: var(--tds-radius-card);
+  width: 2px;
+  background: var(--color-accent);
+  transform: scaleY(0);
+  transform-origin: top;
+}
+
+.tds-product-card:hover::before,
+.tds-product-card:focus-within::before {
+  transform: scaleY(1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tds-product-card::before {
+    transition: transform var(--tds-dur-base) var(--tds-ease-out);
+  }
+}
+
 .tds-product-card__body {
   display: flex;
   flex-direction: column;
