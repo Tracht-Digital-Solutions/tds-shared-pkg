@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **`/consent/store` — the consent store without the React half.** `/consent`
+  re-exports the components, so its bundle imports React on line one. A bundler
+  will usually tree-shake that away for a consumer who only wants
+  `consentGranted` — but "usually" is doing real work in that sentence, and the
+  consumers who need this are exactly the ones that must not ship a UI
+  framework: an inline script deciding whether to inject an ad tag, a plain-TS
+  module upgrading a gated embed. Same division of labour as `/toast` beside
+  `ToastHost` and `/api` beside the islands that use it.
+  `consentStoreEntry.test.ts` walks the import graph from the source and fails
+  if anything in it reaches React — or, in fact, any dependency at all: this
+  module runs before everything else on a page that gates a tag.
 - **The consent manager (`/consent`).** A category-based, keyboard-operable
   replacement for the informational `CookieNotice`, which stays and still works
   — it is mounted on five live sites that do not release in lockstep with this

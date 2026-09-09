@@ -55,6 +55,11 @@
       "import": "./dist/consent/index.js",
       "require": "./dist/consent/index.cjs"
     },
+    "./consent/store": {
+      "types": "./dist/consent/store.d.ts",
+      "import": "./dist/consent/store.js",
+      "require": "./dist/consent/store.cjs"
+    },
     "./astro": {
       "types": "./dist/astro/index.d.ts",
       "import": "./dist/astro/index.js",

@@ -10,10 +10,22 @@ export default defineConfig({
     "motion/index": "src/motion/index.ts",
     "components/index": "src/components/index.ts",
     // The consent manager. Its own entry rather than a re-export from
-    // `components`: a non-React consumer (an inline script deciding whether to
-    // inject a tag) imports `/consent` for `consentGranted` and must not drag
-    // the whole component barrel — and React — in behind it.
+    // `components`: a page that mounts the banner should not have to pull the
+    // entire component barrel.
     "consent/index": "src/consent/index.ts",
+    // The store, WITHOUT the React half.
+    //
+    // `/consent` re-exports the components, so its bundle imports React on line
+    // one. A bundler will usually tree-shake that away for a consumer who only
+    // wants `consentGranted` — but "usually" is doing real work in that
+    // sentence, and the consumers who need this are exactly the ones that must
+    // not ship React: an inline script deciding whether to inject an ad tag, or
+    // a plain-TS module upgrading a gated embed.
+    //
+    // Same division of labour as `/toast` beside `components/ToastHost` and
+    // `/api` beside the islands that use it: the bus is reachable without the
+    // UI that happens to be its most common caller.
+    "consent/store": "src/consent/store.ts",
     "astro/index": "src/astro/index.ts",
     "design/index": "src/design/index.ts",
     "theme/index": "src/theme/index.ts",
