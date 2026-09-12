@@ -793,6 +793,39 @@ input[type="radio"] {
   background: color-mix(in srgb, var(--color-ink) 8%, transparent);
 }
 
+/* Phones: the notice hands the page back its first screen.
+   Measured on the landingpage before this block existed: 207px tall at 320px —
+   the tallest thing on the first screen, lying on top of the page's primary
+   call to action — and at 400 % zoom (a 320×256 viewport) header, notice and a
+   floating button left under a tenth of the page visible. The notice states
+   one fact, so it can take far less room: tighter padding, a smaller line, and
+   the button BESIDE the text wherever a narrow text column still fits.
+   `max-height` + scroll is the floor for the extreme zoom case, where even the
+   compact notice would otherwise outgrow the viewport it is informing about.
+   The consent mode keeps its action row on a line of its own: three equal
+   decisions squeezed beside a text column stop looking equal.
+   No lane here on purpose: this element PUBLISHES `--tds-bottom-lane`, it does
+   not read it. */
+@media (max-width: 40rem) {
+  .cookie-notice {
+    inset-inline: 0.5rem;
+    bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    gap: 0.5rem 0.75rem;
+    padding: 0.625rem 0.75rem;
+    max-height: 40svh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .cookie-notice-text {
+    flex: 1 1 9rem;
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+  .cookie-notice-actions {
+    flex-basis: 100%;
+  }
+}
+
 /* === Consent manager ==============================================
    The second layer and its satellites (src/consent). The FIRST layer
    reuses `.cookie-notice` above unchanged — it is the same object in

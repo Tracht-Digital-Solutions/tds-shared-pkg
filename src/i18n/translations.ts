@@ -358,8 +358,12 @@ export const translations = {
     },
     cookieNotice: {
       label: "Hinweis zu Cookies und Datenschutz",
+      /* Short on purpose. On a 320px phone this notice was the tallest thing on
+         the first screen (207px) and sat on top of the page's primary call to
+         action; the fact it states fits in one sentence. Same fact, same
+         precision: no tracking, only necessary settings, stored locally. */
       siteText:
-        "Diese Website verwendet keine Tracking-Cookies. Es werden lediglich technisch notwendige Einstellungen (z. B. Ihr Farbschema) lokal in Ihrem Browser gespeichert.",
+        "Keine Tracking-Cookies: Nur technisch nötige Einstellungen wie Ihr Farbschema bleiben lokal in Ihrem Browser.",
       panelText:
         "Dieser Bereich verwendet ausschließlich ein technisch notwendiges Cookie für die sichere Anmeldung (Session-Cookie). Es findet kein Tracking statt.",
       privacy: "Mehr in der Datenschutzerklärung.",
@@ -787,7 +791,7 @@ export const translations = {
     cookieNotice: {
       label: "Cookie and privacy notice",
       siteText:
-        "This website does not use tracking cookies. Only technically necessary preferences (e.g. your colour scheme) are stored locally in your browser.",
+        "No tracking cookies: only necessary preferences such as your colour scheme stay local in your browser.",
       panelText:
         "This area only uses one technically necessary cookie for secure sign-in (session cookie). No tracking takes place.",
       privacy: "More in the privacy policy.",
