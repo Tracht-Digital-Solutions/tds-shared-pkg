@@ -2211,13 +2211,28 @@ button.tds-row:focus-visible {
 /* Phones: trim the control so a top bar holding wordmark + language + theme +
    hamburger fits without horizontal overflow. `body { overflow-x: hidden }`
    CLIPS that overflow rather than revealing it, so the symptom would be a
-   hamburger simply missing off the right edge, with nothing in the console. */
+   hamburger simply missing off the right edge, with nothing in the console.
+
+   Trimmed, but never below WCAG 2.2's 24px target floor (2.5.8): the shop's
+   mobile audit measured the trimmed link at 29x23px. The floor is written in
+   px on purpose — it is a size for a finger, not a step on the type scale. */
 @media (max-width: 39.9375rem) {
   .tds-lang-toggle a {
     height: 1.5rem;
+    min-height: 24px;
     padding: 0 0.5rem;
     font-size: 0.625rem;
   }
+}
+/* Inside the mobile sheet there is no crowded bar to fit, so the switch gets a
+   finger-sized target. The journal, the tools site and the shop all place the
+   switch in `.tds-mobile-menu`; the shop had grown a local copy of exactly this
+   rule, which is how it arrived here. Two classes, so it outranks the phone
+   trim above at any width. */
+.tds-mobile-menu .tds-lang-toggle a {
+  height: 2.75rem;
+  padding-inline: 1rem;
+  font-size: 0.8125rem;
 }
 @media (prefers-reduced-motion: reduce) {
   /* Reset the end state rather than only shortening it — a colour transition
@@ -2519,9 +2534,14 @@ button.tds-row:focus-visible {
 
 /* --- collections -------------------------------------------------- */
 
+/* `auto-fill`, not `auto-fit`. With `auto-fit` the empty tracks collapse and a
+   grid holding ONE product — a related-products row with a single entry —
+   stretches that card across the whole container, 4:3 image and all: measured
+   at 72rem wide on the shop. `auto-fill` keeps the empty tracks, so one card
+   stays one column wide. */
 .tds-product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
   gap: 1rem;
 }
 

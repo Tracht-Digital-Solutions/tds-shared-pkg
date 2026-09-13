@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **`.tds-product-grid` keeps a lone card one column wide.** `auto-fit`
+  collapsed the empty tracks, so a grid holding a single product — a
+  related-products row with one entry — stretched that card across the whole
+  container, 4:3 image included. `auto-fill` keeps the tracks.
+- **`.tds-lang-toggle` meets the 24px target floor on phones, and is
+  finger-sized inside `.tds-mobile-menu`.** The phone trim measured 29×23px in
+  the shop's mobile audit and now carries `min-height: 24px`. In the sheet —
+  where the journal, the tools site and the shop all place the switch — it gets
+  a 2.75rem target.
+
 ### Added
 - **`/consent/store` — the consent store without the React half.** `/consent`
   re-exports the components, so its bundle imports React on line one. A bundler

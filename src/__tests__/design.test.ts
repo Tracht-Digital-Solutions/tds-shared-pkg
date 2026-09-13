@@ -1486,6 +1486,32 @@ describe("mobile contracts", () => {
     // open every settings list in the panel.
     expect(coarse).toMatch(/input\[type="checkbox"\][\s\S]{0,80}min-height:\s*1\.5rem/);
   });
+
+  it("keeps the language switch at the 24px target floor on a phone", () => {
+    // `height: 1.5rem` alone measured 29x23px in the shop's mobile audit — a
+    // chrome control below WCAG 2.5.8 that looks like any other compact pill.
+    const phone = mediaBlock(primitives, "max-width: 39.9375rem");
+    const rule = phone.match(/\.tds-lang-toggle a \{([^}]*)\}/)?.[1] ?? "";
+    expect(rule, "no phone rule for the language switch").not.toBe("");
+    expect(rule).toMatch(/min-height:\s*24px/);
+  });
+
+  it("gives the language switch a finger-sized target inside the mobile sheet", () => {
+    // The journal, the tools site and the shop all put the switch in
+    // `.tds-mobile-menu`; two classes, so it outranks the phone trim.
+    expect(ruleBody(primitives, ".tds-mobile-menu .tds-lang-toggle a")).toMatch(
+      /height:\s*2\.75rem/,
+    );
+  });
+
+  it("keeps a lone product card one column wide", () => {
+    // `auto-fit` collapses the empty tracks, so a grid holding ONE product
+    // stretched that card across the whole container. `auto-fill` keeps them.
+    const grid = ruleBody(primitives, ".tds-product-grid");
+    expect(grid, "no .tds-product-grid rule").not.toBe("");
+    expect(grid).toMatch(/repeat\(auto-fill,/);
+    expect(grid).not.toMatch(/auto-fit/);
+  });
 });
 
 /**
