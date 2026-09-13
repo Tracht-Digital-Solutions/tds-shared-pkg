@@ -566,6 +566,12 @@ import this — they duplicate the small bit of validation they need, by design.
   `apiUrl()` leaves already-absolute URLs alone, so wrapping a call site is
   idempotent. `apiBase()` **memoises** after its first DOM read — a test that
   swaps the document must call `resetApiBase()`.
+  **A network failure still rejects.** `apiFetch` returns every HTTP status as
+  a response, but a request that never reaches the API (offline, DNS, CORS, a
+  gateway that is down) rejects with fetch's `TypeError`. Catch it at every
+  call site: a failed load belongs in the island's in-flow `.tds-alert`, a
+  failed mutation in `toast.danger`. Uncaught, a load stays on its spinner and
+  a save ends in an unhandled rejection nobody sees.
   **Fixed bottom chrome shares TWO lanes.** Anything pinned to the bottom of
   the viewport publishes its measured height and anything else pinned there
   adds it to its own `bottom`. Do not hard-code an offset instead: the notice

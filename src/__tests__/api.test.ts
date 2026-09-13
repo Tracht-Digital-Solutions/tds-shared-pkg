@@ -155,6 +155,14 @@ describe("apiFetch", () => {
     });
     await expect(apiFetch("/contact/messages")).resolves.toMatchObject({ status: 401 });
   });
+
+  it("REJECTS when the request never reaches the API — every call site has to catch that", async () => {
+    // Every HTTP status comes back as a response; a network failure (offline,
+    // DNS, CORS, a gateway that is down) does not. Islands that read an older
+    // "never throws" in the docblock sat on their spinner when it happened.
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+    await expect(apiFetch("/contact/messages")).rejects.toBeInstanceOf(TypeError);
+  });
 });
 
 describe("setRequestHeadersProvider", () => {

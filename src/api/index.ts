@@ -398,10 +398,16 @@ export function setRequestHeadersProvider(provider: HeadersProvider | null): voi
  * `fetch` for the composed panel API.
  *
  * Sends the shared session cookie, resolves the path against {@link apiBase},
- * and returns the ORIGINAL response — it never throws and never redirects on
- * its own, so a caller can still handle a legitimate 401/403 (RBAC) itself.
- * Same contract as the host's `frontendFetch`, deliberately: one mental model
- * for base pages and extension islands alike.
+ * and returns the ORIGINAL response for every HTTP status — it never throws on
+ * a status and never redirects on its own, so a caller can still handle a
+ * legitimate 401/403 (RBAC) itself. Same contract as the host's
+ * `frontendFetch`, deliberately: one mental model for base pages and extension
+ * islands alike.
+ *
+ * **A request that never reaches the API still rejects** with the `TypeError`
+ * fetch raises (offline, DNS, CORS, a gateway that is down). Catch it at the
+ * call site: uncaught, a load stays on its spinner and a save ends in an
+ * unhandled rejection the user never sees.
  */
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
   // Resolve the host-side config FIRST, so a site the operator re-pointed with
