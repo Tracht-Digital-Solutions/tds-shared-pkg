@@ -65,17 +65,42 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+function isLoopback(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
+}
+
 /** Strict origin validation prevents pairing from becoming an SSRF proxy. */
 export function normalizeSecureOrigin(value: string): string | null {
   try {
     const url = new URL(value);
-    const loopback = url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]";
-    if (url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) return null;
+    if (url.protocol !== "https:" && !(url.protocol === "http:" && isLoopback(url.hostname))) return null;
     if (url.username || url.password || url.search || url.hash || url.pathname !== "/") return null;
     return url.origin;
   } catch {
     return null;
   }
+}
+
+/**
+ * The origin a visitor used to reach this server.
+ *
+ * `request.url` is what the Node process saw, not what the client used. Astro's
+ * Node adapter builds it from the socket (`encrypted ? "https" : "http"`) and
+ * the Host header, and ignores `X-Forwarded-Proto` — so behind a proxy that
+ * ends TLS in front of the app, which is every production host (Plesk's nginx
+ * and Passenger), it reads `http://<host>`. Taken as is, `normalizeSecureOrigin`
+ * refused it, and every pairing, direct or through the /install link, ended in
+ * 422 `invalid_origin`.
+ *
+ * Plain HTTP is valid only on loopback, so a non-loopback `http:` URL can only
+ * mean TLS ended upstream: report the HTTPS origin. Nothing is trusted that the
+ * request did not already decide — the host still comes from the Host header,
+ * and the API still checks the claim against the origin the CMS registered.
+ */
+function requestOrigin(requestUrl: string): string {
+  const url = new URL(requestUrl);
+  if (url.protocol === "http:" && !isLoopback(url.hostname)) url.protocol = "https:";
+  return url.origin;
 }
 
 function runtimeConfig(
@@ -309,7 +334,7 @@ export class SiteConnectionService {
       return json({ error: "invalid_payload" }, 422);
     }
     try {
-      return json(await this.connect(body as unknown as ConnectBody, new URL(request.url).origin));
+      return json(await this.connect(body as unknown as ConnectBody, requestOrigin(request.url)));
     } catch (error) {
       if (error instanceof ConnectionError) return json({ error: error.code }, error.status);
       return json({ error: "connection_failed" }, 502);

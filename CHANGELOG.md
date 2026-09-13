@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Site pairing works behind the host's TLS proxy.** `handleConnect` took the
+  site's origin from `request.url`, which Astro's Node adapter builds from the
+  socket while ignoring `X-Forwarded-Proto`. On the production hosts TLS ends at
+  Plesk's nginx, so every site claimed `http://<host>` and refused each pairing
+  — direct delivery and the `/install` link alike — with 422 `invalid_origin`.
+  A non-loopback `http:` request URL now reports the HTTPS origin; plain HTTP
+  on loopback stays as it was for local development.
 - **`.tds-product-grid` keeps a lone card one column wide.** `auto-fit`
   collapsed the empty tracks, so a grid holding a single product — a
   related-products row with one entry — stretched that card across the whole

@@ -228,6 +228,78 @@ describe("SiteConnectionService", () => {
   });
 });
 
+describe("SiteConnectionService.handleConnect", () => {
+  function exchangeReply(origin: string, apiBase: string): Response {
+    return Response.json({
+      pairing_id: "pair_1",
+      finalize_token: "finalize_secret",
+      connection: {
+        version: 1,
+        profile: "tools",
+        origin,
+        api_base: apiBase,
+        site_key: "tdsk_private",
+        cache_token: "cache_private",
+        resource: { type: "tools", id: "tools" },
+      },
+    });
+  }
+
+  function connectRequest(url: string, apiBase: string): Request {
+    return new Request(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ pairing_token: "e".repeat(43), api_base: apiBase }),
+    });
+  }
+
+  it("claims the HTTPS origin when TLS ends in front of the server", async () => {
+    // Astro's Node adapter builds request.url from the socket and ignores
+    // X-Forwarded-Proto, so behind the host's nginx every request reads
+    // http://. Taken literally, each production pairing failed with 422.
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(exchangeReply("https://tools.example.test", "https://api.example.test"))
+      .mockResolvedValueOnce(Response.json({ connected: true }));
+    const service = new SiteConnectionService({
+      profile: "tools",
+      stateDir: await root(),
+      fallbackApiBase: "https://api.example.test",
+      fetch: fetcher,
+    });
+
+    const response = await service.handleConnect(
+      connectRequest("http://tools.example.test/tds/connect", "https://api.example.test"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ connected: true, origin: "https://tools.example.test" });
+    expect(JSON.parse(String(fetcher.mock.calls[0]![1]?.body))).toMatchObject({ origin: "https://tools.example.test" });
+    expect(JSON.parse(String(fetcher.mock.calls[1]![1]?.body))).toMatchObject({ origin: "https://tools.example.test" });
+  });
+
+  it("leaves plain HTTP on loopback alone", async () => {
+    // Local development reaches the server directly, so there is no TLS to
+    // account for. The API refuses this invitation; only the claim matters.
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ error: "invalid_pairing_token" }, { status: 401 }));
+    const service = new SiteConnectionService({
+      profile: "tools",
+      stateDir: await root(),
+      fallbackApiBase: "http://localhost:8100",
+      fetch: fetcher,
+    });
+
+    const response = await service.handleConnect(
+      connectRequest("http://localhost:4322/tds/connect", "http://localhost:8100"),
+    );
+
+    expect(response.status).toBe(401);
+    expect(JSON.parse(String(fetcher.mock.calls[0]![1]?.body))).toMatchObject({ origin: "http://localhost:4322" });
+  });
+});
+
 /**
  * The profile list, and the drift it used to allow.
  *

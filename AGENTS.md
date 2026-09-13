@@ -12,6 +12,11 @@ import this — they duplicate the small bit of validation they need, by design.
 
 ## Rules of thumb
 
+- **Never take a public origin from `request.url` in server code.** Astro's
+  Node adapter builds that URL from the socket and ignores `X-Forwarded-Proto`,
+  and on the production hosts TLS ends at Plesk's nginx — so it reads `http://`
+  there, always. `connection/service.ts` derives the origin with
+  `requestOrigin()`, which reports HTTPS for any non-loopback host.
 - **`vi.stubGlobal` is not undone by `vi.restoreAllMocks()` — stubs and spies
   are separate mechanisms (learned on the vitest 4 upgrade, 2026-08-25).**
   `vitest.config.ts` therefore sets `unstubGlobals: true`, and a new suite
