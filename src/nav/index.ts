@@ -50,6 +50,11 @@
  * a documented exception, not an oversight — see the repo AGENTS.md.
  */
 
+// The one piece of header CONTENT that is shared: the four public properties
+// in one order and under one set of names. The markup around it stays local.
+export { PROPERTY_ORIGINS, propertyContact, propertyHome, propertyNav } from "./properties";
+export type { PropertyLink, PublicProperty } from "./properties";
+
 /** Tailwind's `lg`, i.e. 1024px. The breakpoint every public header hides its desktop nav at. */
 export const MOBILE_NAV_DESKTOP_QUERY = "(min-width: 64rem)";
 

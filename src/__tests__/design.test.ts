@@ -1528,6 +1528,16 @@ describe("mobile contracts", () => {
     expect(grid).toMatch(/repeat\(auto-fill,/);
     expect(grid).not.toMatch(/auto-fit/);
   });
+
+  it("reads the product grid's minimum track from a token, capped by its container", () => {
+    // A site on a wider shell (the shop, at 120rem) asks for wider cards
+    // instead of a seventh narrow column; `min()` keeps a container narrower
+    // than the track from overflowing.
+    expect(ruleBody(primitives, ".tds-product-grid")).toMatch(
+      /minmax\(min\(100%, var\(--tds-product-grid-min\)\), 1fr\)/,
+    );
+    expect(base).toMatch(/--tds-product-grid-min:\s*15rem/);
+  });
 });
 
 /**
@@ -1736,6 +1746,64 @@ describe("brand hues in interface roles", () => {
       expect(block, `no rule for ${selector}`).toBeDefined();
       expect(block, `${selector} labels in the raw hue`).toContain(`color: var(${name})`);
     }
+  });
+});
+
+describe("public property bar", () => {
+  it("shows its nav and desktop cluster at exactly the width the hamburger hides at", () => {
+    // Two breakpoints that disagree leave a band of widths with neither a nav
+    // nor a hamburger on screen — invisible in any single screenshot.
+    expect(primitives).toMatch(
+      /@media \(min-width: 64rem\) \{\s*\.tds-menu-toggle,\s*\.tds-mobile-menu \{\s*display: none;/,
+    );
+    expect(primitives).toMatch(
+      /@media \(min-width: 64rem\) \{\s*\.tds-sitebar__nav,\s*\.tds-sitebar__desktop \{\s*display: flex;\s*\}\s*\.tds-sitebar__divider \{\s*display: block;/,
+    );
+    expect(primitives).toMatch(/\.tds-sitebar__nav,\s*\.tds-sitebar__desktop \{\s*display: none;/);
+    // The divider separates the wordmark from the nav; without the nav beside
+    // it, it is a stray dot.
+    expect(ruleBlock(primitives, ".tds-sitebar__divider")).toMatch(/display:\s*none/);
+  });
+
+  it("lets the CTA yield before the row overflows, through a wrapper", () => {
+    // `.btn` declares its own display, so the rule has to sit on a wrapper.
+    expect(ruleBlock(primitives, ".tds-sitebar__wide")).toMatch(/display:\s*none/);
+    expect(primitives).toMatch(/@media \(min-width: 80rem\) \{\s*\.tds-sitebar__wide \{\s*display: flex;/);
+  });
+
+  it("gives a finger a 44px target on the desktop nav", () => {
+    expect(primitives).toMatch(
+      /@media \(pointer: coarse\) \{\s*\.tds-sitebar__link \{[^}]*min-height:\s*2\.75rem/,
+    );
+  });
+
+  it("stays exactly as tall as the offset the mobile sheets dock at", () => {
+    // Every site docks `.tds-mobile-menu` at `top: 3.75rem`. min-height minus
+    // the padding has to leave 2.75rem, or a 44px control grows the bar past
+    // the sheet's top edge.
+    const bar = ruleBlock(primitives, ".tds-sitebar");
+    expect(bar).toMatch(/min-height:\s*3\.75rem/);
+    expect(bar).toMatch(/padding-block:\s*0\.5rem/);
+  });
+
+  it("keeps the account menu, basket and hamburger visible at every width", () => {
+    const actions = ruleBlock(primitives, ".tds-sitebar__actions");
+    expect(actions).toMatch(/display:\s*flex/);
+    expect(actions).not.toMatch(/display:\s*none/);
+  });
+
+  it("marks the current property in colour AND with the underline", () => {
+    // Colour alone is not a state (WCAG 1.4.1); the underline is the shape half.
+    expect(primitives).toMatch(/\.tds-sitebar__link\[aria-current\]::after/);
+    expect(ruleBlock(primitives, ".tds-sitebar__link[aria-current]")).toMatch(/font-weight:\s*600/);
+    expect(ruleBlock(primitives, ".tds-sitebar__link")).toContain("var(--tds-dur-fast)");
+  });
+
+  it("gives the three public properties one page width, on their shared surface", () => {
+    // The journal set 120rem locally while the tools site and the shop sat at
+    // 72rem, so the bar's edges jumped on every link between them.
+    expect(surfaceCss.blog).toMatch(/--tds-shell-max:\s*120rem/);
+    expect(surfaceCss.blog).toMatch(/--tds-shell-wide:\s*132rem/);
   });
 });
 

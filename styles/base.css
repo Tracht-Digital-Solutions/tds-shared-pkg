@@ -412,6 +412,13 @@
   /* Minimum track for the intrinsic card grid. */
   --tds-grid-min: 16rem;
 
+  /* Minimum track for `.tds-product-grid`. Its own token rather than
+     `--tds-grid-min`, because the two grids answer different content: a
+     product card carries a 4:3 image and a title that breaks badly below this
+     width, and a site that widens its shell (the shop, at 120rem) wants the
+     extra room as wider cards, not as a seventh narrow column. */
+  --tds-product-grid-min: 15rem;
+
   --tds-gutter: clamp(1.25rem, 0.9rem + 1.6vw, 2.5rem);
 
   /* The wash a hovered row takes. Coral, because "Hoverzustände" is exactly

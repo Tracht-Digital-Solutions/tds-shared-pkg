@@ -60,6 +60,16 @@
      names were repo-local. */
   --tds-flat-tint: color-mix(in srgb, var(--color-primary) 9%, var(--color-paper));
   --tds-flat-hover: color-mix(in srgb, var(--color-soft) 70%, var(--color-line));
+
+  /* Page width for the three public properties on this surface — the
+     journal, the tools site and the shop. The journal set 120rem locally while
+     the tools site sat at 72rem (`max-w-6xl`) and the shop at 72rem, so the
+     header's edges jumped by 24rem on every link between them, and on a
+     1920px screen two of the three used little more than half of it. One value
+     here keeps the edges identical; `.tds-grid-auto` answers the width with
+     more columns rather than longer lines, and prose keeps its `ch` measure. */
+  --tds-shell-max: 120rem;
+  --tds-shell-wide: 132rem;
 }
 
 /* === The FLAT variant ==============================================

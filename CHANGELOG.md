@@ -46,6 +46,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a 2.75rem target.
 
 ### Added
+- **One top bar for the journal, the tools site and the shop:
+  `.tds-sitebar*` and `propertyNav()` (`/nav`).** The three drew their own bars
+  at three widths, in three link styles, and named their siblings differently
+  ("Blog"/"Startseite" on the tools site, "Journal"/"Tracht Digital" on the
+  shop, no main site on the journal), so following a link between them moved
+  the logo and renamed the links. The geometry, the journal's link voice and the
+  list — always Journal · Tools · Shop · Tracht Digital, untranslated — are
+  shared now; each site keeps only its own extras. The divider shows only beside
+  the nav, the contact CTA sits in `.tds-sitebar__wide` and yields below 80rem,
+  and on a coarse pointer the nav links are 44px targets.
+- **`propertyContact(lang)`** — the one address of that CTA, the main site's
+  contact section in the reader's language. The journal and the tools site both
+  sent English readers to the German page.
+- **`.tds-product-grid` reads its minimum track from `--tds-product-grid-min`**
+  (default 15rem, as before) and never exceeds a narrower container. The shop
+  widens to 120rem and wants the room as wider cards, not as a seventh column of
+  titles broken over four lines.
+- **The blog surface sets the page width** (`--tds-shell-max: 120rem`,
+  `--tds-shell-wide: 132rem`), which the journal used to set locally. The tools
+  site and the shop render the same surface and now read the same edges.
 - **`renderMarkdown` keeps hard line breaks.** A line ending in a backslash or
   in two or more spaces now breaks with `<br>` instead of folding into the next
   line, as in CommonMark. An address block was the case: the shop's Impressum

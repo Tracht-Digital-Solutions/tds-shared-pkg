@@ -667,6 +667,23 @@ import this — they duplicate the small bit of validation they need, by design.
   read from `vite.build.cssTarget`. Frontends import `tdsViteBuild` so the
   Safari floor is defined once — never hand-copy the array back into a
   frontend's `astro.config.mjs` (that's the drift this export removed).
+- **The journal, the tools site and the shop share one top bar:
+  `.tds-sitebar*` + `propertyNav()`.** They used to draw three bars at three
+  widths (120rem, 72rem, 72rem), in three link styles, and named the same
+  siblings differently, so a link between them moved the logo and renamed the
+  links. Three rules keep them seamless:
+  - **The list is `propertyNav()`, never a local array.** Always Journal ·
+    Tools · Shop · Tracht Digital, proper names in both languages; a header adds
+    only its own extras (the journal's search and Entdecken, the shop's basket)
+    and marks itself current.
+  - **The width is the blog surface's `--tds-shell-max`.** A site that sets its
+    own is how the edges drift apart again; put `.tds-sitebar` on the element
+    that carries `.tds-shell`.
+  - **The right-hand order is fixed:** `.tds-sitebar__desktop` (DE|EN, theme,
+    then the contact CTA inside `.tds-sitebar__wide`) → `.tds-sitebar__actions`
+    (account menu, site extras, hamburger), which never hides. The CTA points
+    at `propertyContact(lang)` and yields below 80rem, where the journal's row
+    no longer holds it; hide it through that wrapper, never on the `.btn`.
 - **A mobile menu is `src/nav` + `.tds-mobile-menu`, never a fifth hand-roll.**
   Before this the workspace held four of them: the landingpage's docked dropdown,
   the blog's full-screen overlay at a different breakpoint, the panel host's

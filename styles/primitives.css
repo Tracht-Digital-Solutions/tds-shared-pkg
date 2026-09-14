@@ -1454,6 +1454,148 @@ button.tds-row:focus-visible {
 
 /* === Header shell ================================================= */
 
+/* The public property bar — the one top bar the journal, the tools site and
+   the shop share, inside `.brand-header`. The three used to draw their own:
+   three widths, three link styles, three orders and two sets of names for the
+   same sibling sites, so following a link between them moved the logo and
+   renamed the links. Markup stays in each site, because the extras differ (the
+   journal's search and Entdecken, the shop's basket); the geometry, the link
+   voice and — through `propertyNav()` in `/nav` — the list itself do not.
+
+   Put it on the element that also carries `.tds-shell`, so the bar's edges are
+   the page's. Below 64rem the nav and the desktop cluster give way to the
+   hamburger: that is `.tds-menu-toggle`'s own breakpoint and
+   `MOBILE_NAV_DESKTOP_QUERY`, and two breakpoints that disagree leave a band of
+   widths with neither a nav nor a hamburger. */
+/* 3.75rem tall, and that number is load-bearing: every site docks its mobile
+   sheet at `top: 3.75rem`. The padding leaves exactly 2.75rem for content, so a
+   44px control (the hamburger, a coarse-pointer link, the CTA) fits without
+   growing the bar — at 0.625rem it grew to 64px and the sheet overlapped it. */
+.tds-sitebar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3.75rem;
+  padding-block: 0.5rem;
+}
+.tds-sitebar__brand {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+  padding-block: 0.5rem;
+  font-size: 1.0625rem;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  text-decoration: none;
+}
+/* Shown only beside the nav it divides; below 64rem it would be a lone dot
+   after the wordmark. */
+.tds-sitebar__divider {
+  display: none;
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  margin-inline: 0.5rem;
+  background: var(--color-accent);
+}
+.tds-sitebar__nav,
+.tds-sitebar__desktop {
+  display: none;
+  align-items: center;
+}
+/* The first thing to yield when the row runs short: the contact CTA, which the
+   mobile sheet and every footer repeat. From 64rem to 80rem the journal's bar
+   carries five nav entries, the search field, the language switch, the theme
+   toggle and the account menu, and a CTA on top of that no longer fits. A
+   WRAPPER around the `.btn`, never a class on it — `.btn` declares its own
+   `display` and would win it back. */
+.tds-sitebar__wide {
+  display: none;
+  align-items: center;
+}
+.tds-sitebar__nav {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 0.25rem;
+}
+.tds-sitebar__desktop {
+  gap: 0.5rem;
+}
+/* Always visible, pushed right: the account menu, the shop's basket and the
+   hamburger live here at every width. */
+.tds-sitebar__actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+  margin-inline-start: auto;
+}
+/* The journal's link voice, promoted: muted label, a 2px accent underline
+   that draws in on hover and stays under the current property. The underline
+   is absolutely positioned, so it never shifts the row. A `<button>` may wear
+   this class too (the journal's Entdecken) — the preflight already strips a
+   button's own fill and border. */
+.tds-sitebar__link {
+  position: relative;
+  padding: 0.5rem 0.8125rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--color-muted);
+  text-decoration: none;
+  transition: color var(--tds-dur-fast) var(--tds-ease-out);
+}
+.tds-sitebar__link::after {
+  content: "";
+  position: absolute;
+  left: 0.8125rem;
+  right: 0.8125rem;
+  bottom: 0.25rem;
+  height: 2px;
+  background: var(--color-accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--tds-dur-fast) var(--tds-ease-out);
+}
+.tds-sitebar__link:hover,
+.tds-sitebar__link:focus-visible {
+  color: var(--color-ink);
+}
+.tds-sitebar__link:hover::after,
+.tds-sitebar__link:focus-visible::after,
+.tds-sitebar__link[aria-current]::after {
+  transform: scaleX(1);
+}
+.tds-sitebar__link[aria-current] {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+@media (min-width: 64rem) {
+  .tds-sitebar__nav,
+  .tds-sitebar__desktop {
+    display: flex;
+  }
+  .tds-sitebar__divider {
+    display: block;
+  }
+}
+@media (min-width: 80rem) {
+  .tds-sitebar__wide {
+    display: flex;
+  }
+}
+/* A tablet in landscape gets the desktop nav with a finger: 44px targets, as
+   the library already gives buttons and fields at `pointer: coarse`. */
+@media (pointer: coarse) {
+  .tds-sitebar__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+}
+
 .brand-header {
   position: sticky;
   top: 0;
@@ -2565,7 +2707,7 @@ button.tds-row:focus-visible {
    stays one column wide. */
 .tds-product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--tds-product-grid-min)), 1fr));
   gap: 1rem;
 }
 
