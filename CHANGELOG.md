@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **The German cookie notice no longer addresses the visitor.** `cookieNotice.siteText`
+  said "wie Ihr Farbschema … in Ihrem Browser", which put a formal "Sie" on the
+  first screen of a site that addresses its visitors with "du" (the landing
+  page since 2026-09-15). It now reads "wie das Farbschema … im Browser" — the
+  same fact, no form of address, so it fits every site regardless of how it
+  speaks to its visitors. The English text was already neutral.
+
 ### Fixed
 - **Section headings in a panel page read as headings.** The extensions'
   islands write bare `<h2>` / `<h3>` (Lexware's "Kunden", the website CMS's

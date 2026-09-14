@@ -363,7 +363,7 @@ export const translations = {
          action; the fact it states fits in one sentence. Same fact, same
          precision: no tracking, only necessary settings, stored locally. */
       siteText:
-        "Keine Tracking-Cookies: Nur technisch nötige Einstellungen wie Ihr Farbschema bleiben lokal in Ihrem Browser.",
+        "Keine Tracking-Cookies: Nur technisch nötige Einstellungen wie das Farbschema bleiben lokal im Browser.",
       panelText:
         "Dieser Bereich verwendet ausschließlich ein technisch notwendiges Cookie für die sichere Anmeldung (Session-Cookie). Es findet kein Tracking statt.",
       privacy: "Mehr in der Datenschutzerklärung.",
