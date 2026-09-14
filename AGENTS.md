@@ -144,7 +144,11 @@ import this — they duplicate the small bit of validation they need, by design.
   primary or accent fill. Never write `color: white` on one of those fills:
   both flip to pastels in dark mode, where white measures 2.28:1 / 2.15:1 —
   every `.btn-primary` in dark mode shipped that way until the tokens existed. (2) Semantic status (since 0.5.x): `--color-success`/
-  `-warning`/`-danger`/`-info`. (3) Categorical wayfinding (since 0.5.x):
+  `-warning`/`-danger`/`-info`, plus `--color-success-ink`/`--color-warning-ink`
+  for LABEL text on their own 12% wash — the raw hues measure 4.29:1 and
+  3.16:1 there, so a chip, pill or alert in those two hues never labels in the
+  raw token (`--color-gold` aliases the warning hue, which is why it cannot
+  simply darken). (3) Categorical wayfinding (since 0.5.x):
   `--color-cat-violet`/`-teal`/`-amber`/`-rose`/`-cyan`. Every new token needs
   **both** a light and a dark value (the dark ground is navy-tinted, so the
   dark value is usually brighter), or it breaks under `data-theme="dark"`.

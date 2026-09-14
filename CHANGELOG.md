@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Success and warning labels clear AA on their own wash.** Chips, status
+  pills and alerts paint their label on a 12% wash of their hue, and the raw
+  hues measured 4.29:1 (success) and 3.16:1 (warning) there — the panel's API
+  reference GET/PUT chips and every "Noch nicht angeschlossen" alert. New
+  `--color-success-ink` / `--color-warning-ink` twins (5.8:1 and 5.4:1 in
+  light mode, the hues themselves in dark mode) label `.chip--success`,
+  `.chip--warning`, `.status-pill--success`, `.status-pill--warning`,
+  `.tds-alert--success` and `.tds-alert--warning`; edges and washes keep the
+  base hue. The warning hue itself could not darken: `--color-gold` aliases it
+  and has to stay a 3:1 rule on navy.
 - **Primary and accent buttons are readable in dark mode.** Both fills flip to
   pastels there, and `.btn-primary`, `.btn-accent`, `.chip-solid` and the prose
   block button kept white text on them — 2.28:1 on the primary and 2.15:1 on

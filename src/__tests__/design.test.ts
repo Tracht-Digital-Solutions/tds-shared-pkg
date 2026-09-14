@@ -1694,6 +1694,49 @@ describe("brand hues in interface roles", () => {
       );
     }
   });
+
+  it.each(["light", "dark"] as const)(
+    "keeps status text readable on its own 12%% wash (%s)",
+    (theme) => {
+      // Chips, status pills and alerts paint their label on a 12% wash of their
+      // own hue. The raw success and warning hues measured 4.29:1 and 3.16:1
+      // there (the API reference's GET and PUT chips), so those two read `-ink`
+      // twins; danger and info read the hue itself.
+      const card = token("--color-card", theme);
+      const wash = (hue: RGB): RGB => [0, 1, 2].map((i) => hue[i]! * 0.12 + card[i]! * 0.88) as RGB;
+      for (const [status, text] of [
+        ["success", "--color-success-ink"],
+        ["warning", "--color-warning-ink"],
+        ["danger", "--color-danger"],
+        ["info", "--color-info"],
+      ] as const) {
+        expect(
+          contrast(token(text, theme), wash(token(`--color-${status}`, theme))),
+          `${status} label on its wash (${theme})`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+      // The guard for WHY the twins exist: the raw warning hue must not pass,
+      // or they are ceremony.
+      if (theme === "light") {
+        expect(contrast(token("--color-warning", theme), wash(token("--color-warning", theme)))).toBeLessThan(4.5);
+      }
+    },
+  );
+
+  it("labels success and warning chips, pills and alerts in the -ink twins", () => {
+    for (const [selector, name] of [
+      [".chip--success", "--color-success-ink"],
+      [".chip--warning", "--color-warning-ink"],
+      [".status-pill--success", "--color-success-ink"],
+      [".status-pill--warning", "--color-warning-ink"],
+      [".tds-alert--success", "--color-success-ink"],
+      [".tds-alert--warning", "--color-warning-ink"],
+    ] as const) {
+      const block = ruleBlock(primitives, selector);
+      expect(block, `no rule for ${selector}`).toBeDefined();
+      expect(block, `${selector} labels in the raw hue`).toContain(`color: var(${name})`);
+    }
+  });
 });
 
 describe("decoration layer", () => {

@@ -171,13 +171,15 @@ a.chip:focus-visible {
   border-color: var(--color-line);
   background: transparent;
 }
+/* Success and warning take their LABEL from the `-ink` twins (base.css): the
+   raw hues measured 4.29:1 and 3.16:1 as text on their own wash. */
 .chip--success {
-  color: var(--color-success);
+  color: var(--color-success-ink);
   border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
   background: color-mix(in srgb, var(--color-success) 12%, transparent);
 }
 .chip--warning {
-  color: var(--color-warning);
+  color: var(--color-warning-ink);
   border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
   background: color-mix(in srgb, var(--color-warning) 12%, transparent);
 }
@@ -253,12 +255,12 @@ a.chip:focus-visible {
   font-style: italic;
 }
 .status-pill--success {
-  color: var(--color-success);
+  color: var(--color-success-ink);
   border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
   background: color-mix(in srgb, var(--color-success) 12%, transparent);
 }
 .status-pill--warning {
-  color: var(--color-warning);
+  color: var(--color-warning-ink);
   border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
   background: color-mix(in srgb, var(--color-warning) 12%, transparent);
 }
@@ -319,11 +321,15 @@ a.chip:focus-visible {
 /* Hue modifiers, so a consumer doesn't need an inline style (and, in TSX, a
    CSSProperties cast) just to change the tone. `--tds-alert-hue` inline still
    works for a one-off hue such as a categorical colour. */
+/* Success and warning label in their `-ink` twins, like the chips: the raw
+   warning hue measured 3.16:1 as text on its own wash. */
 .tds-alert--success {
   --tds-alert-hue: var(--color-success);
+  color: var(--color-success-ink);
 }
 .tds-alert--warning {
   --tds-alert-hue: var(--color-warning);
+  color: var(--color-warning-ink);
 }
 .tds-alert--danger {
   --tds-alert-hue: var(--color-danger);

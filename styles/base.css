@@ -94,6 +94,16 @@
   --color-warning: #b9791c;
   --color-danger: #b3261e;
   --color-info: #2f5fb0;
+  /* TEXT on a success/warning wash. The claim above ("the raw tokens are AA as
+     text") holds on bare paper for success but not on its own 12% wash, and
+     for warning not even on paper: the API reference's GET and PUT chips
+     measured 4.29:1 and 3.16:1, and so did every "Noch nicht angeschlossen"
+     alert. Neither hue can simply darken — `--color-gold` aliases the warning
+     hue and must stay a 3:1 rule on navy — so chips, status pills and alerts
+     take their label colour from these darker twins and keep the base hue for
+     edge and wash. Danger and info already clear 5:1 on their washes. */
+  --color-success-ink: #256740;
+  --color-warning-ink: #855714;
 
   /* === Categorical / wayfinding hues ==============================
      A distinct (non-semantic) set for category coding and nav
@@ -197,6 +207,10 @@
   --color-warning: #e9b455;
   --color-danger: #ff7a6e;
   --color-info: #84a8ff;
+  /* The light block's text twins. On a dark wash the brightened hues already
+     read at 7:1 and more, so the twins are the hues themselves. */
+  --color-success-ink: #5fd394;
+  --color-warning-ink: #e9b455;
 
   --color-cat-violet: #b39bff;
   --color-cat-teal: #5eead4;
