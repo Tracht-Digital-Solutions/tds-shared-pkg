@@ -649,6 +649,29 @@
   font-size: 0.6875rem;
   color: var(--tds-panel-accent);
 }
+/* Section headings inside a page's content. The extensions' islands write a
+   bare `<h2>` / `<h3>` — Lexware's "Kunden", the website CMS's section cards,
+   a form's "Neues Projekt" — and Tailwind's preflight strips every heading to
+   body size and weight, so a section title read like the sentence under it.
+   Bare headings only: anything with a class (`.tds-widget__title`,
+   `.tds-page__title`, a dialog title) styles itself, and rendered markdown
+   keeps `.tds-prose`'s larger scale, which this selector would otherwise
+   outrank. */
+[data-surface="panel"] .tds-page h2:not([class]):not(.tds-prose *),
+[data-surface="panel"] .tds-page h3:not([class]):not(.tds-prose *) {
+  font-family: var(--font-display);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+}
+[data-surface="panel"] .tds-page h2:not([class]):not(.tds-prose *) {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+[data-surface="panel"] .tds-page h3:not([class]):not(.tds-prose *) {
+  font-size: 1rem;
+  font-weight: 600;
+}
 
 /* === Hued dashboard widgets ======================================= */
 

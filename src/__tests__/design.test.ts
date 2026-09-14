@@ -550,6 +550,20 @@ describe("surface character", () => {
     }
   });
 
+  it("gives the bare section headings of a panel page a heading's size", () => {
+    // Preflight strips headings to body size, and the islands write bare
+    // <h2>/<h3>. Scoped to the panel page, never to a classed heading, and
+    // never into rendered markdown, whose `.tds-prose h2` it would outrank.
+    for (const [level, size] of [["h2", "1.125rem"], ["h3", "1rem"]] as const) {
+      const selector = `[data-surface="panel"] .tds-page ${level}:not([class]):not(.tds-prose *) {`;
+      // lastIndexOf: the h3 selector also closes the shared rule above the
+      // per-level ones, and that rule deliberately carries no size.
+      const at = app.lastIndexOf(selector);
+      expect(at, `${selector} missing from app.css`).toBeGreaterThan(-1);
+      expect(app.slice(at, app.indexOf("}", at))).toContain(`font-size: ${size}`);
+    }
+  });
+
   it("never lets .nav-item declare the hue it is supposed to inherit", () => {
     // `--nav-hue` is set per SECTION (inline on .nav-group by NavList.astro)
     // and falls back to white on .portal-sidebar. Declaring it on .nav-item

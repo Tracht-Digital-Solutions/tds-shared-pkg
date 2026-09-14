@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Section headings in a panel page read as headings.** The extensions'
+  islands write bare `<h2>` / `<h3>` (Lexware's "Kunden", the website CMS's
+  section cards, "Neues Projekt"), and Tailwind's preflight strips them to body
+  size, so a section title looked like the sentence under it. Inside
+  `[data-surface="panel"] .tds-page` a bare h2 is now 1.125rem/700 and a bare
+  h3 1rem/600 in the display face; classed headings and `.tds-prose` keep their
+  own styles.
 - **Success and warning labels clear AA on their own wash.** Chips, status
   pills and alerts paint their label on a 12% wash of their hue, and the raw
   hues measured 4.29:1 (success) and 3.16:1 (warning) there — the panel's API
