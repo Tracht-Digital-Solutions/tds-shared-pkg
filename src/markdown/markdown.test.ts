@@ -18,7 +18,7 @@ import { renderMarkdown } from "./index";
 /** Tags the renderer is allowed to emit. Anything else means escaping leaked. */
 const emittedTags = (html: string) => [...html.matchAll(/<\/?([a-z0-9]+)/gi)].map((m) => m[1]!.toLowerCase());
 
-const ALLOWED = new Set(["p", "a", "code", "pre", "strong", "em", "ul", "li", "h1", "h2", "h3", "h4"]);
+const ALLOWED = new Set(["p", "br", "a", "code", "pre", "strong", "em", "ul", "li", "h1", "h2", "h3", "h4"]);
 
 describe("escaping (the XSS boundary)", () => {
   it("renders a script tag as inert text, not an element", () => {
@@ -250,5 +250,66 @@ describe("inline markdown", () => {
   it("applies inline markdown inside headings and list items", () => {
     expect(renderMarkdown("# **B**")).toBe("<h1><strong>B</strong></h1>");
     expect(renderMarkdown("- **B**")).toBe("<ul><li><strong>B</strong></li></ul>");
+  });
+});
+
+describe("hard line breaks", () => {
+  it("keeps a line ending in a backslash or two spaces as <br>", () => {
+    // The address block is the case this exists for: without it the shop's
+    // Impressum rendered name, street and town as one run-on line.
+    expect(renderMarkdown("Julian Tracht\\\nElbinger Straße 19\\\n21493 Schwarzenbek")).toBe(
+      "<p>Julian Tracht<br>Elbinger Straße 19<br>21493 Schwarzenbek</p>",
+    );
+    expect(renderMarkdown("one  \ntwo")).toBe("<p>one<br>two</p>");
+  });
+
+  it("still folds a line with no marker, or a single trailing space, into the next", () => {
+    expect(renderMarkdown("one \ntwo")).toBe("<p>one two</p>");
+  });
+
+  it("drops a hard break that closes its paragraph", () => {
+    expect(renderMarkdown("one\\")).toBe("<p>one</p>");
+    expect(renderMarkdown("one\\\n\ntwo")).toBe("<p>one</p>\n<p>two</p>");
+  });
+
+  it("keeps inline markdown working across a break", () => {
+    expect(renderMarkdown("**Julian\\\nTracht**")).toBe("<p><strong>Julian<br>Tracht</strong></p>");
+  });
+
+  it("keeps escaping in force on both sides of a break", () => {
+    expect(renderMarkdown("<b>x</b>\\\n<i>y</i>")).toBe("<p>&lt;b&gt;x&lt;/b&gt;<br>&lt;i&gt;y&lt;/i&gt;</p>");
+  });
+
+  it("cannot be made to emit a <br> through a NUL in the source", () => {
+    // The break travels through the inline pass as NUL. One typed into the
+    // source is stripped first, so it can never stand in for a break.
+    expect(renderMarkdown("a  b")).toBe("<p>a b</p>");
+  });
+
+  it("never lets a break into a link's href", () => {
+    const html = renderMarkdown("[x](https://tracht-digital.de/\\\npfad)");
+    expect(html).not.toContain("<a ");
+    expect(html).not.toMatch(/href="[^"]*<br>/);
+  });
+});
+
+describe("wrapped list items", () => {
+  it("continues a bullet with the indented line that follows it", () => {
+    // The shop's privacy policy wraps its payment providers this way; the
+    // second half of each item used to render as a stray paragraph between
+    // two one-item lists.
+    expect(
+      renderMarkdown("- **PayPal**, 22–24 Boulevard Royal, 2449\n  Luxemburg.\n- **Stripe**"),
+    ).toBe("<ul><li><strong>PayPal</strong>, 22–24 Boulevard Royal, 2449 Luxemburg.</li><li><strong>Stripe</strong></li></ul>");
+  });
+
+  it("escapes a continuation line like any other text", () => {
+    expect(renderMarkdown("- a\n  <script>x</script>")).toBe(
+      "<ul><li>a &lt;script&gt;x&lt;/script&gt;</li></ul>",
+    );
+  });
+
+  it("does not continue a paragraph that merely starts indented", () => {
+    expect(renderMarkdown("text\n  more")).toBe("<p>text more</p>");
   });
 });

@@ -152,7 +152,7 @@ a.chip:focus-visible {
 }
 .chip-solid {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
   border-color: var(--color-primary);
 }
 
@@ -379,7 +379,7 @@ a.chip:focus-visible {
 }
 .btn-primary {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
 }
 .btn-primary:hover:not(:disabled) {
   opacity: 0.92;
@@ -387,7 +387,7 @@ a.chip:focus-visible {
 }
 .btn-accent {
   background: var(--color-accent);
-  color: white;
+  color: var(--color-on-accent);
 }
 .btn-accent:hover:not(:disabled) {
   opacity: 0.92;
@@ -2066,11 +2066,29 @@ button.tds-row:focus-visible {
 
 [data-flat] .status-pill,
 [data-flat] .chip--neutral,
-[data-flat] .chip:not(.chip-solid):not([class*="--"]) {
+[data-flat] .chip:not(.chip-solid):not(.chip-active):not([class*="--"]) {
   background: color-mix(in srgb, var(--color-ink) 6%, var(--color-card));
 }
 /* `.chip-solid` is excluded because it already carries a solid primary fill
-   with white text; a wash over it would leave white on near-white. */
+   with its on-primary text; a wash over it would put that text on
+   near-white. `.chip-active` is excluded for the rule below: at (0,4,0) this
+   wash would paint straight over its fill. */
+
+/* THE SELECTED CHIP. `.chip-active` is the library's tab and filter state
+   (the tools' mode switches, the extensions' tab bars), and on an outlined
+   surface its accent EDGE is what says "selected". Flat, the edge is gone and
+   only the label's hue is left: on the tools site the selected and resting
+   labels measured 1.93:1 apart in light mode and 1.15:1 in dark, so the PDF
+   tool's three modes read as three identical buttons — a state carried by
+   colour alone (WCAG 1.4.1). It takes `.chip-solid`'s fill instead, which
+   makes it the one solid element in its row in both themes.
+
+   `.chip.chip-active`, not `.chip-active`: `button.chip:hover` is (0,2,1)
+   and would repaint the label in ink over the solid fill. */
+[data-flat] .chip.chip-active {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
 
 /* A CARD INSIDE A CARD. Not on the original list, and found only in a
    browser: an output box nested in a form card carries the same

@@ -39,6 +39,13 @@
      read on both backgrounds. */
   --color-primary: #050f68;
   --color-accent: #820933;
+  /* Text on a SOLID primary or accent fill (`.btn-primary`, `.btn-accent`,
+     `.chip-solid`, the selected flat chip). White here; the dark block
+     turns it into the dark ground, because both fills flip to pastels
+     there and white on them measured 2.28:1 (primary) and 2.15:1 (accent)
+     on the tools site's header CTA. */
+  --color-on-primary: #ffffff;
+  --color-on-accent: #ffffff;
   --color-paper: #fafaf7;
   /* Warmed one step (#e8e6df → #e3e0d8) with the "Digitale Maßarbeit"
      pass: hairlines are the single most repeated surface in the library
@@ -158,6 +165,11 @@
 :root[data-theme="dark"] {
   --color-primary: #93a7ff;
   --color-accent: #ff8fab;
+  /* Both fills are light pastels in this theme, so the text on them is the
+     dark ground: 8.7:1 on the primary and 9.2:1 on the accent, where the
+     white they used to carry measured 2.28:1 and 2.15:1. */
+  --color-on-primary: #070a14;
+  --color-on-accent: #070a14;
   /* Deep ink-navy ground (not a warm/neutral black) so the whole dark UI
      is built from the brand navy. */
   --color-paper: #070a14;

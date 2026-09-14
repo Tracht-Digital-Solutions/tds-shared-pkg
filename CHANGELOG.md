@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Primary and accent buttons are readable in dark mode.** Both fills flip to
+  pastels there, and `.btn-primary`, `.btn-accent`, `.chip-solid` and the prose
+  block button kept white text on them — 2.28:1 on the primary and 2.15:1 on
+  the accent, measured on the tools site's header CTA. The new tokens
+  `--color-on-primary` / `--color-on-accent` carry that text: white in light
+  mode, the dark ground (`#070a14`) in dark mode, at 8.7:1 and 9.2:1.
+- **A selected chip is visible on a `[data-flat]` surface.** `.chip-active`
+  marked the selection with its accent edge, which the flat variant removes.
+  What was left was the label's hue, 1.93:1 (light) and 1.15:1 (dark) away
+  from the resting chips, so the tools site's mode tabs looked identical. The
+  selected chip now takes the solid primary fill.
 - **Site pairing works behind the host's TLS proxy.** `handleConnect` took the
   site's origin from `request.url`, which Astro's Node adapter builds from the
   socket while ignoring `X-Forwarded-Proto`. On the production hosts TLS ends at
@@ -25,6 +36,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a 2.75rem target.
 
 ### Added
+- **`renderMarkdown` keeps hard line breaks.** A line ending in a backslash or
+  in two or more spaces now breaks with `<br>` instead of folding into the next
+  line, as in CommonMark. An address block was the case: the shop's Impressum
+  rendered "Julian Tracht Tracht Digital Solutions Elbinger Straße 19 21493
+  Schwarzenbek Deutschland" as one run-on line. The break travels through the
+  inline pass as NUL, which is stripped from the source first, and it never
+  enters a link's href.
+- **`renderMarkdown` keeps a wrapped list item whole.** An indented line right
+  after a bullet now continues that bullet. Before, the item was cut off
+  mid-sentence and the rest rendered as a paragraph between two lists — the
+  shop's privacy policy lists its payment providers exactly like that. A line
+  that is not indented still closes the list.
 - **`/consent/store` — the consent store without the React half.** `/consent`
   re-exports the components, so its bundle imports React on line one. A bundler
   will usually tree-shake that away for a consumer who only wants

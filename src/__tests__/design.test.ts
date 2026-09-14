@@ -433,7 +433,7 @@ describe("surface character", () => {
     for (const selector of [
       ".status-pill",
       ".chip--neutral",
-      ".chip:not(.chip-solid):not([class*=\"--\"])",
+      ".chip:not(.chip-solid):not(.chip-active):not([class*=\"--\"])",
       ".field-boxed",
       ".btn-ghost",
     ]) {
@@ -474,6 +474,22 @@ describe("surface character", () => {
     // token, so it is the one separator a flat consumer cannot switch off from
     // its own stylesheet without re-declaring a shared class.
     expect(primitives).toContain("[data-flat] .brand-header {");
+  });
+
+  it("gives the SELECTED chip a solid fill under [data-flat]", () => {
+    // `.chip-active` says "selected" with its accent edge. Flat, the edge is
+    // gone and only the label's hue is left — 1.93:1 between the selected and
+    // resting label in light mode, 1.15:1 in dark — so the tools site's mode
+    // tabs read as identical buttons. Nothing about that reaches a build.
+    const active = ruleBlock(primitives, "[data-flat] .chip.chip-active");
+    expect(active, "the flat selected chip has no fill of its own").toBeDefined();
+    expect(active).toMatch(/background:\s*var\(--color-primary\)/);
+    expect(active).toMatch(/color:\s*var\(--color-on-primary\)/);
+    // The resting wash is (0,4,0) and outranks the (0,3,0) fill, so it has to
+    // keep excluding the selected chip or it paints straight over it.
+    expect(primitives).toContain(
+      '[data-flat] .chip:not(.chip-solid):not(.chip-active):not([class*="--"])',
+    );
   });
 
   it("keeps .field out of the flat variant", () => {
@@ -1647,6 +1663,36 @@ describe("brand hues in interface roles", () => {
     expect(
       contrast(token("--tds-eyebrow-color", "light"), token("--color-surface-navy", "light")),
     ).toBeLessThan(4.5);
+  });
+
+  it.each(["light", "dark"] as const)(
+    "keeps text on a solid primary or accent fill readable (%s)",
+    (theme) => {
+      // Both fills flip to pastels in dark mode. White on them measured 2.28:1
+      // (primary) and 2.15:1 (accent) on the tools site's header CTA; the
+      // on-colour tokens are what flips with them.
+      expect(
+        contrast(token("--color-on-primary", theme), token("--color-primary", theme)),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrast(token("--color-on-accent", theme), token("--color-accent", theme)),
+      ).toBeGreaterThanOrEqual(4.5);
+    },
+  );
+
+  it("paints the text on every solid primary/accent fill through an on-colour token", () => {
+    for (const [css, selector, name] of [
+      [primitives, ".btn-primary", "--color-on-primary"],
+      [primitives, ".btn-accent", "--color-on-accent"],
+      [primitives, ".chip-solid", "--color-on-primary"],
+      [prose, ".tds-prose .tds-block-button .btn-primary", "--color-on-primary"],
+    ] as const) {
+      const block = ruleBlock(css, selector);
+      expect(block, `no rule for ${selector}`).toBeDefined();
+      expect(block, `${selector} hard-codes the text on its fill`).toContain(
+        `color: var(${name})`,
+      );
+    }
   });
 });
 

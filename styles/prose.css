@@ -262,7 +262,7 @@
 }
 .tds-prose .tds-block-button .btn-primary {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 .tds-prose .tds-block-button .btn-ghost {
   border: 1px solid var(--color-line);
