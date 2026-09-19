@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`transitionUpdate(update, types = ["list"])`** in `./motion`: a DOM update
+  as a same-document View Transition — native, no animation library. For a
+  public page's `client:load` island (a filtered article list, a cart, a login
+  step), where `motion` on the first load would cost what the landing page
+  measured. Elements marked `.tds-vt-item` with a unique `--tds-vt-name` glide
+  to their new place, entering ones fade in, leaving ones fade out. The names
+  are only live while `<html>` carries `.tds-vt-list` (set for the length of
+  the transition), so they never take part in cross-page transitions. Plain
+  update where the API is missing, where it only takes a callback, or under
+  reduced motion. Timing for type `list` comes from the tokens
+  (`primitives.css`).
+
 ### Fixed
 - **The `./components` barrel no longer ships `motion` to public pages.**
   Astro hydrates an island by importing its module's whole namespace, so a

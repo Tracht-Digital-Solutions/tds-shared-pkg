@@ -2143,6 +2143,29 @@ button.tds-row:focus-visible {
   }
 }
 
+/* === Motion: list transitions (transitionUpdate) =================== */
+
+/* `transitionUpdate()` from `./motion` runs a DOM update as a same-document
+   View Transition. An element marked `.tds-vt-item` with a unique
+   `--tds-vt-name` then glides to its new place (or fades in/out); the names
+   are only live while `<html>` carries `.tds-vt-list`, which the helper sets
+   for the length of the transition — named permanently, the same elements
+   would also morph through every cross-page transition. */
+.tds-vt-list .tds-vt-item {
+  view-transition-name: var(--tds-vt-name);
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root:active-view-transition-type(list)::view-transition-group(*) {
+    animation-duration: var(--tds-dur-slow);
+    animation-timing-function: var(--tds-ease-out);
+  }
+  :root:active-view-transition-type(list)::view-transition-old(*),
+  :root:active-view-transition-type(list)::view-transition-new(*) {
+    animation-duration: var(--tds-dur-base);
+    animation-timing-function: var(--tds-ease-out);
+  }
+}
+
 /* === Motion: tabs, disclosure, reveal ============================== */
 
 /* The gliding marker under the active tab. Rendered by <TabIndicator> from
