@@ -7,7 +7,7 @@
  * `<details>` opening, a dropdown fading in) stays in CSS — see `.tds-reveal`,
  * `.tds-disclosure` and `styles/page-transitions.css`.
  *
- * Three rules every primitive here keeps, so a caller does not have to:
+ * Four rules every primitive here keeps, so a caller does not have to:
  *
  * 1. **The first mount never animates.** `AnimatePresence initial={false}` /
  *    `initial={false}` everywhere. An Astro island server-renders its
@@ -19,7 +19,9 @@
  *    the one primitive that animates size, zeroes its own duration. The end
  *    state is always reached — a reduced-motion user must never be left
  *    looking at a half-faded element.
- * 3. **Small and compositor-friendly.** `LazyMotion` + `m.*` (never the full
+ * 3. **A leaving element is unreachable at once** — `aria-hidden` + `inert`
+ *    for the length of its exit, in every primitive (`useLeaving`).
+ * 4. **Small and compositor-friendly.** `LazyMotion` + `m.*` (never the full
  *    `motion.*` component), opacity/transform only, `layout` for reflow (FLIP,
  *    i.e. transforms). Timing comes from `../motion` — one curve, one scale,
  *    shared with the `--tds-dur-*` / `--tds-ease-*` CSS tokens.
@@ -31,6 +33,7 @@ import {
   domAnimation,
   domMax,
   m,
+  useIsPresent,
   useReducedMotion,
 } from "motion/react";
 import { useEffect, useRef, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
@@ -45,6 +48,18 @@ type PassThrough<T extends "div" | "li"> = Omit<
   ComponentPropsWithoutRef<T>,
   "children" | "onDrag" | "onDragStart" | "onDragEnd" | "onAnimationStart" | "onAnimationEnd" | "onAnimationIteration"
 >;
+
+/**
+ * Props for something on its way OUT. A leaving element stays in the DOM for
+ * the length of its exit animation, and for that time it must be gone for
+ * everyone who does not see it fade: out of the accessibility tree (a screen
+ * reader would otherwise read a dismissed message or a stale error again) and
+ * out of the tab order (Tab would land on a button that no longer exists).
+ * Outside an `AnimatePresence` nothing is ever leaving, so this is a no-op.
+ */
+function useLeaving(): { "aria-hidden"?: true; inert?: true } {
+  return useIsPresent() ? {} : { "aria-hidden": true, inert: true };
+}
 
 export interface MotionScopeProps {
   children: ReactNode;
@@ -90,21 +105,24 @@ export interface PresenceProps extends PassThrough<"div"> {
  * two never overlap in the same box.
  */
 export function Presence({ view, children, as = "div", ...rest }: PresenceProps) {
-  const Tag = m[as] as typeof m.div;
   return (
     <MotionScope>
       <AnimatePresence mode="wait" initial={false}>
-        <Tag
-          key={view}
-          {...rest}
-          initial={presence.enter}
-          animate={presence.shown}
-          exit={presence.exit}
-        >
+        <PresenceView key={view} as={as} {...rest}>
           {children}
-        </Tag>
+        </PresenceView>
       </AnimatePresence>
     </MotionScope>
+  );
+}
+
+/** The keyed child of `Presence` — a component so it can ask whether it is leaving. */
+function PresenceView({ as, children, ...rest }: Omit<PresenceProps, "view"> & { as: ContainerTag }) {
+  const Tag = m[as] as typeof m.div;
+  return (
+    <Tag {...rest} {...useLeaving()} initial={presence.enter} animate={presence.shown} exit={presence.exit}>
+      {children}
+    </Tag>
   );
 }
 
@@ -146,9 +164,11 @@ export type AnimatedItemProps = PassThrough<"li"> & {
  */
 export function AnimatedItem({ as = "li", children, ...rest }: AnimatedItemProps) {
   const Tag = m[as] as typeof m.li;
+  const leaving = useLeaving();
   return (
     <Tag
       {...rest}
+      {...leaving}
       // Position only: a row that changes HEIGHT (an expanded detail) would
       // otherwise be scale-distorted for the length of the animation.
       layout="position"
@@ -236,26 +256,35 @@ export interface CollapseProps extends PassThrough<"div"> {
  * it is kept to small inline blocks and switched off entirely under reduced
  * motion (`MotionConfig` only drops transforms, not size).
  */
-export function Collapse({ open, children, style, ...rest }: CollapseProps) {
-  const reduce = useReducedMotion();
-  const instant = { duration: 0 };
+export function Collapse({ open, children, ...rest }: CollapseProps) {
   return (
     <MotionScope>
       <AnimatePresence initial={false}>
         {open ? (
-          <m.div
-            key="collapse"
-            {...rest}
-            style={{ overflow: "hidden", ...style }}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1, transition: reduce ? instant : transitions.base }}
-            exit={{ height: 0, opacity: 0, transition: reduce ? instant : transitions.fast }}
-          >
+          <CollapseBody key="collapse" {...rest}>
             {children}
-          </m.div>
+          </CollapseBody>
         ) : null}
       </AnimatePresence>
     </MotionScope>
+  );
+}
+
+/** The keyed child of `Collapse` — a component so it can ask whether it is leaving. */
+function CollapseBody({ children, style, ...rest }: Omit<CollapseProps, "open">) {
+  const reduce = useReducedMotion();
+  const instant = { duration: 0 };
+  return (
+    <m.div
+      {...rest}
+      {...useLeaving()}
+      style={{ overflow: "hidden", ...style }}
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: "auto", opacity: 1, transition: reduce ? instant : transitions.base }}
+      exit={{ height: 0, opacity: 0, transition: reduce ? instant : transitions.fast }}
+    >
+      {children}
+    </m.div>
   );
 }
 

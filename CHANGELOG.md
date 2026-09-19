@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Every motion primitive makes a leaving element unreachable at once.**
+  `Presence`, `AnimatedItem` and `Collapse` keep a replaced view, a
+  removed row or a closing block on screen while it fades — and until now it
+  stayed readable and focusable for that time: a stale "Antwort darf nicht
+  leer sein." was still announced while the retry was in flight. It is now
+  `aria-hidden` + `inert` from the first frame of its exit, the rule
+  `ToastHost` already followed.
+
+### Fixed
 - **Reduced motion switches off every view transition**, not only the root
   one. The panels name `<main>` for their ClientRouter page swap
   (`tds-main`), and Astro's generated animations do not consult the

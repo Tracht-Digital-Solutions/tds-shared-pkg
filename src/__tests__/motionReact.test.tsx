@@ -219,3 +219,43 @@ describe("useCoarsePointer", () => {
     expect(renderToString(<Probe />)).toContain("maus");
   });
 });
+
+describe("every primitive — a leaving element is unreachable at once", () => {
+  // The same promise the toast makes, for the primitives the islands use: a
+  // stale error, a replaced view or a deleted row may still be fading, but it
+  // must not be read out again or receive focus.
+  const isLeaving = (el: Element | null) =>
+    !!el && el.closest('[aria-hidden="true"]') !== null && el.closest("[inert]") !== null;
+
+  it("Collapse: a closing block", () => {
+    const { rerender } = render(<Collapse open><p>Alter Fehler.</p></Collapse>);
+    rerender(<Collapse open={false}><p>Alter Fehler.</p></Collapse>);
+    const stale = screen.queryByText("Alter Fehler.");
+    expect(stale, "still there to animate out").not.toBeNull();
+    expect(isLeaving(stale)).toBe(true);
+  });
+
+  it("Presence: the view being replaced", () => {
+    const { rerender } = render(<Presence view="a"><p>Alte Ansicht</p></Presence>);
+    rerender(<Presence view="b"><p>Neue Ansicht</p></Presence>);
+    const old = screen.queryByText("Alte Ansicht");
+    expect(old, "still there to animate out").not.toBeNull();
+    expect(isLeaving(old)).toBe(true);
+  });
+
+  it("AnimatedItem: a removed row", () => {
+    const { rerender } = render(
+      <AnimatedList>
+        <AnimatedItem key="1">Bleibt</AnimatedItem>
+        <AnimatedItem key="2">Geht</AnimatedItem>
+      </AnimatedList>,
+    );
+    rerender(
+      <AnimatedList>
+        <AnimatedItem key="1">Bleibt</AnimatedItem>
+      </AnimatedList>,
+    );
+    expect(isLeaving(screen.queryByText("Geht"))).toBe(true);
+    expect(isLeaving(screen.getByText("Bleibt"))).toBe(false);
+  });
+});
