@@ -63,6 +63,34 @@ export const motionSsrNoExternal: string[] = [
 ];
 
 /**
+ * The cross-page transition opt-in, as a raw CSS string for the FIRST element
+ * of a public site's `<head>`:
+ *
+ * ```astro
+ * import { pageTransitionOptIn } from "@tracht-digital-solutions/tds-shared/astro";
+ * <head>
+ *   <style is:inline set:html={pageTransitionOptIn} />
+ *   …
+ * ```
+ *
+ * `styles/page-transitions.css` carries the same `@view-transition` rule, but
+ * inside the site's stylesheet, whose `<link>` sits at the END of the head —
+ * after the theme bootstrap, JSON-LD and meta. Chrome decides the incoming
+ * page's opt-in at its first rendering opportunity, and the parser can yield
+ * before it reaches that link: on a larger page the rule arrives too late and
+ * the transition is aborted ("ViewTransition opt-in disabled"). Measured on the
+ * shop: 0 of 12 navigations transitioned with the rule in the stylesheet only,
+ * 12 of 12 with this inline copy first in `<head>`. The animation rules stay in
+ * the stylesheet; only the switch has to be early.
+ *
+ * `set:html`, not a template body, for the same reason as
+ * `themeBootstrapScript` below.
+ */
+export const pageTransitionOptIn: string =
+  "@view-transition{navigation:auto;types:page}" +
+  "@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}";
+
+/**
  * The no-flash theme bootstrap, as a raw JS source string.
  *
  * Must run **synchronously in `<head>`**, before the body parses, so the

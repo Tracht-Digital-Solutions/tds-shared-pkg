@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`pageTransitionOptIn`** from `./astro`: the cross-page transition switch as
+  a CSS string for `<style is:inline set:html={pageTransitionOptIn} />` as the
+  FIRST element of a public site's `<head>`. With the rule only in
+  `page-transitions.css`, whose `<link>` sits at the end of a long head, Chrome
+  often decided the incoming page's opt-in before it had the stylesheet and
+  aborted the transition ("ViewTransition opt-in disabled"): on the shop 0 of
+  12 navigations transitioned, 12 of 12 with the inline copy. The stylesheet
+  keeps the animation rules; a test pins the two copies of the switch together.
+
 ### Changed
 - **`FormAlert` fetches its motion half only once it has a message.** It
   used to import it on mount, so a login page — whose alert most visitors

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { cssTarget, motionSsrNoExternal, tdsViteBuild, themeBootstrapScript } from "../astro";
+import { cssTarget, motionSsrNoExternal, pageTransitionOptIn, tdsViteBuild, themeBootstrapScript } from "../astro";
 import { THEME_ATTRIBUTE, THEME_STORAGE_KEY } from "../design";
 
 /**
@@ -36,6 +36,20 @@ describe("cssTarget", () => {
       expect(typeof t).toBe("string");
       expect(t).toMatch(/^[a-z]+\d+$/);
     }
+  });
+});
+
+describe("pageTransitionOptIn", () => {
+  it("opts into typed cross-page transitions and out again under reduced motion", () => {
+    expect(pageTransitionOptIn).toContain("@view-transition{navigation:auto;types:page}");
+    expect(pageTransitionOptIn).toContain(
+      "@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}",
+    );
+  });
+
+  it("matches the rule in page-transitions.css, so the two cannot disagree", () => {
+    const css = readFileSync(join(__dirname, "..", "..", "styles", "page-transitions.css"), "utf8");
+    expect(css).toMatch(/@view-transition\s*\{\s*navigation:\s*auto;\s*types:\s*page;?\s*\}/);
   });
 });
 

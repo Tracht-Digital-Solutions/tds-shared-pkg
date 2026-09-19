@@ -1,7 +1,11 @@
 /* Cross-page transitions for the public multi-page sites.
 
    Opt-in: `@import "@tracht-digital-solutions/tds-shared/styles/page-transitions.css";`
-   after base.css. The panels do NOT import it — they navigate with Astro's
+   after base.css — AND put `pageTransitionOptIn` from `./astro` inline as the
+   first element of `<head>`. The `@view-transition` rule below only counts if
+   Chrome has it at the incoming page's first rendering opportunity, and a
+   stylesheet linked at the end of a long head often arrives later (measured:
+   0 of 12 navigations transitioned without the inline copy, 12 of 12 with it). The panels do NOT import it — they navigate with Astro's
    ClientRouter, which runs its own same-document transition.
 
    A navigation between two pages of the same site cross-fades instead of
