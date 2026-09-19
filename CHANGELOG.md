@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **The `./components` barrel no longer ships `motion` to public pages.**
+  Astro hydrates an island by importing its module's whole namespace, so a
+  site that mounts `ThemeToggle` or the chat bubble from the barrel loads
+  everything the barrel imports statically — with no tree-shaking. Since
+  0.38.0 that included `motion` (through `ToastHost` and `FormAlert`), and
+  the landing page's first load grew from 392 KB to 567 KB of JS. Both
+  components now fetch their Motion half with `import()` on mount
+  (`toastMotion.tsx`, `motion/react`): the first load is back to baseline and
+  the LCP unchanged, while the panels still get animated toasts and alerts a
+  few milliseconds after hydration. The build now code-splits (ESM) so those
+  imports stay separate chunks, `useCoarsePointer` moved to the motion-free
+  `motion/pointer` (still re-exported from `motion/react`), and a test fails
+  on any static `motion` import in the barrel.
+
 ### Added
 - **`motionSsrNoExternal`** from `./astro`: the four packages behind `motion`
   (`motion`, `framer-motion`, `motion-dom`, `motion-utils`) for an SSR site's

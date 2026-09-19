@@ -36,7 +36,7 @@ import {
   useIsPresent,
   useReducedMotion,
 } from "motion/react";
-import { useEffect, useRef, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
+import { useEffect, useRef, type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { listItem, presence, spring, transitions } from "./index";
 
 /**
@@ -288,25 +288,8 @@ function CollapseBody({ children, style, ...rest }: Omit<CollapseProps, "open">)
   );
 }
 
-/**
- * `true` where the primary pointer is a finger. SSR-safe: `false` on the
- * server and on the first client render (so hydration matches), then the real
- * answer. Branch on the POINTER, not the width — a small desktop window has a
- * mouse, a large tablet does not. Same rule as ThemeToggle.
- */
-export function useCoarsePointer(): boolean {
-  const [coarse, setCoarse] = useState(false);
-  useEffect(() => {
-    // Absent in jsdom and some embedded webviews: stay on the mouse default.
-    if (typeof window.matchMedia !== "function") return;
-    const query = window.matchMedia("(pointer: coarse)");
-    setCoarse(query.matches);
-    const onChange = (event: MediaQueryListEvent) => setCoarse(event.matches);
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
-  }, []);
-  return coarse;
-}
+/** Lives in `./pointer` (motion-free, so the components barrel can use it). */
+export { useCoarsePointer } from "./pointer";
 
 /**
  * The last non-empty value of `value`. For content that must keep showing its

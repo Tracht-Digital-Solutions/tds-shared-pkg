@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState, type ReactElement } from "react";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import FormAlert from "../components/FormAlert";
@@ -29,6 +31,19 @@ afterEach(() => {
   delete w.__tdsToastHostMounted;
   vi.unstubAllGlobals();
 });
+
+/**
+ * ToastHost and FormAlert fetch their Motion half with `import()` on mount
+ * (the barrel must stay motion-free). Let those imports settle, and the state
+ * updates they trigger flush, before asserting on the animated path.
+ */
+async function motionReady() {
+  await act(async () => {
+    await import("../components/toastMotion");
+    await import("../motion/react");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+}
 
 /** Every spelling Motion or React could emit for a hidden start state. */
 const HIDDEN = /opacity:\s*0(?![.\d])/;
@@ -97,8 +112,9 @@ describe("Collapse", () => {
 });
 
 describe("FormAlert", () => {
-  it("keeps showing the last message while it closes", () => {
+  it("keeps showing the last message while it closes", async () => {
     const { rerender } = render(<FormAlert message="Erst." />);
+    await motionReady();
     rerender(<FormAlert message={null} />);
     // Still in the DOM for the exit animation — and not as an empty banner.
     const alert = document.querySelector(".form-alert");
@@ -108,8 +124,9 @@ describe("FormAlert", () => {
 });
 
 describe("ToastHost — a leaving toast", () => {
-  it("drops out of the accessibility tree and the tab order at once", () => {
+  it("drops out of the accessibility tree and the tab order at once", async () => {
     render(<ToastHost />);
+    await motionReady();
     act(() => {
       toast.info("Weg damit.");
     });
@@ -134,7 +151,7 @@ describe("ToastHost — a leaving toast", () => {
     expect(card.style.touchAction).toBe("");
   });
 
-  it("lets vertical swipes scroll the page on a touch screen", () => {
+  it("lets vertical swipes scroll the page on a touch screen", async () => {
     vi.stubGlobal("matchMedia", (query: string) => ({
       matches: query === "(pointer: coarse)",
       media: query,
@@ -142,6 +159,7 @@ describe("ToastHost — a leaving toast", () => {
       removeEventListener: () => {},
     }));
     render(<ToastHost />);
+    await motionReady();
     act(() => {
       toast.info("Finger.");
     });
@@ -257,5 +275,26 @@ describe("every primitive — a leaving element is unreachable at once", () => {
     );
     expect(isLeaving(screen.queryByText("Geht"))).toBe(true);
     expect(isLeaving(screen.getByText("Bleibt"))).toBe(false);
+  });
+});
+
+describe("the ./components barrel stays motion-free", () => {
+  // Astro hydrates an island by importing its module's whole namespace, so
+  // anything the barrel imports STATICALLY ships to every public page that
+  // mounts a ThemeToggle or the chat bubble — no tree-shaking. A static
+  // `motion` import there once added ~45 KB (gzip) to the landing page's first
+  // load. The animated halves are reached through import() only.
+  const dir = join(__dirname, "..", "components");
+  const files = readdirSync(dir).filter((f) => /\.tsx?$/.test(f) && f !== "toastMotion.tsx");
+
+  it.each(files)("%s has no static import of motion or the primitives", (file) => {
+    const src = readFileSync(join(dir, file), "utf8");
+    expect(src).not.toMatch(/^import[^;]*from\s+["'](motion|framer-motion)[^"']*["']/m);
+    expect(src).not.toMatch(/^import[^;]*from\s+["']\.\.\/motion\/react["']/m);
+  });
+
+  it("reaches the animated halves only through import()", () => {
+    expect(readFileSync(join(dir, "ToastHost.tsx"), "utf8")).toContain('import("./toastMotion")');
+    expect(readFileSync(join(dir, "FormAlert.tsx"), "utf8")).toContain('import("../motion/react")');
   });
 });

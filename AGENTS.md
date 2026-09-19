@@ -511,6 +511,10 @@ import this — they duplicate the small bit of validation they need, by design.
      one copy in every tree. Bump it deliberately and re-verify in a browser.
   Motion clocks with `performance.now()`, which fake timers do not move: test
   the accessible state (`aria-hidden`) rather than waiting for a node to go.
+  **Never import `motion` statically from anything in `./components`.** Astro
+  hydrates the barrel as a whole namespace, so it would ship to every public
+  page (it did, in 0.38.0–0.38.3: +175 KB on the landing page). `ToastHost` and
+  `FormAlert` reach their animated half through `import()`; a test enforces it.
   **Every SSR consumer spreads `motionSsrNoExternal` into `vite.ssr.noExternal`**
   (`./components` imports `motion`); without it `pack-release` fails the
   release, and a host would not start.

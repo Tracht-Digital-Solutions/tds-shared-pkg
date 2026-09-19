@@ -51,7 +51,12 @@ export default defineConfig({
   },
   format: ["esm", "cjs"],
   dts: true,
-  splitting: false,
+  // ESM only (tsup cannot split CJS). Needed since 0.38.4: ToastHost and
+  // FormAlert load their Motion half through `import()`, and without
+  // splitting esbuild inlines a dynamic import into the importing file — the
+  // `./components` barrel would carry `motion` statically again, and Astro
+  // hydrates that barrel as a whole namespace on every public page.
+  splitting: true,
   sourcemap: true,
   clean: true,
   treeshake: true,
