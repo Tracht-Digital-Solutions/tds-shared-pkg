@@ -45,6 +45,11 @@
       "import": "./dist/motion/index.js",
       "require": "./dist/motion/index.cjs"
     },
+    "./motion/react": {
+      "types": "./dist/motion/react.d.ts",
+      "import": "./dist/motion/react.js",
+      "require": "./dist/motion/react.cjs"
+    },
     "./components": {
       "types": "./dist/components/index.d.ts",
       "import": "./dist/components/index.js",
@@ -119,6 +124,7 @@
     },
     "./styles/primitives.css": "./styles/primitives.css",
     "./styles/prose.css": "./styles/prose.css",
+    "./styles/page-transitions.css": "./styles/page-transitions.css",
     "./styles/surfaces/marketing.css": "./styles/surfaces/marketing.css",
     "./styles/surfaces/blog.css": "./styles/surfaces/blog.css",
     "./styles/surfaces/panel.css": "./styles/surfaces/panel.css"
@@ -130,6 +136,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "motion": "13.4.0"
   },
   "peerDependencies": {
     "react": ">=18",

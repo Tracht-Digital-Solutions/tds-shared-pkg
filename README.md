@@ -125,7 +125,8 @@ import type { BlogPost, Project, Invoice } from "@tracht-digital-solutions/tds-s
 import { ContactSchema, BlogPostCreateSchema } from "@tracht-digital-solutions/tds-shared/schemas";
 import { translations, type Language } from "@tracht-digital-solutions/tds-shared/i18n";
 import { LanguageProvider, useLang } from "@tracht-digital-solutions/tds-shared/i18n/react";
-import { ease } from "@tracht-digital-solutions/tds-shared/motion";
+import { ease, transitions } from "@tracht-digital-solutions/tds-shared/motion";
+import { Presence, AnimatedList, AnimatedItem, TabIndicator, Collapse } from "@tracht-digital-solutions/tds-shared/motion/react";
 import { ThemeToggle, CookieNotice, LiveChatCta, ToastHost, Spinner, Skeleton, SkeletonText, PostCover, AbstractCover, coverVariant } from "@tracht-digital-solutions/tds-shared/components";
 import { toast } from "@tracht-digital-solutions/tds-shared/toast";
 import { mountMobileNav } from "@tracht-digital-solutions/tds-shared/nav";

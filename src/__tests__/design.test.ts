@@ -1324,8 +1324,12 @@ describe("toast stack", () => {
     expect(toastRule).not.toMatch(/transition:[^;]*box-shadow/);
   });
 
-  it("gates the entry animation on reduced motion", () => {
-    expect(base).toMatch(/@media \(prefers-reduced-motion: no-preference\) \{\s*\.tds-toast \{/);
+  it("leaves entry and exit to Motion, with no competing CSS keyframe", () => {
+    // <ToastHost> animates both directions with Motion. A CSS animation on
+    // `.tds-toast` would beat Motion's inline opacity in the cascade and the
+    // two would fight on the first frame (motionReact.test.tsx covers the JS).
+    expect(base).not.toContain("@keyframes tds-toast-in");
+    expect(base).not.toMatch(/\.tds-toast\s*\{[^}]*animation:/);
   });
 
   it("offsets the stack past the panel rail, scoped to the panel surface", () => {
@@ -2088,5 +2092,75 @@ describe("profile chrome", () => {
     // Same rule for the rail, which is where the pattern comes from.
     const rail = app.match(/\.portal-sidebar \{([^}]*)\}/)?.[1] ?? "";
     expect(rail).not.toMatch(/^\s*display:/m);
+  });
+});
+
+/**
+ * The CSS half of the motion layer: page transitions, scroll reveal, the
+ * `<details>` disclosure, the dropdown and the button press. None of these can
+ * be seen failing in a unit test — a missing `@supports` still animates in
+ * Chrome, and a reveal on the hero still looks fine on a fast desktop — so the
+ * source is the contract.
+ */
+describe("page motion (CSS)", () => {
+  const pageTransitions = stripComments(read("page-transitions.css"));
+
+  it("takes every duration and easing from a token in page-transitions.css too", () => {
+    for (const decl of pageTransitions.matchAll(/(?:transition|animation):\s*([^;}]*)[;}]/g)) {
+      expect(decl[1], `hard-coded duration: ${decl[1]}`).not.toMatch(/\b\d+(\.\d+)?m?s\b/);
+    }
+  });
+
+  it("animates navigations by TYPE, leaving the theme wipe alone", () => {
+    // base.css switches the root cross-fade off for <ThemeToggle>, which
+    // animates the same pseudo-elements from JS. An unscoped rule here would
+    // hijack every theme switch.
+    expect(pageTransitions).toMatch(/@view-transition\s*\{[^}]*navigation:\s*auto;[^}]*types:\s*page/);
+    expect(pageTransitions).toMatch(/:active-view-transition-type\(page\)::view-transition-old\(root\)/);
+    expect(pageTransitions).toMatch(/:active-view-transition-type\(page\)::view-transition-new\(root\)/);
+    expect(pageTransitions).not.toMatch(/(^|\})\s*::view-transition-(old|new)\(root\)/);
+  });
+
+  it("switches navigation transitions off under reduced motion", () => {
+    expect(pageTransitions).toMatch(
+      /prefers-reduced-motion: reduce\)\s*\{\s*@view-transition\s*\{\s*navigation:\s*none/,
+    );
+  });
+
+  it("only reveals where the reveal can finish", () => {
+    expect(primitives).toMatch(
+      /prefers-reduced-motion: no-preference\)\s*\{\s*@supports \(animation-timeline: view\(\)\)\s*\{\s*\.tds-reveal\s*\{/,
+    );
+  });
+
+  it("never reveals a hero — the LCP candidate must not depend on scroll", () => {
+    for (const [name, css] of Object.entries({ base, primitives, app, prose, pageTransitions })) {
+      expect(css, `hero reveal in ${name}`).not.toMatch(/hero[^{}]*\.tds-reveal/);
+    }
+  });
+
+  it("shortens the reveal travel on phones", () => {
+    expect(primitives).toMatch(/max-width: 40rem\)\s*\{\s*\.tds-reveal\s*\{\s*--tds-reveal-shift/);
+  });
+
+  it("grows the disclosure only where ::details-content exists", () => {
+    expect(primitives).toMatch(
+      /prefers-reduced-motion: no-preference\)\s*\{\s*@supports selector\(::details-content\)\s*\{\s*\.tds-disclosure::details-content/,
+    );
+    // Scoped to disclosures, not flipped document-wide.
+    expect(ruleBlock(primitives, ".tds-disclosure")).toMatch(/interpolate-size:\s*allow-keywords/);
+  });
+
+  it("fades the dropdown with allow-discrete, gated like the modal", () => {
+    expect(primitives).toMatch(
+      /prefers-reduced-motion: no-preference\)\s*\{\s*@supports \(transition-behavior: allow-discrete\)\s*\{\s*\.tds-dropdown__panel\s*\{/,
+    );
+    // A panel that is fading out must not catch the click meant for the page.
+    expect(primitives).toMatch(/\.tds-dropdown__panel\[hidden\]\s*\{[^}]*pointer-events:\s*none/);
+  });
+
+  it("resets the button press under reduced motion, like the hover lift", () => {
+    const reduced = base.slice(base.indexOf("@media (prefers-reduced-motion: reduce)"));
+    expect(reduced).toMatch(/\.btn:active[\s\S]*?transform:\s*none/);
   });
 });

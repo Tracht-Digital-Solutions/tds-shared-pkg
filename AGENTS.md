@@ -493,6 +493,24 @@ import this — they duplicate the small bit of validation they need, by design.
   spinner to an even ring rather than leaving it frozen mid-rotation.
   `.portal-sidebar` takes `contain: layout` — **not `paint`**, which would clip
   the collapsed rail's tooltips, and not `size`, since the width is what changes.
+- **Motion: CSS for pages, `./motion/react` for islands.** Anything the
+  browser can animate without JS stays CSS: page transitions
+  (`styles/page-transitions.css`), scroll reveal (`.tds-reveal`), `<details>`
+  (`.tds-disclosure`), the dropdown. Motion is only for what CSS cannot do —
+  a node LEAVING the DOM, siblings reflowing around it, a shared element
+  gliding (`layoutId`). Four rules, all tested:
+  1. **Never ship SSR content hidden.** Every primitive mounts with
+     `initial={false}`; `motionReact.test.tsx` renders each one to a string
+     and rejects `opacity:0`. Never put `.tds-reveal` on a hero.
+  2. **A leaving element is inert at once** (`useIsPresent` → `aria-hidden` +
+     `inert`), or a screen reader re-reads a dismissed toast and Tab lands on
+     its dead close button.
+  3. **Branch on the pointer, not the width** (`useCoarsePointer`). Swipe to
+     dismiss is touch-only because a horizontal mouse drag selects text.
+  4. **`motion` is pinned EXACTLY** and is a dependency here, not a peer —
+     one copy in every tree. Bump it deliberately and re-verify in a browser.
+  Motion clocks with `performance.now()`, which fake timers do not move: test
+  the accessible state (`aria-hidden`) rather than waiting for a node to go.
 - **In `app.css`, scope anything that styles a generic primitive.**
   Panel-only-by-name chrome (`.portal-sidebar`, `.nav-item`, `.widget-slot`)
   stays unscoped, but a rule on `.tds-card` / `.tds-widget` / `.tds-page__title`

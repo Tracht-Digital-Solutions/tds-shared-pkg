@@ -1,5 +1,60 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ease, fadeUp, microFade, stagger } from "../motion";
+import {
+  durations,
+  ease,
+  fadeUp,
+  listItem,
+  microFade,
+  presence,
+  spring,
+  stagger,
+  transitions,
+} from "../motion";
+
+describe("./motion stays plain data", () => {
+  it("never imports the Motion runtime", () => {
+    // A consumer that only wants a curve (a CSS-only site, the WAAPI in
+    // ThemeToggle) must not pull an animation library into its bundle. The
+    // React primitives live behind `./motion/react` for exactly this reason.
+    const src = readFileSync(join(__dirname, "..", "motion", "index.ts"), "utf8");
+    expect(src).not.toMatch(/from\s+["']motion/);
+    expect(src).not.toMatch(/from\s+["']framer-motion/);
+  });
+});
+
+describe("transitions", () => {
+  it("is the millisecond scale in seconds, derived rather than re-typed", () => {
+    for (const key of ["fast", "base", "slow"] as const) {
+      expect(transitions[key].duration).toBe(durations[key] / 1000);
+      expect(transitions[key].ease).toBe(ease);
+    }
+  });
+
+  it("settles without bouncing", () => {
+    expect(spring.bounce).toBe(0);
+    expect(spring.visualDuration).toBe(durations.slow / 1000);
+  });
+});
+
+describe("presence and listItem", () => {
+  it.each([
+    ["presence", presence],
+    ["listItem", listItem],
+  ] as const)("%s always ends fully visible", (_name, preset) => {
+    // Reduced motion collapses the transition, never the target: the end
+    // state must be opaque whatever the timing does.
+    expect(preset.shown.opacity).toBe(1);
+    expect(preset.enter.opacity).toBe(0);
+    expect(preset.exit.opacity).toBe(0);
+  });
+
+  it("leaves faster than it arrives", () => {
+    expect(presence.exit.transition.duration).toBeLessThan(presence.shown.transition.duration);
+    expect(listItem.exit.transition.duration).toBeLessThan(listItem.shown.transition.duration);
+  });
+});
 
 /**
  * The motion presets are plain data consumed by framer-motion in the

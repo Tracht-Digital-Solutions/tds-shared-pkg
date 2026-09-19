@@ -1,0 +1,53 @@
+/* Cross-page transitions for the public multi-page sites.
+
+   Opt-in: `@import "@tracht-digital-solutions/tds-shared/styles/page-transitions.css";`
+   after base.css. The panels do NOT import it — they navigate with Astro's
+   ClientRouter, which runs its own same-document transition.
+
+   A navigation between two pages of the same site cross-fades instead of
+   blanking. No script: the browser snapshots the old page, loads the new
+   one, and animates between the two (cross-document View Transitions,
+   Chrome 126+ / Safari 18.2+). Everywhere else the rule is ignored and
+   navigation works exactly as before.
+
+   Scoped by TYPE on purpose. base.css turns the default root cross-fade
+   off (`animation: none`) because <ThemeToggle> animates the same
+   `::view-transition-*(root)` pseudo-elements from JS for its theme wipe.
+   That transition has no type, so the rules below never touch it, and
+   navigations — which carry the `page` type — are the only thing they
+   animate.
+
+   Opacity only: the header is identical on both sides of a navigation, so
+   any movement would read as the whole page lurching. */
+
+@view-transition {
+  navigation: auto;
+  types: page;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:active-view-transition-type(page)::view-transition-old(root) {
+    animation: tds-page-out var(--tds-dur-fast) var(--tds-ease-out) both;
+  }
+  :root:active-view-transition-type(page)::view-transition-new(root) {
+    animation: tds-page-in var(--tds-dur-base) var(--tds-ease-out) both;
+  }
+}
+
+/* Reduced motion: no transition at all, rather than a snapshot swap. */
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+}
+
+@keyframes tds-page-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes tds-page-in {
+  from {
+    opacity: 0;
+  }
+}

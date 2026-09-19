@@ -1245,21 +1245,11 @@ input[type="radio"] {
   }
 }
 
-/* Entry animation is OPT-IN under `no-preference` rather than clamped by
-   the reduce block below — the animation's end state IS the resting state,
-   so there is nothing to reset and nothing to add to that block. Same
-   pattern as `.tds-modal[open]`. */
-@media (prefers-reduced-motion: no-preference) {
-  .tds-toast {
-    animation: tds-toast-in var(--tds-dur-base) var(--tds-ease-out);
-  }
-}
-@keyframes tds-toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.5rem);
-  }
-}
+/* No CSS entry animation here on purpose. `<ToastHost>` animates enter, exit
+   and the stack's reflow with Motion (`motion/react`), because a toast
+   removed from the DOM can only be animated OUT from JS. A keyframe on
+   `.tds-toast` would also win the cascade over Motion's inline `opacity`
+   and the two would fight on the first frame. */
 
 /* Phones: a band across the bottom rather than a narrow column. */
 @media (max-width: 40rem) {
@@ -1361,6 +1351,7 @@ input[type="radio"] {
         the only ones it can see from there.) */
   .btn-primary:hover,
   .btn-accent:hover,
+  .btn:active,
   .live-chat-cta__launcher:hover {
     transform: none;
   }

@@ -428,6 +428,15 @@ a.chip:focus-visible {
 .btn-danger:hover:not(:disabled) {
   background: color-mix(in srgb, var(--color-danger) 12%, transparent);
 }
+/* Press feedback. After the variants on purpose: at equal specificity this
+   has to win over the hover lift, or a pressed primary button would still be
+   floating 1px up. It rides the transform transition `.btn` already has, at
+   the fast end of the scale — a press answered at `--tds-dur-base` feels late.
+   Reduced motion resets it in base.css, like the hover lift. */
+.btn:active:not(:disabled):not([aria-busy="true"]) {
+  transform: scale(0.98);
+  transition-duration: var(--tds-dur-fast);
+}
 
 /* === Form fields ================================================== */
 
@@ -2015,6 +2024,36 @@ button.tds-row:focus-visible {
 .tds-dropdown__panel[hidden] {
   display: none;
 }
+/* Open/close. The panel is toggled with `hidden`, i.e. `display: none`, so
+   the exit needs `allow-discrete` to keep it on screen while it fades and the
+   entry needs `@starting-style` for a from-state — the same pair the modal
+   uses. CSS rather than Motion because the public sites' <AccountMenu> uses
+   this panel, and those pages should not load an animation runtime for one
+   dropdown. Older engines skip the block and keep the instant toggle. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (transition-behavior: allow-discrete) {
+    .tds-dropdown__panel {
+      transform-origin: top right;
+      transition:
+        opacity var(--tds-dur-fast) var(--tds-ease-out),
+        transform var(--tds-dur-fast) var(--tds-ease-out),
+        display var(--tds-dur-fast) allow-discrete;
+    }
+    .tds-dropdown__panel[hidden] {
+      opacity: 0;
+      transform: translateY(-0.25rem) scale(0.98);
+      /* Still painted for the length of the exit — it must not catch a click
+         meant for whatever is underneath. */
+      pointer-events: none;
+    }
+    @starting-style {
+      .tds-dropdown__panel:not([hidden]) {
+        opacity: 0;
+        transform: translateY(-0.25rem) scale(0.98);
+      }
+    }
+  }
+}
 /* Non-interactive header block (avatar + name + email). */
 .tds-dropdown__head {
   display: flex;
@@ -2101,6 +2140,92 @@ button.tds-row:focus-visible {
   .tds-dropdown__trigger,
   .tds-dropdown__item {
     transition: none;
+  }
+}
+
+/* === Motion: tabs, disclosure, reveal ============================== */
+
+/* The gliding marker under the active tab. Rendered by <TabIndicator> from
+   `motion/react`, which moves it between tabs with a shared `layoutId`; this
+   rule only draws it. The tabs in the library are chips, so it sits INSIDE
+   the chip's bottom edge in `currentColor` — right for every chip variant
+   without knowing which one the active tab uses. The owning tab needs
+   `position: relative` (`.tds-tab` below gives it that). */
+.tds-tab {
+  position: relative;
+}
+.tds-tab-indicator {
+  position: absolute;
+  inset-inline: 0.625rem;
+  bottom: 0.1875rem;
+  height: 2px;
+  border-radius: var(--tds-radius-pill);
+  background: currentColor;
+  pointer-events: none;
+}
+
+/* A `<details>` that opens by growing instead of snapping. `::details-content`
+   is the box the browser wraps everything after `<summary>` in, and
+   `interpolate-size` lets `block-size` transition to `auto`. It is inherited,
+   so declaring it here scopes the switch to disclosures instead of flipping it
+   for the whole document. Engines without either feature skip the block and
+   keep the instant open. Promoted from the landingpage FAQ, which had the only
+   copy. */
+.tds-disclosure {
+  interpolate-size: allow-keywords;
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports selector(::details-content) {
+    .tds-disclosure::details-content {
+      block-size: 0;
+      overflow: clip;
+      opacity: 0;
+      transition:
+        block-size var(--tds-dur-slow) var(--tds-ease-out),
+        opacity var(--tds-dur-base) var(--tds-ease-out),
+        content-visibility var(--tds-dur-slow) allow-discrete;
+    }
+    .tds-disclosure[open]::details-content {
+      block-size: auto;
+      opacity: 1;
+    }
+  }
+}
+
+/* A section that rises in as it scrolls into view — driven by the scroll
+   position itself (`animation-timeline: view()`), so no script, no
+   IntersectionObserver, nothing to hydrate.
+   Two rules make it safe to put on a public page:
+   - It only exists where it can finish. Behind `@supports` and
+     `no-preference`; everywhere else the element is simply visible.
+   - NEVER on the hero or anything else above the fold. An element that is
+     already in view at load resolves straight to its end state, but the
+     LCP candidate must not depend on that — design.test.ts forbids
+     `.tds-reveal` in a hero. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .tds-reveal {
+      animation: tds-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
+}
+/* The travel distance is a custom property so a phone can shorten it:
+   1.5rem is a gentle rise on a desktop, but on a 390px screen the same
+   distance reads as the section sliding in rather than settling. */
+.tds-reveal {
+  --tds-reveal-shift: 1.5rem;
+}
+@media (max-width: 40rem) {
+  .tds-reveal {
+    --tds-reveal-shift: 0.75rem;
+  }
+}
+@keyframes tds-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(var(--tds-reveal-shift));
   }
 }
 

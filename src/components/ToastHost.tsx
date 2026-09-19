@@ -1,4 +1,7 @@
+import { AnimatePresence, m, useIsPresent } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { spring, transitions } from "../motion";
+import { MotionScope, useCoarsePointer } from "../motion/react";
 import { translations, type Language } from "../i18n/translations";
 import { resolveToastVariant } from "../design";
 import {
@@ -49,6 +52,97 @@ const ICONS: Readonly<Record<ToastVariant, string>> = {
   info: "M10 2a8 8 0 100 16 8 8 0 000-16zm0 3.4a1.1 1.1 0 110 2.2 1.1 1.1 0 010-2.2zm0 3.7a.9.9 0 01.9.9v4a.9.9 0 01-1.8 0v-4a.9.9 0 01.9-.9z",
 };
 
+/**
+ * A toast rises into place and, when it goes, fades out while the stack below
+ * it glides up (`layout="position"`) instead of jumping. Motion rather than
+ * the CSS keyframe this used to be, because only JS can keep a removed node on
+ * screen long enough to animate it out. Reduced motion drops the movement via
+ * `MotionScope`; the opacity step remains, and the end state is always reached.
+ */
+const TOAST_MOTION = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0, transition: transitions.base },
+  exit: { opacity: 0, scale: 0.96, transition: transitions.fast },
+  transition: { layout: spring },
+} as const;
+
+/**
+ * Swipe-to-dismiss on touch screens: a toast flicked sideways far enough, or
+ * fast enough, is dismissed; anything less springs back. Touch only — with a
+ * mouse, a horizontal drag is how people select a toast's text.
+ */
+const SWIPE_DISTANCE = 80;
+const SWIPE_VELOCITY = 500;
+
+interface ToastCardProps {
+  item: ToastItem;
+  /** Touch screens only — see SWIPE_DISTANCE. */
+  swipeable: boolean;
+  dismissLabel: string;
+  onDismiss: (id: number) => void;
+  /** Pause/resume the host's timers (a finger on the toast is a hover). */
+  onHold: (held: boolean) => void;
+}
+
+/** One toast. A component rather than inline JSX so it can ask Motion whether it is leaving. */
+function ToastCard({ item, swipeable, dismissLabel, onDismiss, onHold }: ToastCardProps) {
+  const isPresent = useIsPresent();
+  return (
+    <m.div
+      layout="position"
+      {...TOAST_MOTION}
+      // Leaving: out of the accessibility tree and out of the tab order at
+      // once, while it is still fading. A dismissed toast must not be read
+      // out again, and its close button must not be reachable a second time.
+      aria-hidden={isPresent ? undefined : true}
+      inert={!isPresent}
+      className={`tds-toast tds-toast--${item.variant}`}
+      drag={swipeable ? "x" : false}
+      dragSnapToOrigin
+      dragElastic={0.6}
+      // Vertical swipes still scroll the page underneath.
+      style={swipeable ? { touchAction: "pan-y" } : undefined}
+      // A finger on the toast counts as hovering it: the timer must not
+      // dismiss it mid-swipe, then snap the stack under the user's thumb.
+      onDragStart={() => onHold(true)}
+      onDragEnd={(_event, info) => {
+        onHold(false);
+        if (Math.abs(info.offset.x) > SWIPE_DISTANCE || Math.abs(info.velocity.x) > SWIPE_VELOCITY) {
+          onDismiss(item.id);
+        }
+      }}
+    >
+      <svg className="tds-toast__icon" aria-hidden="true" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" clipRule="evenodd" d={ICONS[item.variant]} />
+      </svg>
+      <span className="tds-toast__message">
+        {item.href ? (
+          // A linked toast is the ONLY interactive part besides dismiss, so it
+          // must be reachable by keyboard on its own — an <a href> is, a
+          // click handler on the <span> would not be.
+          <a className="tds-toast__link" href={item.href}>
+            {item.message}
+          </a>
+        ) : (
+          item.message
+        )}
+        {item.count > 1 ? <span className="tds-toast__count">×{item.count}</span> : null}
+      </span>
+      <button
+        type="button"
+        className="tds-toast__dismiss"
+        aria-label={dismissLabel}
+        title={dismissLabel}
+        onClick={() => onDismiss(item.id)}
+      >
+        <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
+        </svg>
+      </button>
+    </m.div>
+  );
+}
+
 /** danger is announced assertively; everything else waits its turn. */
 const isUrgent = (variant: ToastVariant) => variant === "danger";
 
@@ -97,6 +191,7 @@ export default function ToastHost({ lang = "de" }: ToastHostProps = {}) {
   // inert (and says so once) rather than silently duplicating the UI.
   const [duplicate, setDuplicate] = useState(false);
   const timers = useRef(new Map<number, Timer>());
+  const coarse = useCoarsePointer();
 
   const dismiss = useCallback((id: number) => {
     const timer = timers.current.get(id);
@@ -220,51 +315,32 @@ export default function ToastHost({ lang = "de" }: ToastHostProps = {}) {
   const polite = items.filter((item) => !isUrgent(item.variant));
 
   const renderToast = (item: ToastItem) => (
-    <div key={item.id} className={`tds-toast tds-toast--${item.variant}`}>
-      <svg className="tds-toast__icon" aria-hidden="true" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" clipRule="evenodd" d={ICONS[item.variant]} />
-      </svg>
-      <span className="tds-toast__message">
-        {item.href ? (
-          // A linked toast is the ONLY interactive part besides dismiss, so it
-          // must be reachable by keyboard on its own — an <a href> is, a
-          // click handler on the <span> would not be.
-          <a className="tds-toast__link" href={item.href}>
-            {item.message}
-          </a>
-        ) : (
-          item.message
-        )}
-        {item.count > 1 ? <span className="tds-toast__count">×{item.count}</span> : null}
-      </span>
-      <button
-        type="button"
-        className="tds-toast__dismiss"
-        aria-label={t.dismiss}
-        title={t.dismiss}
-        onClick={() => dismiss(item.id)}
-      >
-        <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
-        </svg>
-      </button>
-    </div>
+    <ToastCard
+      key={item.id}
+      item={item}
+      swipeable={coarse}
+      dismissLabel={t.dismiss}
+      onDismiss={dismiss}
+      onHold={setPaused}
+    />
   );
 
   return (
-    <div
-      className="tds-toast-host"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
-    >
-      <div className="tds-toast-region" role="alert" aria-live="assertive" aria-relevant="additions">
-        {urgent.map(renderToast)}
+    <MotionScope features="layout">
+      <div
+        className="tds-toast-host"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onFocus={() => setPaused(true)}
+        onBlur={() => setPaused(false)}
+      >
+        <div className="tds-toast-region" role="alert" aria-live="assertive" aria-relevant="additions">
+          <AnimatePresence initial={false}>{urgent.map(renderToast)}</AnimatePresence>
+        </div>
+        <div className="tds-toast-region" role="status" aria-live="polite" aria-relevant="additions">
+          <AnimatePresence initial={false}>{polite.map(renderToast)}</AnimatePresence>
+        </div>
       </div>
-      <div className="tds-toast-region" role="status" aria-live="polite" aria-relevant="additions">
-        {polite.map(renderToast)}
-      </div>
-    </div>
+    </MotionScope>
   );
 }

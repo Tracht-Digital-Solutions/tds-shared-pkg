@@ -42,7 +42,59 @@ export const durations = {
   slow: 320,
 } as const;
 
-/** Standard "fade up on scroll-into-view" variant. */
+/**
+ * The same scale in SECONDS — the unit Motion's `transition.duration` takes.
+ * Derived, not re-typed, so the two can never drift.
+ */
+export const transitions = {
+  fast: { duration: durations.fast / 1000, ease },
+  base: { duration: durations.base / 1000, ease },
+  slow: { duration: durations.slow / 1000, ease },
+} as const;
+
+/**
+ * A critically damped spring for `layout` moves (a list reflowing after a
+ * row leaves, a tab indicator gliding). `bounce: 0` on purpose: the interface
+ * settles, it does not wobble. `visualDuration` keeps it on the motion scale.
+ */
+export const spring = {
+  type: "spring",
+  bounce: 0,
+  visualDuration: durations.slow / 1000,
+} as const;
+
+/**
+ * Something swapping in place — list ↔ detail, one tab panel for another, a
+ * form for its success message. A short fade with a 4px drift: enough to read
+ * as "this changed", too little to read as "this moved".
+ *
+ * `enter` is only ever the EXIT target's mirror. The primitives in
+ * `./motion/react` mount with `initial={false}`, so server-rendered content
+ * is never shipped in this state — see `fadeUp` below for why that matters.
+ */
+export const presence = {
+  enter: { opacity: 0, y: 4 },
+  shown: { opacity: 1, y: 0, transition: transitions.base },
+  exit: { opacity: 0, y: -4, transition: transitions.fast },
+} as const;
+
+/** A row joining or leaving a list: fades and slides in from the left edge. */
+export const listItem = {
+  enter: { opacity: 0, x: -8 },
+  shown: { opacity: 1, x: 0, transition: transitions.base },
+  exit: { opacity: 0, x: 8, transition: transitions.fast },
+} as const;
+
+/**
+ * Standard "fade up on scroll-into-view" variant.
+ *
+ * NEVER use this on content that is server-rendered. An Astro island renders
+ * `initial` into the SSR HTML as `style="opacity:0"`, so the element stays
+ * invisible until the island hydrates — that is exactly how the landingpage
+ * hero became its own mobile LCP (4.1s) before 0.31. For page sections use the
+ * CSS `.tds-reveal` class; for React state changes use the `./motion/react`
+ * primitives, which never animate their first mount.
+ */
 export const fadeUp = {
   initial: { opacity: 0, y: 24 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.6, ease } },

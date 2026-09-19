@@ -8,6 +8,9 @@ export default defineConfig({
     "i18n/index": "src/i18n/index.ts",
     "i18n/react": "src/i18n/react.tsx",
     "motion/index": "src/motion/index.ts",
+    // The React primitives. Its own entry so `./motion` stays plain data that
+    // never pulls the Motion runtime into a consumer that only wants a curve.
+    "motion/react": "src/motion/react.tsx",
     "components/index": "src/components/index.ts",
     // The consent manager. Its own entry rather than a re-export from
     // `components`: a page that mounts the banner should not have to pull the
@@ -52,5 +55,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   treeshake: true,
-  external: ["react", "react-dom", "zod"],
+  external: ["react", "react-dom", "zod", "motion"],
 });

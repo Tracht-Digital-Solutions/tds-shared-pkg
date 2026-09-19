@@ -6,7 +6,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **A motion layer for the React islands: `./motion/react`.** Five primitives
+  for the state changes CSS cannot animate — `Presence` (list ↔ detail, tab
+  panels, form ↔ success), `AnimatedList`/`AnimatedItem` (rows arriving,
+  leaving and reflowing), `TabIndicator` (a marker gliding between tabs) and
+  `Collapse` (inline content opening), plus `MotionScope` and
+  `useCoarsePointer()`. Built on `motion` (Framer Motion), now a dependency
+  pinned **exactly** at 13.4.0 — consumers never need their own copy. Every
+  primitive mounts with `initial={false}`, so server-rendered HTML is never
+  shipped hidden (the landingpage hero's 4.1s LCP before 0.31), and honours
+  reduced motion centrally.
+- **Page motion in CSS, no runtime.** `styles/page-transitions.css` (opt-in):
+  a cross-page fade for the public sites via cross-document View Transitions,
+  scoped by type so the theme wipe is untouched and off under reduced motion.
+  `.tds-reveal`: a scroll-driven rise-in (`animation-timeline: view()`), only
+  where supported and never on a hero; shorter travel on phones.
+  `.tds-disclosure`: a `<details>` that grows open (promoted from the
+  landingpage FAQ). `.tds-tab` / `.tds-tab-indicator` draw the tab marker.
+- **Presets in `./motion`:** `transitions` (the ms scale in seconds, derived),
+  `spring` (no bounce), `presence`, `listItem`. `fadeUp` is documented as
+  never-for-SSR-content.
+- **Mobile:** toasts can be swiped away sideways on touch screens (pointer,
+  not width, decides); a tab strip wider than the screen scrolls the newly
+  active tab into view after a change, without moving the page.
+
 ### Changed
+- **Toasts animate out and the stack reflows** instead of jumping, and a
+  leaving toast is `aria-hidden` + `inert` at once, so it is neither read
+  again nor focusable while it fades. The CSS entry keyframe is gone — it
+  would have fought Motion over `opacity`.
+- **`FormAlert` opens and closes** (`Collapse`), keeping its last message
+  while it closes.
+- **Dropdown panels fade in and out** (`@starting-style` + `allow-discrete`,
+  CSS only, so the public sites' `AccountMenu` loads no animation runtime).
+- **Buttons answer a press** (`.btn:active` scales to 0.98 at
+  `--tds-dur-fast`), reset under reduced motion like the hover lift.
 - **The German cookie notice no longer addresses the visitor.** `cookieNotice.siteText`
   said "wie Ihr Farbschema … in Ihrem Browser", which put a formal "Sie" on the
   first screen of a site that addresses its visitors with "du" (the landing

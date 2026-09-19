@@ -32,6 +32,25 @@ function raise(fn: () => void) {
   });
 }
 
+/**
+ * What the live region SAYS: its text minus any toast that is on its way out.
+ * A leaving toast is `aria-hidden` (and `inert`) from the moment it is
+ * dismissed, while it fades — so it is gone for a screen reader at once, even
+ * though the node lingers for the length of the exit animation.
+ */
+function presentToasts(): Element[] {
+  return [...document.querySelectorAll(".tds-toast")].filter(
+    (el) => el.getAttribute("aria-hidden") !== "true",
+  );
+}
+function liveText(role: "status" | "alert"): string {
+  const region = screen.getByRole(role);
+  return presentToasts()
+    .filter((el) => region.contains(el))
+    .map((el) => el.textContent ?? "")
+    .join("");
+}
+
 function advance(ms: number) {
   act(() => {
     vi.advanceTimersByTime(ms);
@@ -42,8 +61,8 @@ describe("live regions", () => {
   it("renders both live regions before any toast exists", () => {
     render(<ToastHost />);
     // Empty, but present — this is what makes the first message announce.
-    expect(screen.getByRole("status").textContent).toBe("");
-    expect(screen.getByRole("alert").textContent).toBe("");
+    expect(liveText("status")).toBe("");
+    expect(liveText("alert")).toBe("");
   });
 
   it("keeps the politeness split: danger is assertive, the rest polite", () => {
@@ -53,8 +72,8 @@ describe("live regions", () => {
     raise(() => toast.warning("Achtung."));
     raise(() => toast.info("Hinweis."));
 
-    expect(screen.getByRole("alert").textContent).toContain("Fehlgeschlagen.");
-    const polite = screen.getByRole("status").textContent ?? "";
+    expect(liveText("alert")).toContain("Fehlgeschlagen.");
+    const polite = liveText("status");
     expect(polite).toContain("Gespeichert.");
     expect(polite).toContain("Achtung.");
     expect(polite).toContain("Hinweis.");
@@ -93,7 +112,7 @@ describe("variants", () => {
       );
     });
     expect(document.querySelector(".tds-toast--info")).toBeTruthy();
-    expect(screen.getByRole("status").textContent).toContain("Hm.");
+    expect(liveText("status")).toContain("Hm.");
   });
 });
 
@@ -106,32 +125,32 @@ describe("dismissal", () => {
     render(<ToastHost />);
     raise(() => toast.success("Gespeichert."));
     advance(TOAST_DURATIONS.success - 100);
-    expect(screen.getByRole("status").textContent).toContain("Gespeichert.");
+    expect(liveText("status")).toContain("Gespeichert.");
     advance(200);
-    expect(screen.getByRole("status").textContent).toBe("");
+    expect(liveText("status")).toBe("");
   });
 
   it("gives a failure the longer duration", () => {
     render(<ToastHost />);
     raise(() => toast.danger("Fehlgeschlagen."));
     advance(TOAST_DURATIONS.success + 100);
-    expect(screen.getByRole("alert").textContent).toContain("Fehlgeschlagen.");
+    expect(liveText("alert")).toContain("Fehlgeschlagen.");
     advance(TOAST_DURATIONS.danger);
-    expect(screen.getByRole("alert").textContent).toBe("");
+    expect(liveText("alert")).toBe("");
   });
 
   it("keeps a toast with duration 0 until it is dismissed", () => {
     render(<ToastHost />);
     raise(() => showToast({ variant: "info", message: "Bleibt.", duration: 0 }));
     advance(60_000);
-    expect(screen.getByRole("status").textContent).toContain("Bleibt.");
+    expect(liveText("status")).toContain("Bleibt.");
   });
 
   it("dismisses on the close button", () => {
     render(<ToastHost />);
     raise(() => toast.info("Hinweis."));
     fireEvent.click(screen.getByRole("button", { name: "Schließen" }));
-    expect(screen.getByRole("status").textContent).toBe("");
+    expect(liveText("status")).toBe("");
   });
 
   it("pauses the timer while the stack is hovered and resumes after", () => {
@@ -142,13 +161,13 @@ describe("dismissal", () => {
       fireEvent.mouseEnter(document.querySelector(".tds-toast-host") as HTMLElement);
     });
     advance(TOAST_DURATIONS.success * 2);
-    expect(screen.getByRole("status").textContent).toContain("Gespeichert.");
+    expect(liveText("status")).toContain("Gespeichert.");
     act(() => {
       fireEvent.mouseLeave(document.querySelector(".tds-toast-host") as HTMLElement);
     });
     // Only the banked remainder is left, not a fresh full duration.
     advance(TOAST_DURATIONS.success - 900);
-    expect(screen.getByRole("status").textContent).toBe("");
+    expect(liveText("status")).toBe("");
   });
 
   it("does not restart the other toasts' timers when a new one arrives", () => {
@@ -158,7 +177,7 @@ describe("dismissal", () => {
     raise(() => toast.info("Zweite."));
     advance(300);
     // The first must have expired on its own schedule.
-    const polite = screen.getByRole("status").textContent ?? "";
+    const polite = liveText("status");
     expect(polite).not.toContain("Erste.");
     expect(polite).toContain("Zweite.");
   });
@@ -168,7 +187,7 @@ describe("stacking", () => {
   it("caps a region at three and evicts the oldest", () => {
     render(<ToastHost />);
     for (const n of [1, 2, 3, 4]) raise(() => toast.info(`Meldung ${n}`));
-    const polite = screen.getByRole("status").textContent ?? "";
+    const polite = liveText("status");
     expect(polite).not.toContain("Meldung 1");
     for (const n of [2, 3, 4]) expect(polite).toContain(`Meldung ${n}`);
   });
@@ -177,15 +196,15 @@ describe("stacking", () => {
     render(<ToastHost />);
     raise(() => toast.danger("Fehlgeschlagen."));
     for (const n of [1, 2, 3]) raise(() => toast.success(`Gespeichert ${n}`));
-    expect(screen.getByRole("alert").textContent).toContain("Fehlgeschlagen.");
+    expect(liveText("alert")).toContain("Fehlgeschlagen.");
   });
 
   it("counts a repeated message instead of stacking it", () => {
     render(<ToastHost />);
     raise(() => toast.danger("Fehlgeschlagen (HTTP 500)."));
     raise(() => toast.danger("Fehlgeschlagen (HTTP 500)."));
-    expect(document.querySelectorAll(".tds-toast").length).toBe(1);
-    expect(screen.getByRole("alert").textContent).toContain("×2");
+    expect(presentToasts().length).toBe(1);
+    expect(liveText("alert")).toContain("×2");
   });
 });
 
@@ -193,13 +212,13 @@ describe("the bus", () => {
   it("delivers a toast raised before the host mounted", () => {
     raise(() => toast.success("Früh."));
     render(<ToastHost />);
-    expect(screen.getByRole("status").textContent).toContain("Früh.");
+    expect(liveText("status")).toContain("Früh.");
   });
 
   it("delivers a buffered toast only once", () => {
     raise(() => toast.success("Früh."));
     render(<ToastHost />);
-    expect(document.querySelectorAll(".tds-toast").length).toBe(1);
+    expect(presentToasts().length).toBe(1);
   });
 
   it("never throws, even when dispatching fails", () => {
@@ -213,14 +232,14 @@ describe("the bus", () => {
   it("ignores an empty message", () => {
     render(<ToastHost />);
     raise(() => toast.info(""));
-    expect(document.querySelectorAll(".tds-toast").length).toBe(0);
+    expect(presentToasts().length).toBe(0);
   });
 
   it("stops listening after unmount", () => {
     const { unmount } = render(<ToastHost />);
     unmount();
     raise(() => toast.info("Zu spät."));
-    expect(document.querySelectorAll(".tds-toast").length).toBe(0);
+    expect(presentToasts().length).toBe(0);
   });
 
   it("renders nothing from a second host, rather than doubling every toast", () => {
@@ -228,7 +247,7 @@ describe("the bus", () => {
     render(<ToastHost />);
     render(<ToastHost />);
     raise(() => toast.info("Einmal."));
-    expect(document.querySelectorAll(".tds-toast").length).toBe(1);
+    expect(presentToasts().length).toBe(1);
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
@@ -263,7 +282,7 @@ describe("href", () => {
     (href) => {
       render(<ToastHost />);
       raise(() => toast.info("Behauptung.", { href }));
-      expect(document.querySelectorAll(".tds-toast").length).toBe(1);
+      expect(presentToasts().length).toBe(1);
       expect(document.querySelector(".tds-toast__link")).toBeNull();
     },
   );
