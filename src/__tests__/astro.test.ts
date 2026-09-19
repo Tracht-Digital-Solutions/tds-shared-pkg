@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { cssTarget, tdsViteBuild, themeBootstrapScript } from "../astro";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { cssTarget, motionSsrNoExternal, tdsViteBuild, themeBootstrapScript } from "../astro";
 import { THEME_ATTRIBUTE, THEME_STORAGE_KEY } from "../design";
 
 /**
@@ -34,6 +36,29 @@ describe("cssTarget", () => {
       expect(typeof t).toBe("string");
       expect(t).toMatch(/^[a-z]+\d+$/);
     }
+  });
+});
+
+describe("motionSsrNoExternal", () => {
+  it("names every package in the installed motion chain", () => {
+    // Walk what `motion` actually depends on, so an upgrade that adds a
+    // package to the chain turns this red here — not a host that cannot
+    // start because pack-release found an unresolvable import.
+    // Read the manifests off disk: motion-dom's `exports` map does not expose
+    // `./package.json`, so require.resolve() of it throws.
+    const manifest = (name: string) =>
+      JSON.parse(readFileSync(join(__dirname, "..", "..", "node_modules", name, "package.json"), "utf8")) as {
+        dependencies?: Record<string, string>;
+      };
+    const seen = new Set<string>();
+    const walk = (name: string) => {
+      if (seen.has(name) || name === "tslib") return;
+      seen.add(name);
+      const pkg = manifest(name);
+      for (const dep of Object.keys(pkg.dependencies ?? {})) walk(dep);
+    };
+    walk("motion");
+    for (const name of seen) expect(motionSsrNoExternal, name).toContain(name);
   });
 });
 

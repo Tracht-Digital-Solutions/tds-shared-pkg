@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`motionSsrNoExternal`** from `./astro`: the four packages behind `motion`
+  (`motion`, `framer-motion`, `motion-dom`, `motion-utils`) for an SSR site's
+  `vite.ssr.noExternal`. Since 0.38.0 `./components` imports `motion`, and
+  Vite leaves node_modules packages external in the server bundle — the
+  customer portal's release run stopped at `pack-release` ("server bundle
+  imports \"motion\" statically"), which is exactly the host crash that check
+  exists to prevent. Bundling keeps the server on the browser's copy; a test
+  walks the installed chain so an upgrade that adds a package fails here.
+
 ### Fixed
 - **Every motion primitive makes a leaving element unreachable at once.**
   `Presence`, `AnimatedItem` and `Collapse` keep a replaced view, a

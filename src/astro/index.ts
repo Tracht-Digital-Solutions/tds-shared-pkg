@@ -38,6 +38,31 @@ export const tdsViteBuild = {
 };
 
 /**
+ * The packages behind `motion`, for an SSR site's `vite.ssr.noExternal`:
+ * `noExternal: [/^@tracht-digital-solutions\//, "zod", ...motionSsrNoExternal]`.
+ *
+ * `./components` (ToastHost, FormAlert) and `./motion/react` import `motion`,
+ * which is a DEPENDENCY of this package — so it is in the tree, but Vite
+ * leaves any node_modules package external in the server bundle by default.
+ * The host runs the release tree without an install, and `pack-release`
+ * refuses to ship a server bundle whose `import "motion"` would not resolve
+ * there. Bundling it (rather than listing it in
+ * `tds.release.runtimeDependencies`) also keeps the server on exactly the
+ * copy the browser bundle got.
+ *
+ * `motion` re-exports `framer-motion`, which splits into `motion-dom` and
+ * `motion-utils` — all four must be named, or the chain stops at the first
+ * one left out. Kept here so a Motion upgrade that reshuffles its packages is
+ * fixed once, not in every astro.config.
+ */
+export const motionSsrNoExternal: string[] = [
+  "motion",
+  "framer-motion",
+  "motion-dom",
+  "motion-utils",
+];
+
+/**
  * The no-flash theme bootstrap, as a raw JS source string.
  *
  * Must run **synchronously in `<head>`**, before the body parses, so the

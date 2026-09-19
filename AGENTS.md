@@ -511,6 +511,9 @@ import this — they duplicate the small bit of validation they need, by design.
      one copy in every tree. Bump it deliberately and re-verify in a browser.
   Motion clocks with `performance.now()`, which fake timers do not move: test
   the accessible state (`aria-hidden`) rather than waiting for a node to go.
+  **Every SSR consumer spreads `motionSsrNoExternal` into `vite.ssr.noExternal`**
+  (`./components` imports `motion`); without it `pack-release` fails the
+  release, and a host would not start.
 - **In `app.css`, scope anything that styles a generic primitive.**
   Panel-only-by-name chrome (`.portal-sidebar`, `.nav-item`, `.widget-slot`)
   stays unscoped, but a rule on `.tds-card` / `.tds-widget` / `.tds-page__title`
