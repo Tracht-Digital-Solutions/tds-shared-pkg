@@ -697,9 +697,14 @@ input[type="radio"] {
   z-index: 9999;
 }
 
+/* Every view transition, not only root: the panels name `<main>` for their
+   ClientRouter page swap (`tds-main`), and Astro's generated animations do
+   not consult the preference themselves. The global clamp further down
+   cannot reach these pseudo-elements — they are not matched by `*`. */
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
     animation: none !important;
   }
 }

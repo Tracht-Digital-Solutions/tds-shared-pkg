@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Reduced motion switches off every view transition**, not only the root
+  one. The panels name `<main>` for their ClientRouter page swap
+  (`tds-main`), and Astro's generated animations do not consult the
+  preference, so that fade kept running for users who asked for none.
+
 ### Added
 - **A motion layer for the React islands: `./motion/react`.** Five primitives
   for the state changes CSS cannot animate — `Presence` (list ↔ detail, tab

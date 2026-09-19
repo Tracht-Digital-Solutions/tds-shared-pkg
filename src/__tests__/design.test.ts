@@ -2164,3 +2164,13 @@ describe("page motion (CSS)", () => {
     expect(reduced).toMatch(/\.btn:active[\s\S]*?transform:\s*none/);
   });
 });
+
+describe("view transitions under reduced motion", () => {
+  it("switches off EVERY view-transition animation, named groups included", () => {
+    // The panel names <main> for its page swap and Astro's generated CSS does
+    // not check the preference; a root-only rule left that fade running.
+    expect(base).toMatch(
+      /prefers-reduced-motion: reduce\)\s*\{\s*::view-transition-group\(\*\),\s*::view-transition-old\(\*\),\s*::view-transition-new\(\*\)\s*\{\s*animation:\s*none\s*!important/,
+    );
+  });
+});
