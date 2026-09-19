@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **`FormAlert` fetches its motion half only once it has a message.** It
+  used to import it on mount, so a login page — whose alert most visitors
+  never see — loaded the animation runtime after every hydration. The first
+  message now appears without animation; every later open and close
+  animates.
+
 ### Added
 - **`transitionUpdate(update, types = ["list"])`** in `./motion`: a DOM update
   as a same-document View Transition — native, no animation library. For a

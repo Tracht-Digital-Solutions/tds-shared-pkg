@@ -298,3 +298,19 @@ describe("the ./components barrel stays motion-free", () => {
     expect(readFileSync(join(dir, "FormAlert.tsx"), "utf8")).toContain('import("../motion/react")');
   });
 });
+
+describe("FormAlert loads motion only when it has something to show", () => {
+  it("does not fetch the animation runtime for an alert that never shows", async () => {
+    // A login form mounts one on every visit; most visitors never see it.
+    const { container } = render(<FormAlert message={null} />);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.innerHTML).toBe("");
+    // Nothing observable to assert on the import itself, so pin the source:
+    // the loader must be gated on the message.
+    expect(readFileSync(join(__dirname, "..", "components", "FormAlert.tsx"), "utf8")).toContain(
+      "useCollapse(Boolean(message))",
+    );
+  });
+});

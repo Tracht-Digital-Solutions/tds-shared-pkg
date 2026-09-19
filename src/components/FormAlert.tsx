@@ -12,17 +12,24 @@ export interface FormAlertProps {
 type MotionReact = typeof import("../motion/react");
 
 /**
- * `Collapse` from `../motion/react`, fetched on mount.
+ * `Collapse` from `../motion/react`, fetched the first time there is
+ * something to show.
  *
  * An `import()`, never a static import: this component sits in the
  * `./components` barrel, which Astro hydrates as a whole namespace, so a
  * static `motion` import here would ship the animation runtime to every page
- * that hydrates anything from that barrel (see `toastMotion.tsx`). `null` on
- * the server and the first client render, so hydration matches.
+ * that hydrates anything from that barrel (see `toastMotion.tsx`).
+ *
+ * And not on mount either: a login form mounts an alert that most visitors
+ * never see, and fetching an animation runtime for it on every page view is
+ * the cost this avoids. The FIRST message therefore appears without motion;
+ * every later open and close animates. `null` on the server and the first
+ * client render, so hydration matches.
  */
-function useCollapse(): MotionReact["Collapse"] | null {
+function useCollapse(wanted: boolean): MotionReact["Collapse"] | null {
   const [collapse, setCollapse] = useState<MotionReact["Collapse"] | null>(null);
   useEffect(() => {
+    if (!wanted || collapse) return;
     let live = true;
     void import("../motion/react").then((loaded) => {
       if (live) setCollapse(() => loaded.Collapse);
@@ -30,7 +37,7 @@ function useCollapse(): MotionReact["Collapse"] | null {
     return () => {
       live = false;
     };
-  }, []);
+  }, [wanted, collapse]);
   return collapse;
 }
 
@@ -48,7 +55,7 @@ function useCollapse(): MotionReact["Collapse"] | null {
  * screen (aria-hidden and inert). Before that, it simply appears.
  */
 export default function FormAlert({ message }: FormAlertProps) {
-  const Collapse = useCollapse();
+  const Collapse = useCollapse(Boolean(message));
   const alert = message ? (
     <p className="form-alert" role="alert" aria-live="assertive">
       <svg
