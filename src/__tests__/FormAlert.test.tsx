@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import FormAlert from "../components/FormAlert";
 
@@ -9,6 +9,13 @@ import FormAlert from "../components/FormAlert";
  * mount it unconditionally.
  */
 afterEach(() => cleanup());
+
+// FormAlert fetches Collapse with import() once it has a message. Load it up
+// front so no test ends with that import still in flight (a torn-down
+// environment turns it into an unhandled error on a slower CI runner).
+beforeAll(async () => {
+  await import("../motion/react");
+});
 
 describe("FormAlert", () => {
   it("renders nothing when there is no message", () => {

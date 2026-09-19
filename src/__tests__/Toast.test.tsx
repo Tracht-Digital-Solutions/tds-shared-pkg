@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import ToastHost from "../components/ToastHost";
 import { TOAST_DURATIONS, TOAST_EVENT, showToast, toast } from "../toast";
 
@@ -16,6 +16,14 @@ import { TOAST_DURATIONS, TOAST_EVENT, showToast, toast } from "../toast";
  *  5. the timer bookkeeping — auto-dismiss, hover-pause, per-region cap, dedup
  *     — because every one of those bugs is invisible until a user is annoyed.
  */
+// ToastHost fetches its animated half with import() on mount. Load it once
+// up front: otherwise a test can end while that import is still in flight,
+// the environment is torn down under it, and a slower CI runner reports the
+// half-finished module load as an unhandled error.
+beforeAll(async () => {
+  await import("../components/toastMotion");
+});
+
 afterEach(() => {
   cleanup();
   vi.useRealTimers();

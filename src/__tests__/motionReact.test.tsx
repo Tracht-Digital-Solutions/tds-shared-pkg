@@ -4,7 +4,7 @@ import { useState, type ReactElement } from "react";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { renderToString } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import FormAlert from "../components/FormAlert";
 import ToastHost from "../components/ToastHost";
 import {
@@ -23,6 +23,13 @@ import { toast } from "../toast";
  * the server HTML is never shipped hidden, a leaving element stops being
  * interactive at once, and the phone-only behaviour stays off the desktop.
  */
+// ToastHost and FormAlert load their animated halves with import(). Load them
+// once up front so no test ends with such an import still in flight.
+beforeAll(async () => {
+  await import("../components/toastMotion");
+  await import("../motion/react");
+});
+
 afterEach(() => {
   cleanup();
   const w = window as Window & { __tdsToastReady?: boolean; __tdsToastQueue?: unknown[]; __tdsToastHostMounted?: boolean };
