@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **`.tds-appear`**: an element that arrives as the ANSWER to an action — a
+  generated QR code, a compressed file, a formatted JSON — fades and lifts
+  into place instead of popping. Pure CSS (`@starting-style`), so the public
+  tools get it without a line of JavaScript; only on insertion, and off under
+  reduced motion or without `@starting-style`.
+
+### Added
 - **`pageTransitionOptIn`** from `./astro`: the cross-page transition switch as
   a CSS string for `<style is:inline set:html={pageTransitionOptIn} />` as the
   FIRST element of a public site's `<head>`. With the rule only in

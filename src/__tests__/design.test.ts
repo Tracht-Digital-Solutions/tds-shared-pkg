@@ -2127,6 +2127,15 @@ describe("page motion (CSS)", () => {
     );
   });
 
+  it("fades something arriving in, and only on insertion", () => {
+    // @starting-style gives a freshly inserted element a from-state; an
+    // element that only changes its content does not re-animate.
+    expect(primitives).toMatch(
+      /prefers-reduced-motion: no-preference\)\s*\{\s*@supports \(transition-behavior: allow-discrete\)\s*\{\s*\.tds-appear\s*\{/,
+    );
+    expect(primitives).toMatch(/@starting-style\s*\{\s*\.tds-appear\s*\{[^}]*opacity:\s*0/);
+  });
+
   it("only reveals where the reveal can finish", () => {
     expect(primitives).toMatch(
       /prefers-reduced-motion: no-preference\)\s*\{\s*@supports \(animation-timeline: view\(\)\)\s*\{\s*\.tds-reveal\s*\{/,

@@ -2143,6 +2143,34 @@ button.tds-row:focus-visible {
   }
 }
 
+/* === Motion: something arriving ==================================== */
+
+/* An element that appears as the ANSWER to an action — a generated QR code, a
+   compressed file, a formatted JSON — fades and lifts into place instead of
+   popping. Pure CSS: `@starting-style` gives the freshly inserted element a
+   from-state, so there is no script, no bundle cost and nothing to hydrate.
+   That is what the public tools need; the panels use `motion/react`.
+
+   Only on INSERTION. An element whose content merely changes does not
+   re-animate — which is right: the first answer arrives, later ones update.
+   Engines without `@starting-style` skip the block and show the element at
+   once, as do visitors who asked for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (transition-behavior: allow-discrete) {
+    .tds-appear {
+      transition:
+        opacity var(--tds-dur-base) var(--tds-ease-out),
+        transform var(--tds-dur-base) var(--tds-ease-out);
+    }
+    @starting-style {
+      .tds-appear {
+        opacity: 0;
+        transform: translateY(0.375rem);
+      }
+    }
+  }
+}
+
 /* === Motion: list transitions (transitionUpdate) =================== */
 
 /* `transitionUpdate()` from `./motion` runs a DOM update as a same-document
