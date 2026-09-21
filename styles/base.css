@@ -336,6 +336,11 @@
      indistinguishable to a reader — and to design.test.ts — from the
      hard-coded durations the motion scale exists to eliminate. */
   --tds-dur-none: 0s;
+  /* The modal bounce on the marketing surface (primitives.css): overshoot
+     once on the way in, a small lift then the drop on the way out. */
+  --tds-ease-bounce-in: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --tds-ease-bounce-out: cubic-bezier(0.36, 0, 0.66, -0.56);
+  --tds-dur-bounce: 420ms;
 
   /* Loop durations for the indeterminate indicators. Kept separate from the
      transition scale above because they are periods, not response times: a

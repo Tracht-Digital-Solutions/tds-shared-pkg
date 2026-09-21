@@ -2910,3 +2910,66 @@ button.tds-row:focus-visible {
     width: 100%;
   }
 }
+
+
+/* === Modals on the marketing surface (2026-09-21) =====================
+
+   The public sites' modals share one look with the landing page's own
+   dialogs: ONE flat navy behind the modal, ONE flat colour for the modal, a
+   bare cross without a chip, and a bounce on the way in and on the way out.
+   Scoped to the marketing surface, so the panels' ConfirmDialog keeps its
+   quieter look. The landing page drives its own dialogs with Motion; these are
+   React-rendered, so the same spring is a curve here. */
+[data-surface="marketing"] .tds-modal::backdrop {
+  background: var(--color-surface-navy);
+  backdrop-filter: none;
+}
+[data-surface="marketing"] .tds-modal[open]::backdrop {
+  opacity: 0.9;
+}
+[data-surface="marketing"] .tds-modal__panel {
+  background: var(--color-paper);
+  border: 0;
+  box-shadow: none;
+}
+[data-surface="marketing"] .consent-dialog__close {
+  background: none;
+  color: var(--color-ink);
+  transition:
+    color var(--tds-dur-base) var(--tds-ease-out),
+    transform var(--tds-dur-slow) var(--tds-ease-out);
+}
+[data-surface="marketing"] .consent-dialog__close:hover {
+  background: none;
+  color: var(--color-accent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-surface="marketing"] .consent-dialog__close:hover {
+    transform: rotate(90deg);
+  }
+  @supports (transition-behavior: allow-discrete) {
+    /* In: overshoot once and settle. Out: a small lift, then the drop — the
+       same bounce read backwards. */
+    [data-surface="marketing"] .tds-modal {
+      transform: translateY(1.75rem) scale(0.82);
+      transition:
+        opacity var(--tds-dur-base) var(--tds-ease-out),
+        transform var(--tds-dur-slow) var(--tds-ease-bounce-out),
+        display var(--tds-dur-bounce) allow-discrete,
+        overlay var(--tds-dur-bounce) allow-discrete;
+    }
+    [data-surface="marketing"] .tds-modal[open] {
+      transform: none;
+      transition:
+        opacity var(--tds-dur-fast) var(--tds-ease-out),
+        transform var(--tds-dur-bounce) var(--tds-ease-bounce-in),
+        display var(--tds-dur-bounce) allow-discrete,
+        overlay var(--tds-dur-bounce) allow-discrete;
+    }
+    @starting-style {
+      [data-surface="marketing"] .tds-modal[open] {
+        transform: translateY(1.75rem) scale(0.82);
+      }
+    }
+  }
+}

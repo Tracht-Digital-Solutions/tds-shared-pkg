@@ -55,6 +55,17 @@ export default function ConsentSettings({
   const titleId = useId();
   const descId = useId();
   const [choices, setChoices] = useState<ConsentChoices>(initial);
+  /**
+   * Stays true for the length of the exit transition after `open` goes false.
+   * The component used to return null on the same render, which removed the
+   * <dialog> before `.close()` ran — so the exit transition in
+   * primitives.css (`allow-discrete`) never had an element to play on and
+   * the dialog snapped shut.
+   */
+  const [rendered, setRendered] = useState(open);
+  useEffect(() => {
+    if (open) setRendered(true);
+  }, [open]);
 
   // Re-seed from the record every time the dialog opens: a visitor who opens
   // settings, flips a switch, then closes without saving must not find their
@@ -84,8 +95,13 @@ export default function ConsentSettings({
     } else if (!open && el.open) {
       if (typeof el.close === "function") el.close();
       else el.removeAttribute("open");
+      // Unmount once the exit has played (the longest leg is 420 ms).
+      const timer = window.setTimeout(() => setRendered(false), 450);
+      return () => window.clearTimeout(timer);
+    } else if (!open) {
+      setRendered(false);
     }
-  }, [open]);
+  }, [open, rendered]);
 
   // Escape fires `cancel` natively. Take it over so React stays the single
   // source of truth for `open` — and treat it as "close", not "save": leaving
@@ -101,7 +117,7 @@ export default function ConsentSettings({
     return () => el.removeEventListener("cancel", onNativeCancel);
   }, [onClose]);
 
-  if (!open) return null;
+  if (!open && !rendered) return null;
 
   const rows = ["necessary" as const, ...categories];
 

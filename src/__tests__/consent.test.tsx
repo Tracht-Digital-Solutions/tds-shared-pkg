@@ -379,3 +379,28 @@ describe("the click-to-load gate", () => {
     expect(queryByTitle("video")).toBeNull();
   });
 });
+
+describe("ConsentSettings exit", () => {
+  it("stays mounted for the exit transition, then unmounts", async () => {
+    vi.useFakeTimers();
+    const { default: ConsentSettings } = await import("../consent/ConsentSettings");
+    const props = {
+      lang: "de" as const,
+      categories: [],
+      initial: necessaryOnly(),
+      privacyUrl: "/legal/datenschutz",
+      onSave: () => {},
+      onClose: () => {},
+    };
+    const { container, rerender } = render(<ConsentSettings {...props} open />);
+    expect(container.querySelector("dialog")).not.toBeNull();
+    rerender(<ConsentSettings {...props} open={false} />);
+    // Still there: the <dialog> must exist for its exit transition to play.
+    expect(container.querySelector("dialog")).not.toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(container.querySelector("dialog")).toBeNull();
+    vi.useRealTimers();
+  });
+});
