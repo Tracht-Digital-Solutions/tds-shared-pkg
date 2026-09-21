@@ -15,11 +15,20 @@ export * from "./shopBlocks";
  *
  * `website` is the honeypot field: any non-empty value indicates a bot
  * and should be silently rejected by the server.
+ *
+ * `subject` is what the visitor picked from the form's reason dropdown. It is
+ * optional because the field is: forcing a choice costs submissions without
+ * making the message better. It has to be declared HERE even though the
+ * backend has accepted and stored it all along — the form validates with
+ * `zodResolver`, which hands on only the keys the schema knows, so a value the
+ * schema does not declare is dropped before the request is built. The 200-char
+ * cap matches what `ContactTicketsModule` truncates to.
  */
 export const ContactSchema = z.object({
   name: z.string().min(2, "name"),
   email: z.string().email("email"),
   company: z.string().optional(),
+  subject: z.string().max(200).optional(),
   message: z.string().min(20, "message"),
   consent: z.literal(true, { error: () => ({ message: "consent" }) }),
   website: z.string().max(0).optional(),

@@ -64,6 +64,28 @@ describe("ContactSchema", () => {
     expect(res.success).toBe(true);
   });
 
+  it("allows an optional subject", () => {
+    const res = ContactSchema.safeParse({ ...valid, subject: "Website übernehmen" });
+    expect(res.success).toBe(true);
+  });
+
+  it("carries the subject through the parsed output", () => {
+    // The reason this field exists at all. `zodResolver` hands the form only
+    // the keys the schema declares, so an undeclared `subject` was stripped
+    // before the request was built — while the backend had been accepting and
+    // storing one all along. Parsing has to RETURN it, not merely tolerate it.
+    const res = ContactSchema.safeParse({ ...valid, subject: "Shop reparieren" });
+    expect(res.success).toBe(true);
+    if (res.success) expect(res.data.subject).toBe("Shop reparieren");
+  });
+
+  it("rejects a subject past what the backend stores", () => {
+    // `ContactTicketsModule` truncates at 200; failing here beats silently
+    // sending something the server will cut.
+    const res = ContactSchema.safeParse({ ...valid, subject: "x".repeat(201) });
+    expect(res.success).toBe(false);
+  });
+
   it("rejects non-empty honeypot (website)", () => {
     const res = ContactSchema.safeParse({ ...valid, website: "spambot" });
     expect(res.success).toBe(false);
