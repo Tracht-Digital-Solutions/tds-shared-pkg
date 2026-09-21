@@ -515,6 +515,12 @@ import this — they duplicate the small bit of validation they need, by design.
   hydrates the barrel as a whole namespace, so it would ship to every public
   page (it did, in 0.38.0–0.38.3: +175 KB on the landing page). `ToastHost` and
   `FormAlert` reach their animated half through `import()`; a test enforces it.
+  **`./motion/dom` is the vanilla runtime** (0.40): `animate`, `inView`,
+  `hover`, `press`, `scroll`, `stagger` plus the presets, `pointerSpring`,
+  `prefersReducedMotion()` and `hasFinePointer()` — for server-rendered pages
+  that animate plain markup without an island (the landing page's CTA, photos
+  and page transitions). Consumers `import()` it after first paint and never
+  import `motion` themselves; start states are set from JS, off screen only.
   **Every SSR consumer spreads `motionSsrNoExternal` into `vite.ssr.noExternal`**
   (`./components` imports `motion`); without it `pack-release` fails the
   release, and a host would not start.
@@ -753,8 +759,8 @@ src/
 ├── i18n/
 │   ├── translations.ts       # DE/EN copy (no React). `footer.slogan` is the
 │                             #   brand lead claim ("Digitale Lösungen, die
-│                             #   wirklich passen." / "Digital solutions that
-│                             #   truly fit.") — the Hero renders it as its
+│                             #   passen." / "Digital solutions that
+│                             #   fit."; "wirklich" dropped 2026-09-21) — the Hero renders it as its
 │                             #   LEADING line since 2026-08-22, so one edit
 │                             #   drives Hero + Footer + the OG card's copy.
 │                             #   NOTE: `hero.tagline` was removed in the same

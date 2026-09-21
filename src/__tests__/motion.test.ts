@@ -102,3 +102,22 @@ describe("microFade", () => {
     expect(microFade.hover.transition.ease).toBe(ease);
   });
 });
+
+describe("./motion/dom", () => {
+  it("re-exports the vanilla runtime and nothing React", async () => {
+    const dom = await import("../motion/dom");
+    for (const name of ["animate", "inView", "hover", "press", "scroll", "stagger"] as const) {
+      expect(typeof dom[name], name).toBe("function");
+    }
+    expect(dom.spring).toBe(spring);
+    const src = readFileSync(join(__dirname, "..", "motion", "dom.ts"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(src).not.toMatch(/motion\/react|from ["']react/);
+  });
+
+  it("treats a server (no window) as reduced motion and coarse pointer", async () => {
+    const { prefersReducedMotion, hasFinePointer } = await import("../motion/dom");
+    expect(typeof window).toBe("undefined");
+    expect(prefersReducedMotion()).toBe(true);
+    expect(hasFinePointer()).toBe(false);
+  });
+});

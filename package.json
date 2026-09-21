@@ -50,6 +50,11 @@
       "import": "./dist/motion/react.js",
       "require": "./dist/motion/react.cjs"
     },
+    "./motion/dom": {
+      "types": "./dist/motion/dom.d.ts",
+      "import": "./dist/motion/dom.js",
+      "require": "./dist/motion/dom.cjs"
+    },
     "./components": {
       "types": "./dist/components/index.d.ts",
       "import": "./dist/components/index.js",

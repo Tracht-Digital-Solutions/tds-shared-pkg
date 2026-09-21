@@ -314,7 +314,7 @@ export const translations = {
           includes: [
             "Inhouse- oder Remote-Workshops",
             "Maßgeschneiderte Schulungsunterlagen",
-            "Hands-on-Übungen mit Ihrem echten Code",
+            "Hands-on-Übungen mit Ihrem eigenen Code",
             "Nachgespräch und Aufzeichnung inklusive",
           ],
           highlight: false,
@@ -341,7 +341,7 @@ export const translations = {
       secondaryCta: "Leistungen ansehen",
     },
     footer: {
-      slogan: "Digitale Lösungen, die wirklich passen.",
+      slogan: "Digitale Lösungen, die passen.",
       tagline: "Persönlich, passgenau, aus einer Hand — aus Schwarzenbek bei Hamburg.",
       nav: "Navigation",
       contactTitle: "Kontakt",
@@ -773,7 +773,7 @@ export const translations = {
       secondaryCta: "See services",
     },
     footer: {
-      slogan: "Digital solutions that truly fit.",
+      slogan: "Digital solutions that fit.",
       tagline: "Personal, tailored, all from one source — from Schwarzenbek near Hamburg.",
       nav: "Navigation",
       contactTitle: "Contact",

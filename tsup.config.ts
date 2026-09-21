@@ -11,6 +11,9 @@ export default defineConfig({
     // The React primitives. Its own entry so `./motion` stays plain data that
     // never pulls the Motion runtime into a consumer that only wants a curve.
     "motion/react": "src/motion/react.tsx",
+    // The vanilla runtime for server-rendered pages (no React). Its own entry
+    // for the same reason: only a page that asks for it pays for it.
+    "motion/dom": "src/motion/dom.ts",
     "components/index": "src/components/index.ts",
     // The consent manager. Its own entry rather than a re-export from
     // `components`: a page that mounts the banner should not have to pull the
