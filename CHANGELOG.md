@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Hard 2D shadows for the public surfaces.** `--tds-shadow-hard`,
+  `--tds-shadow-hard-sm`, `--tds-shadow-hard-press` and `--tds-shadow-ink`
+  (base.css, `none` by default; set by the marketing and blog surfaces). Cards,
+  widgets, the modal, product cards, dropdowns, the mobile menu, toasts and the
+  cookie notice take the large offset; buttons, the cookie buttons and the
+  live-chat launcher the small one and press into it. Panels are unaffected.
+
 ### Changed
 - **`ThemeToggle` on a touch screen: a curtain instead of a fade.** The new
   theme drops in from the top edge with a small overshoot while the old page

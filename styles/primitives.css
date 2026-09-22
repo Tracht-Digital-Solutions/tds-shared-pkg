@@ -2973,3 +2973,43 @@ button.tds-row:focus-visible {
     }
   }
 }
+
+/* === Hard 2D shadows on the public surfaces (2026-09-22) ============
+
+   Every box and every control on the marketing and blog surfaces carries
+   the fixed offset from base.css (`--tds-shadow-hard*`); the panels never
+   match these selectors. Controls get the small offset and PRESS into it:
+   `translate` moves the control into its own shadow, which then shrinks —
+   `translate`, not `transform`, so Motion's transforms stay free. The
+   shadow itself never transitions (see the rule on transitions). */
+
+/* The dark tones re-declare the shadows: `var()` in a custom property is
+   resolved where it is declared, so a new ink alone would not reach them. */
+:is([data-surface="marketing"], [data-surface="blog"]) :is(.tds-tone-navy, .tds-tone-ink) {
+  --tds-shadow-ink: rgb(0 0 0 / 0.55);
+  --tds-shadow-hard: 6px 6px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-sm: 3px 3px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-press: 1px 1px 0 0 var(--tds-shadow-ink);
+}
+
+:is([data-surface="marketing"], [data-surface="blog"])
+  :is(.tds-card, .tds-widget, .tds-modal__panel, .tds-product-card, .tds-dropdown__panel, .tds-mobile-menu, .tds-toast, .cookie-notice) {
+  box-shadow: var(--tds-shadow-hard);
+}
+
+:is([data-surface="marketing"], [data-surface="blog"])
+  :is(.btn-primary, .btn-accent, .btn-ghost, .btn-danger, .cookie-notice-btn, .live-chat-cta__launcher) {
+  box-shadow: var(--tds-shadow-hard-sm);
+  transition-property: background-color, color, border-color, translate, opacity;
+}
+:is([data-surface="marketing"], [data-surface="blog"])
+  :is(.btn-primary, .btn-accent, .btn-ghost, .btn-danger, .cookie-notice-btn, .live-chat-cta__launcher):active:not(:disabled) {
+  translate: 2px 2px;
+  box-shadow: var(--tds-shadow-hard-press);
+}
+@media (prefers-reduced-motion: reduce) {
+  :is([data-surface="marketing"], [data-surface="blog"])
+    :is(.btn-primary, .btn-accent, .btn-ghost, .btn-danger, .cookie-notice-btn, .live-chat-cta__launcher):active:not(:disabled) {
+    translate: none;
+  }
+}

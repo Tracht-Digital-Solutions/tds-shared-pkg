@@ -61,6 +61,11 @@
      besides the fill that lifts a card off the paper. */
   --tds-radius-card: 6px;
   --tds-elevation-card: var(--tds-shadow-sm);
+  /* The fixed 2D offset (2026-09-22), shared with the blog surface — see
+     base.css. The primitives prefer it to the blurred elevation above. */
+  --tds-shadow-hard: 6px 6px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-sm: 3px 3px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-press: 1px 1px 0 0 var(--tds-shadow-ink);
 
   /* Display voice: 700. */
   --tds-weight-display: 700;

@@ -2183,3 +2183,36 @@ describe("view transitions under reduced motion", () => {
     );
   });
 });
+
+describe("hard 2D shadows (public surfaces only)", () => {
+  const TOKENS = ["--tds-shadow-hard", "--tds-shadow-hard-sm", "--tds-shadow-hard-press"];
+
+  it("default to none in base.css, so the panels never draw one", () => {
+    for (const token of TOKENS) {
+      expect(base).toMatch(new RegExp(`${token}:\\s*none;`));
+    }
+    expect(base).toContain("--tds-shadow-ink:");
+  });
+
+  it("are set by the marketing and blog surfaces, and by no other", () => {
+    for (const surface of SURFACES) {
+      const css = surfaceCss[surface];
+      for (const token of TOKENS) {
+        if (surface === "marketing" || surface === "blog") {
+          expect(css, `${surface} ${token}`).toMatch(new RegExp(`${token}:\\s*\\d+px \\d+px 0 0 var\\(--tds-shadow-ink\\)`));
+        } else {
+          expect(css, `${surface} ${token}`).not.toContain(`${token}:`);
+        }
+      }
+    }
+  });
+
+  it("are only read by rules scoped to the public surfaces", () => {
+    const uses = [...primitives.matchAll(/([^{}]+)\{[^}]*box-shadow:\s*var\(--tds-shadow-hard/g)].map((m) => m[1]!.trim());
+    expect(uses.length).toBeGreaterThan(0);
+    for (const selector of uses) {
+      expect(selector).toContain('[data-surface="marketing"]');
+      expect(selector).toContain('[data-surface="blog"]');
+    }
+  });
+});

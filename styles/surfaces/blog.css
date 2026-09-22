@@ -46,6 +46,12 @@
   /* Never any lift — the flat kit separates with colour, not shadow. */
   --tds-elevation-card: none;
   --tds-elevation-raised: none;
+  /* No BLURRED lift — but since 2026-09-22 a fixed hard offset, the flat
+     kit's own kind of depth: it reads as a printed layer, not a floating
+     card. See base.css for the tokens. */
+  --tds-shadow-hard: 6px 6px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-sm: 3px 3px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-press: 1px 1px 0 0 var(--tds-shadow-ink);
 
   /* Heavier display voice + the display-face eyebrow. */
   --tds-weight-display: 800;

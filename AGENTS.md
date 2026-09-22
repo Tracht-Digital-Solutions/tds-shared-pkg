@@ -12,6 +12,17 @@ import this — they duplicate the small bit of validation they need, by design.
 
 ## Rules of thumb
 
+- **The public sites draw HARD 2D shadows; the panels draw none** (0.42.0).
+  `--tds-shadow-hard`, `-sm` and `-press` default to `none` in base.css and
+  are set only by `surfaces/marketing.css` and `surfaces/blog.css`
+  (`6px 6px 0 0 var(--tds-shadow-ink)` …). The primitives read them only in
+  rules scoped to `:is([data-surface="marketing"], [data-surface="blog"])`
+  (end of primitives.css): boxes take the large offset, controls the small
+  one and press into it with `translate`. The dark tones re-declare the
+  three shadows with a black ink, because a custom property's `var()` is
+  resolved where it is declared. The blurred `--tds-shadow-*` and
+  `--tds-elevation-*` tokens are unchanged — the panels read them.
+  `design.test.ts` holds the scoping.
 - **Never take a public origin from `request.url` in server code.** Astro's
   Node adapter builds that URL from the socket and ignores `X-Forwarded-Proto`,
   and on the production hosts TLS ends at Plesk's nginx — so it reads `http://`

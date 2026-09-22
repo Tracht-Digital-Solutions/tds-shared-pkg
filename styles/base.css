@@ -173,6 +173,9 @@
    periwinkle primary and pink accent all belong together; text stays warm
    ivory for a deliberate warm-on-cool editorial contrast. */
 :root[data-theme="dark"] {
+  /* Black disappears on this ground; the hard shadow is a periwinkle
+     offset instead, still one navy family. */
+  --tds-shadow-ink: rgb(147 167 255 / 0.32);
   --color-primary: #93a7ff;
   --color-accent: #ff8fab;
   /* Both fills are light pastels in this theme, so the text on them is the
@@ -318,6 +321,20 @@
     0 4px 8px rgb(5 15 104 / 0.06), 0 16px 32px rgb(5 15 104 / 0.12);
   --tds-elevation-card: none;
   --tds-elevation-raised: var(--tds-shadow-md);
+
+  /* --- Hard shadows (2026-09-22) -----------------------------------
+     A fixed, unblurred offset for the flat "2D" look of the PUBLIC sites.
+     `none` here, so the panels never see one: only the marketing and blog
+     surfaces set the three values, and the primitives read them in rules
+     scoped to those two surfaces. `--tds-shadow-ink` is the colour, flipped
+     by the dark theme and by the dark tones (`.tds-tone-navy/-ink`, in
+     primitives.css) — which re-declare the shadows, because a custom
+     property's `var()` is resolved where it is declared. Never in a
+     `transition`: a shadow is painted, not composited. */
+  --tds-shadow-ink: #050f68;
+  --tds-shadow-hard: none;
+  --tds-shadow-hard-sm: none;
+  --tds-shadow-hard-press: none;
 
   /* --- Motion -------------------------------------------------------
      `--tds-ease-out` is the same curve exported as `ease` from
