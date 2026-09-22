@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- The hamburger (`.tds-menu-toggle`, a `.btn-ghost`) no longer takes the hard
+  shadow of the public buttons — it is an icon in a bar.
+
 ### Added
 - **Hard 2D shadows for the public surfaces.** `--tds-shadow-hard`,
   `--tds-shadow-hard-sm`, `--tds-shadow-hard-press` and `--tds-shadow-ink`

@@ -2981,7 +2981,9 @@ button.tds-row:focus-visible {
    match these selectors. Controls get the small offset and PRESS into it:
    `translate` moves the control into its own shadow, which then shrinks —
    `translate`, not `transform`, so Motion's transforms stay free. The
-   shadow itself never transitions (see the rule on transitions). */
+   shadow itself never transitions (see the rule on transitions). The
+   hamburger (`.btn-ghost.tds-menu-toggle`) is an icon in a bar, not a button
+   on the page, and keeps none. */
 
 /* The dark tones re-declare the shadows: `var()` in a custom property is
    resolved where it is declared, so a new ink alone would not reach them. */
@@ -2998,18 +3000,18 @@ button.tds-row:focus-visible {
 }
 
 :is([data-surface="marketing"], [data-surface="blog"])
-  :is(.btn-primary, .btn-accent, .btn-ghost, .btn-danger, .cookie-notice-btn, .live-chat-cta__launcher) {
+  :is(.btn-primary, .btn-accent, .btn-ghost, .btn-danger, .cookie-notice-btn, .live-chat-cta__launcher):not(.tds-menu-toggle) {
   box-shadow: var(--tds-shadow-hard-sm);
   transition-property: background-color, color, border-color, translate, opacity;
 }
 :is([data-surface="marketing"], [data-surface="blog"])
-  :is(.btn-primary, .btn-accent, .btn-ghost, .btn-danger, .cookie-notice-btn, .live-chat-cta__launcher):active:not(:disabled) {
+  :is(.btn-primary, .btn-accent, .btn-ghost, .btn-danger, .cookie-notice-btn, .live-chat-cta__launcher):not(.tds-menu-toggle):active:not(:disabled) {
   translate: 2px 2px;
   box-shadow: var(--tds-shadow-hard-press);
 }
 @media (prefers-reduced-motion: reduce) {
   :is([data-surface="marketing"], [data-surface="blog"])
-    :is(.btn-primary, .btn-accent, .btn-ghost, .btn-danger, .cookie-notice-btn, .live-chat-cta__launcher):active:not(:disabled) {
+    :is(.btn-primary, .btn-accent, .btn-ghost, .btn-danger, .cookie-notice-btn, .live-chat-cta__launcher):not(.tds-menu-toggle):active:not(:disabled) {
     translate: none;
   }
 }
