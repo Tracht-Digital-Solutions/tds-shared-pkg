@@ -66,6 +66,8 @@
   --tds-shadow-hard: 6px 6px 0 0 var(--tds-shadow-ink);
   --tds-shadow-hard-sm: 3px 3px 0 0 var(--tds-shadow-ink);
   --tds-shadow-hard-press: 1px 1px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-hover: 8px 8px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-sm-hover: 5px 5px 0 0 var(--tds-shadow-ink);
 
   /* Display voice: 700. */
   --tds-weight-display: 700;

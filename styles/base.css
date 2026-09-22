@@ -335,6 +335,11 @@
   --tds-shadow-hard: none;
   --tds-shadow-hard-sm: none;
   --tds-shadow-hard-press: none;
+  /* The lifted state of an interactive element on hover or keyboard focus:
+     it moves 2px up-left (`translate`) and its offset grows by the same 2px,
+     so it reads as coming off the page toward the pointer. */
+  --tds-shadow-hard-hover: none;
+  --tds-shadow-hard-sm-hover: none;
 
   /* --- Motion -------------------------------------------------------
      `--tds-ease-out` is the same curve exported as `ease` from

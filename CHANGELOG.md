@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Hover lift on the public surfaces.** `--tds-shadow-hard-hover` and
+  `--tds-shadow-hard-sm-hover`: buttons, the cookie buttons, the live-chat
+  launcher and product cards move 2px up-left on hover/keyboard focus while
+  their hard offset grows by 2px. Panels unaffected.
+
 ### Fixed
 - The hamburger (`.tds-menu-toggle`, a `.btn-ghost`) no longer takes the hard
   shadow of the public buttons — it is an icon in a bar.

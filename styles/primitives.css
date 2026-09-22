@@ -2992,6 +2992,8 @@ button.tds-row:focus-visible {
   --tds-shadow-hard: 6px 6px 0 0 var(--tds-shadow-ink);
   --tds-shadow-hard-sm: 3px 3px 0 0 var(--tds-shadow-ink);
   --tds-shadow-hard-press: 1px 1px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-hover: 8px 8px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-sm-hover: 5px 5px 0 0 var(--tds-shadow-ink);
 }
 
 :is([data-surface="marketing"], [data-surface="blog"])
@@ -3003,6 +3005,29 @@ button.tds-row:focus-visible {
   :is(.btn-primary, .btn-accent, .btn-ghost, .btn-danger, .cookie-notice-btn, .live-chat-cta__launcher):not(.tds-menu-toggle) {
   box-shadow: var(--tds-shadow-hard-sm);
   transition-property: background-color, color, border-color, translate, opacity;
+}
+/* Hover and keyboard focus LIFT an interactive element toward the pointer:
+   2px up-left, and the offset grows by the same 2px. The translate
+   animates, the shadow simply switches (never in a transition). */
+:is([data-surface="marketing"], [data-surface="blog"])
+  :is(.btn-primary, .btn-accent, .btn-ghost, .btn-danger, .cookie-notice-btn, .live-chat-cta__launcher):not(.tds-menu-toggle):is(:hover, :focus-visible):not(:disabled) {
+  translate: -2px -2px;
+  box-shadow: var(--tds-shadow-hard-sm-hover);
+}
+:is([data-surface="marketing"], [data-surface="blog"]) .tds-product-card {
+  transition-property: background-color, translate;
+  transition-duration: var(--tds-dur-fast);
+}
+:is([data-surface="marketing"], [data-surface="blog"]) .tds-product-card:is(:hover, :focus-within) {
+  translate: -2px -2px;
+  box-shadow: var(--tds-shadow-hard-hover);
+}
+@media (prefers-reduced-motion: reduce) {
+  :is([data-surface="marketing"], [data-surface="blog"])
+    :is(.btn-primary, .btn-accent, .btn-ghost, .btn-danger, .cookie-notice-btn, .live-chat-cta__launcher):is(:hover, :focus-visible),
+  :is([data-surface="marketing"], [data-surface="blog"]) .tds-product-card:is(:hover, :focus-within) {
+    translate: none;
+  }
 }
 :is([data-surface="marketing"], [data-surface="blog"])
   :is(.btn-primary, .btn-accent, .btn-ghost, .btn-danger, .cookie-notice-btn, .live-chat-cta__launcher):not(.tds-menu-toggle):active:not(:disabled) {

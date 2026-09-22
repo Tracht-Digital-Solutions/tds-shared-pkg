@@ -2185,7 +2185,7 @@ describe("view transitions under reduced motion", () => {
 });
 
 describe("hard 2D shadows (public surfaces only)", () => {
-  const TOKENS = ["--tds-shadow-hard", "--tds-shadow-hard-sm", "--tds-shadow-hard-press"];
+  const TOKENS = ["--tds-shadow-hard", "--tds-shadow-hard-sm", "--tds-shadow-hard-press", "--tds-shadow-hard-hover", "--tds-shadow-hard-sm-hover"];
 
   it("default to none in base.css, so the panels never draw one", () => {
     for (const token of TOKENS) {
