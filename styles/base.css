@@ -684,11 +684,11 @@ input[type="radio"] {
    this block and the toggle falls back to an instant flip.
 
    TWO animations run against these rules, chosen by pointer type:
-   a `clip-path` circle growing from the button (fine pointer) and an
-   `opacity` + `scale` settle (coarse pointer, where `clip-path` repaints
-   a full-viewport layer every frame). The origin below only matters to
-   the second one, and it is stated rather than inherited because the
-   default depends on the snapshot's own box. */
+   a `clip-path` circle growing from the button (fine pointer) and a
+   `transform`-only curtain dropping from the top edge (coarse pointer,
+   where `clip-path` repaints a full-viewport layer every frame). The
+   origin is stated rather than inherited because the default depends on
+   the snapshot's own box. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
@@ -700,6 +700,21 @@ input[type="radio"] {
 }
 ::view-transition-new(root) {
   z-index: 9999;
+}
+
+/* The toggle's icon turns in as the theme flips. The class is only added by
+   a click, and both icons are swapped with `display`, which restarts the
+   animation on the one that appears — so it runs once per flip and never on
+   hydration. */
+@media (prefers-reduced-motion: no-preference) {
+  .tds-theme-toggle__icon--turn {
+    animation: tds-theme-icon-turn var(--tds-dur-bounce) var(--tds-ease-bounce-in) both;
+  }
+}
+@keyframes tds-theme-icon-turn {
+  from {
+    transform: rotate(-120deg) scale(0.4);
+  }
 }
 
 /* Every view transition, not only root: the panels name `<main>` for their

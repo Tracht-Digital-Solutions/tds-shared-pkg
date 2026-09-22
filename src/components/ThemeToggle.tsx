@@ -23,7 +23,7 @@ export interface ThemeToggleProps {
  * for reduced motion) the incoming theme wipes in as a circle growing
  * from the centre of the button; the supporting CSS ships in
  * `@tracht-digital-solutions/tds-shared/styles/base.css`. On a coarse
- * pointer the same snapshot fades and settles instead, because the circle
+ * pointer the new snapshot drops in from the top as a curtain, because the circle
  * is driven by `clip-path` and that is not composited — see the note at
  * the branch. Otherwise it flips instantly and the token transition gives
  * a soft colour crossfade.
@@ -38,6 +38,9 @@ export default function ThemeToggle({
 }: ThemeToggleProps = {}) {
   const [theme, setTheme] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
+  // Set by the first click, so the icon turns when the visitor flips the
+  // theme and never on hydration.
+  const [flipped, setFlipped] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -48,6 +51,7 @@ export default function ThemeToggle({
 
   const flip = () => {
     const next: Theme = theme === "dark" ? "light" : "dark";
+    setFlipped(true);
 
     // Commit the theme change. Kept as one closure so it can run either
     // immediately or inside a View Transition snapshot callback.
@@ -97,19 +101,36 @@ export default function ThemeToggle({
         flushSync(apply);
       });
 
+      // A CURTAIN, from the top edge the toggle sits on. The fade-and-settle
+      // this replaced read as a flicker on a phone: the whole viewport
+      // blinked once and nothing told the eye where the new theme came from.
+      // The new snapshot drops in from above with a small overshoot and the
+      // old one gives way downwards underneath it. Both are `transform` only,
+      // so the compositor moves two finished bitmaps and nothing repaints —
+      // the reason this branch exists at all (see above).
+      //
+      // The old snapshot travels 10 % while the new one travels 100 %, and
+      // the new one leads (ease-out against ease-in-out), so no gap opens
+      // between the falling edge and the page it covers.
       transition.ready.then(() => {
         document.documentElement.animate(
+          [
+            { transform: "translateY(-100%)" },
+            { transform: "translateY(1.5%)", offset: 0.78 },
+            { transform: "translateY(0)" },
+          ],
           {
-            opacity: [0, 1],
-            // A hair of scale so it reads as the new theme settling in
-            // rather than as a plain crossfade. Deliberately small — the
-            // whole viewport is moving.
-            transform: ["scale(1.02)", "scale(1)"],
-          },
-          {
-            duration: 320,
+            duration: 560,
             easing: cssEase.out,
             pseudoElement: "::view-transition-new(root)",
+          },
+        );
+        document.documentElement.animate(
+          { transform: ["translateY(0)", "translateY(10%)"] },
+          {
+            duration: 560,
+            easing: cssEase.inOut,
+            pseudoElement: "::view-transition-old(root)",
           },
         );
       });
@@ -179,7 +200,7 @@ export default function ThemeToggle({
         strokeWidth="1.75"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className={mounted && theme === "dark" ? "hidden" : "block"}
+        className={`${mounted && theme === "dark" ? "hidden" : "block"}${flipped ? " tds-theme-toggle__icon--turn" : ""}`}
       >
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
       </svg>
@@ -194,7 +215,7 @@ export default function ThemeToggle({
         strokeWidth="1.75"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className={mounted && theme === "dark" ? "block" : "hidden"}
+        className={`${mounted && theme === "dark" ? "block" : "hidden"}${flipped ? " tds-theme-toggle__icon--turn" : ""}`}
       >
         <circle cx="12" cy="12" r="4" />
         <line x1="12" y1="2" x2="12" y2="5" />

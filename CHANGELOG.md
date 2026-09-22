@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **`ThemeToggle` on a touch screen: a curtain instead of a fade.** The new
+  theme drops in from the top edge with a small overshoot while the old page
+  gives way downwards — `transform` only, so it stays composited like the fade
+  it replaces, which read as a one-frame flicker. The icon now turns in on
+  every flip (`.tds-theme-toggle__icon--turn`, off under reduced motion).
+
 ### Added
 - **`.tds-appear`**: an element that arrives as the ANSWER to an action — a
   generated QR code, a compressed file, a formatted JSON — fades and lifts
