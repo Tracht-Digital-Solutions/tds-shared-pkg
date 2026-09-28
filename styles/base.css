@@ -176,6 +176,10 @@
   /* Black disappears on this ground; the hard shadow is a periwinkle
      offset instead, still one navy family. */
   --tds-shadow-ink: rgb(147 167 255 / 0.32);
+  /* And the pressed-in inset goes the other way for the same reason: a
+     dark inset inside an already dark field is no depth at all, so the
+     "shadow" on this theme is the light the control is sunk away from. */
+  --tds-inset-ink: rgb(0 0 0 / 0.38);
   --color-primary: #93a7ff;
   --color-accent: #ff8fab;
   /* Both fills are light pastels in this theme, so the text on them is the
@@ -340,6 +344,22 @@
      so it reads as coming off the page toward the pointer. */
   --tds-shadow-hard-hover: none;
   --tds-shadow-hard-sm-hover: none;
+
+  /* --- Pressed-in form controls (2026-09-28) ------------------------
+     A text field, a select, a checkbox and a radio all sit BELOW the
+     surface: an unblurred inset offset from the top left, as if the
+     control had been pushed into the page. It is the inverse of the hard
+     shadow that lifts a card off it, so the two together say which things
+     you reach into and which things you pick up.
+
+     Unlike `--tds-shadow-hard*`, this one is NOT `none` on the panel: it
+     applies on every surface, because a form field is a form field
+     wherever it stands. The ink is mixed from `--color-black` rather than
+     from `--tds-shadow-ink`, which is the brand navy at full strength —
+     opaque navy inside a 2.5rem input reads as a border, not a depth. */
+  --tds-inset-ink: color-mix(in srgb, var(--color-black) 13%, transparent);
+  --tds-shadow-inset: inset 2px 2px 0 0 var(--tds-inset-ink);
+  --tds-shadow-inset-sm: inset 1px 1px 0 0 var(--tds-inset-ink);
 
   /* --- Motion -------------------------------------------------------
      `--tds-ease-out` is the same curve exported as `ease` from

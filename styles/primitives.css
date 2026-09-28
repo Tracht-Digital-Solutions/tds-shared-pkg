@@ -479,11 +479,94 @@ a.chip:focus-visible {
   font-family: var(--font-body);
   font-size: 0.875rem;
   color: var(--color-ink);
+  /* PRESSED IN (2026-09-28). The inverse of the hard shadow that lifts a card
+     off the page: an unblurred inset offset from the top left, so a control
+     you reach INTO is told apart from a thing you pick up. On the marketing
+     and blog surfaces `--tds-border-hairline` is 0, which left a boxed field
+     as a bare fill with nothing to say where its edge was — this is now what
+     draws that edge. */
+  box-shadow: var(--tds-shadow-inset);
   transition: border-color var(--tds-dur-base) var(--tds-ease-out);
 }
 /* Same correction as `.field:focus` above — the outline stays. */
 .field-boxed:focus {
   border-color: var(--color-accent);
+}
+
+/* === Checkbox and radio ============================================
+   Pressed into the page like every other control (2026-09-28), which
+   needs `appearance: none`: a native checkbox takes no background, no
+   border and no shadow, so without it every rule below is ignored and
+   nothing about the change is visible.
+
+   Element selectors on purpose. `scripts/lint-primitives.mjs` lists
+   checkbox and radio as the types that legitimately carry no class, so
+   they are bare in every consumer — a class here would reach none of
+   them. A component that styles its own box (the landingpage's round
+   consent checkbox) wins on specificity and is untouched.
+
+   `:where()` keeps this at zero specificity so a utility still applies. */
+:where(input[type="checkbox"], input[type="radio"]) {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-grid;
+  place-content: center;
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  /* A fixed 1px, NOT `--tds-border-hairline`: that is 0 on the public
+     surfaces, and a borderless empty checkbox is an invisible one. The
+     borderless rule is about cards, not about controls you have to find. */
+  border: 1px solid var(--color-line);
+  border-radius: var(--tds-radius-xs);
+  background: var(--color-card);
+  box-shadow: var(--tds-shadow-inset-sm);
+  color: var(--color-on-primary);
+  cursor: pointer;
+  transition:
+    background-color var(--tds-dur-fast) var(--tds-ease-out),
+    border-color var(--tds-dur-fast) var(--tds-ease-out);
+}
+:where(input[type="radio"]) {
+  border-radius: 100px;
+}
+:where(input[type="checkbox"], input[type="radio"])::before {
+  content: "";
+  width: 0.625rem;
+  height: 0.625rem;
+  background: currentColor;
+  transform: scale(0);
+  transition: transform var(--tds-dur-fast) var(--tds-ease-out);
+}
+:where(input[type="checkbox"])::before {
+  /* A tick, drawn rather than typed: a glyph would depend on a font the
+     surface may not load, and would sit on the text baseline. */
+  clip-path: polygon(14% 52%, 38% 76%, 86% 22%, 96% 34%, 40% 94%, 4% 62%);
+}
+:where(input[type="radio"])::before {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 100px;
+}
+:where(input[type="checkbox"], input[type="radio"]):checked {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  /* Filled, so it is no longer a well to reach into. */
+  box-shadow: none;
+}
+:where(input[type="checkbox"], input[type="radio"]):checked::before {
+  transform: scale(1);
+}
+:where(input[type="checkbox"], input[type="radio"]):disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(input[type="checkbox"], input[type="radio"]),
+  :where(input[type="checkbox"], input[type="radio"])::before {
+    transition: none;
+  }
 }
 
 /* Label + control stacked as one row. Replaces the ad-hoc
