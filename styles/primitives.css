@@ -521,7 +521,13 @@ a.chip:focus-visible {
   border: 1px solid var(--color-line);
   border-radius: var(--tds-radius-xs);
   background: var(--color-card);
-  box-shadow: var(--tds-shadow-inset-sm);
+  /* The FULL inset, not the `-sm` one a text field uses. Depth is read as a
+     proportion of the box, not in absolute pixels: 1px inside an 18px control
+     is 6% of its width and reads as a slightly dirty top edge, where the same
+     1px inside a 40px input reads as a well. 2px here matches what `-sm` does
+     there. Deepening `--tds-inset-ink` instead was the wrong knob — it would
+     have darkened every text field and select along with it. */
+  box-shadow: var(--tds-shadow-inset);
   color: var(--color-on-primary);
   cursor: pointer;
   transition:

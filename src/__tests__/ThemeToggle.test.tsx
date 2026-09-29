@@ -25,6 +25,10 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   localStorage.clear();
+  // The preview overlay is a child of document.body with a timed removal.
+  // `cleanup()` unmounts the component, which discards it — this is the guard
+  // that one leaking would fail its own test rather than the next five.
+  for (const stray of document.querySelectorAll(".tds-theme-preview")) stray.remove();
 });
 
 describe("ThemeToggle", () => {
@@ -90,5 +94,95 @@ describe("ThemeToggle", () => {
   it("uses a button with type=button (never submits a form)", () => {
     const { getByRole } = render(<ThemeToggle />);
     expect(getByRole("button").getAttribute("type")).toBe("button");
+  });
+
+  /**
+   * The hover preview. The negative cases come first, because the failure
+   * mode is a full-viewport overlay left lying on a page nobody is hovering.
+   */
+  describe("preview under the pointer", () => {
+    const finePointer = () =>
+      vi.stubGlobal(
+        "matchMedia",
+        vi.fn((query: string) => ({
+          matches: query === "(hover: hover) and (pointer: fine)",
+          addEventListener: vi.fn(),
+        })),
+      );
+    const preview = () => document.querySelector(".tds-theme-preview");
+
+    it("opens a preview on a fine pointer and closes it on leave", () => {
+      finePointer();
+      const { getByRole } = render(<ThemeToggle />);
+      const btn = getByRole("button");
+
+      fireEvent.pointerEnter(btn, { clientX: 120, clientY: 64 });
+      const el = preview();
+      expect(el).not.toBeNull();
+      expect(el?.getAttribute("aria-hidden")).toBe("true");
+      // Positioned before it is visible, or it fades in mid-viewport and
+      // slides to the cursor.
+      expect((el as HTMLElement).style.getPropertyValue("--tds-theme-preview-x")).toBe("120px");
+      expect((el as HTMLElement).style.getPropertyValue("--tds-theme-preview-y")).toBe("64px");
+
+      fireEvent.pointerLeave(btn);
+      expect(preview()?.getAttribute("data-visible")).toBeNull();
+    });
+
+    it("never opens one under reduced motion", () => {
+      vi.stubGlobal(
+        "matchMedia",
+        vi.fn((query: string) => ({
+          // Both true: a fine pointer that has asked for less motion.
+          matches:
+            query === "(hover: hover) and (pointer: fine)" ||
+            query === "(prefers-reduced-motion: reduce)",
+          addEventListener: vi.fn(),
+        })),
+      );
+      const { getByRole } = render(<ThemeToggle />);
+      fireEvent.pointerEnter(getByRole("button"), { clientX: 10, clientY: 10 });
+      expect(preview()).toBeNull();
+    });
+
+    it("never opens one on a touch screen", () => {
+      // The default stub answers false to everything, including the
+      // hover+fine query — a coarse pointer.
+      const { getByRole } = render(<ThemeToggle />);
+      fireEvent.pointerEnter(getByRole("button"), { clientX: 10, clientY: 10 });
+      expect(preview()).toBeNull();
+    });
+
+    it("opens only one overlay however many enters arrive", () => {
+      finePointer();
+      const { getByRole } = render(<ThemeToggle />);
+      const btn = getByRole("button");
+      fireEvent.pointerEnter(btn, { clientX: 10, clientY: 10 });
+      fireEvent.pointerEnter(btn, { clientX: 20, clientY: 20 });
+      fireEvent.pointerEnter(btn, { clientX: 30, clientY: 30 });
+      expect(document.querySelectorAll(".tds-theme-preview")).toHaveLength(1);
+    });
+
+    it("closes the preview when the theme actually flips", () => {
+      finePointer();
+      const { getByRole } = render(<ThemeToggle />);
+      const btn = getByRole("button");
+      fireEvent.pointerEnter(btn, { clientX: 10, clientY: 10 });
+      expect(preview()).not.toBeNull();
+      fireEvent.click(btn);
+      // A preview of the destination still lying over the destination would
+      // darken it.
+      expect(preview()?.getAttribute("data-visible")).toBeNull();
+    });
+
+    it("takes the overlay with it when unmounted mid-hover", () => {
+      finePointer();
+      const { getByRole, unmount } = render(<ThemeToggle />);
+      fireEvent.pointerEnter(getByRole("button"), { clientX: 10, clientY: 10 });
+      expect(preview()).not.toBeNull();
+      unmount();
+      // It is a child of document.body, so React does not collect it.
+      expect(preview()).toBeNull();
+    });
   });
 });

@@ -31,6 +31,12 @@ export interface ThemeToggleProps {
  * Icons show the *target* state — moon in light mode (tap to go dark),
  * sun in dark mode (tap to go light), matching the Material/iOS
  * convention.
+ *
+ * On a fine pointer, hovering the button also PREVIEWS the flip: a circular
+ * region follows the cursor and shows where the page is going, darker in light
+ * mode and lighter in dark. It lasts exactly as long as the hover. See
+ * `.tds-theme-preview` in base.css for the shape, and the note there on why it
+ * is a gradient rather than a `clip-path`.
  */
 export default function ThemeToggle({
   labelToDark = "Auf Dunkel umschalten",
@@ -49,9 +55,150 @@ export default function ThemeToggle({
     setMounted(true);
   }, []);
 
+  // --- Preview under the pointer --------------------------------------
+  // While the button is hovered, a circular region around the cursor shows
+  // where the page is going. The shape, the ink and the falloff are
+  // `.tds-theme-preview` in base.css (and the note there on why it is a
+  // gradient rather than a clip); this only owns the element's life and its
+  // two coordinates.
+  //
+  // Refs throughout, no state: a `pointermove` fires many times per frame and
+  // re-rendering the button on each one would be the most expensive way
+  // imaginable to move a background.
+  // `previewRef` holds the element for as long as it is IN THE DOM, fading
+  // included — not only while it is wanted. The distinction is load-bearing
+  // twice over: a pointer that re-enters during the fade reuses the element
+  // instead of stacking a second one over it, and an unmount during the fade
+  // still has something to remove.
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const frameRef = useRef(0);
+  const removeTimerRef = useRef(0);
+  const pointRef = useRef({ x: 0, y: 0 });
+
+  const paintPreview = () => {
+    frameRef.current = 0;
+    const el = previewRef.current;
+    if (!el) return;
+    el.style.setProperty("--tds-theme-preview-x", `${pointRef.current.x}px`);
+    el.style.setProperty("--tds-theme-preview-y", `${pointRef.current.y}px`);
+  };
+
+  const trackPointer = (event: { clientX: number; clientY: number }) => {
+    pointRef.current = { x: event.clientX, y: event.clientY };
+    if (!previewRef.current || frameRef.current) return;
+    frameRef.current = requestAnimationFrame(paintPreview);
+  };
+
+  const discardPreview = () => {
+    if (removeTimerRef.current) {
+      clearTimeout(removeTimerRef.current);
+      removeTimerRef.current = 0;
+    }
+    if (frameRef.current) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = 0;
+    }
+    previewRef.current?.remove();
+    previewRef.current = null;
+  };
+
+  const closePreview = () => {
+    if (frameRef.current) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = 0;
+    }
+    const el = previewRef.current;
+    if (!el || removeTimerRef.current) return;
+    el.removeAttribute("data-visible");
+    // A timer rather than `transitionend`: a pointer that entered and left
+    // inside one frame never reached opacity 1, so no transition runs and no
+    // event arrives — and an overlay left behind is invisible, permanent and
+    // sits over the whole page.
+    //
+    // The duration comes from the element's own computed style, so the CSS
+    // stays the single source of truth and a change to `--tds-dur-base` cannot
+    // leave this timer firing mid-fade. `40` is the margin for the frame the
+    // attribute removal lands on; the fallback covers a detached document.
+    const fade = parseFloat(getComputedStyle(el).transitionDuration) || 0.2;
+    removeTimerRef.current = window.setTimeout(discardPreview, fade * 1000 + 40);
+  };
+
+  const openPreview = (event: { clientX: number; clientY: number }) => {
+    // Nothing on a touch screen: there is no hover state to preview under, a
+    // finger covers the circle it would draw, and the tap flips the theme for
+    // real a moment later.
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    // Already on screen — either still shown (a second `pointerenter` without
+    // a leave) or mid-fade. Either way, take it back rather than build another.
+    let el = previewRef.current;
+    if (el) {
+      if (removeTimerRef.current) {
+        clearTimeout(removeTimerRef.current);
+        removeTimerRef.current = 0;
+      }
+    } else {
+      el = document.createElement("div");
+      el.className = "tds-theme-preview";
+      el.setAttribute("aria-hidden", "true");
+      document.body.appendChild(el);
+      previewRef.current = el;
+    }
+    // Place it BEFORE it becomes visible, or the first frame fades in at the
+    // centre of the viewport and slides to the cursor.
+    pointRef.current = { x: event.clientX, y: event.clientY };
+    paintPreview();
+    const target = el;
+    requestAnimationFrame(() => {
+      if (previewRef.current === target) target.setAttribute("data-visible", "true");
+    });
+  };
+
+  // NATIVE listeners, not `onPointerEnter`/`onPointerLeave` props, and the
+  // reason is React's event system rather than preference: React synthesises
+  // enter and leave from delegated `pointerover`/`pointerout` at the root. The
+  // two SVGs inside the button are event targets of their own, so the
+  // synthesised pair is sensitive to which child the pointer crossed into —
+  // and `fireEvent.pointerEnter` in a test never reaches the synthesis at all.
+  // The native events do not bubble and never fire for a move between
+  // children, which is exactly the semantics wanted here.
+  //
+  // Unmounting mid-hover also has to take the overlay with it: it is a child
+  // of `document.body`, so React will not collect it.
+  useEffect(() => {
+    const button = buttonRef.current;
+    if (!button) return;
+    const onEnter = (event: PointerEvent) => openPreview(event);
+    const onMove = (event: PointerEvent) => trackPointer(event);
+    button.addEventListener("pointerenter", onEnter);
+    button.addEventListener("pointermove", onMove);
+    button.addEventListener("pointerleave", closePreview);
+    button.addEventListener("pointercancel", closePreview);
+    // Keyboard focus leaving the button ends the preview too. A pointer parked
+    // on the toggle while the visitor tabs away is the one case
+    // `pointerleave` never fires for.
+    button.addEventListener("blur", closePreview);
+    return () => {
+      button.removeEventListener("pointerenter", onEnter);
+      button.removeEventListener("pointermove", onMove);
+      button.removeEventListener("pointerleave", closePreview);
+      button.removeEventListener("pointercancel", closePreview);
+      button.removeEventListener("blur", closePreview);
+      // Immediately, fade or no fade — nothing is left to watch it finish.
+      discardPreview();
+    };
+    // The handlers read refs only, so the first closure stays correct for the
+    // component's whole life.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const flip = () => {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setFlipped(true);
+    // The real transition is about to run over the whole viewport; a preview
+    // of it still lying on top would darken its destination.
+    closePreview();
 
     // Commit the theme change. Kept as one closure so it can run either
     // immediately or inside a View Transition snapshot callback.

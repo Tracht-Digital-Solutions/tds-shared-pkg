@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **The theme toggle previews the flip under the pointer.** On a fine pointer,
+  hovering `ThemeToggle` draws a circular region that follows the cursor and
+  shows where the page is going — darker in light mode, lighter in dark. It
+  lasts exactly as long as the hover and ends on leave, blur, cancel or the
+  click itself. `.tds-theme-preview` (base.css) owns the shape; it is a
+  radial-gradient rather than a `clip-path: circle()`, because a clip is a
+  binary per-pixel test and staircases along a rim that moves every frame,
+  where a gradient's falloff has no edge to alias. Nothing is created on a
+  coarse pointer or under `prefers-reduced-motion`.
+
+### Changed
+- **Checkboxes and radios take the full inset, not the small one.** Depth reads
+  as a proportion of the control: 1px inside an 18px box is 6% of its width and
+  looked like a dirty top edge, where the same 1px inside a 40px input reads as
+  a well. `--tds-shadow-inset` (2px) now, matching what `-sm` achieves on a
+  text field. `--tds-inset-ink` is untouched, so no other control darkened.
+- The note above the `accent-color` rule in `base.css` no longer argues against
+  `appearance: none` — `primitives.css` has done exactly that since 2026-09-28.
+  It now says what the tint is still for: `:indeterminate`, and any consumer
+  that re-declares `appearance: auto`.
+
+### Added
 - **Hover lift on the public surfaces.** `--tds-shadow-hard-hover` and
   `--tds-shadow-hard-sm-hover`: buttons, the cookie buttons, the live-chat
   launcher and product cards move 2px up-left on hover/keyboard focus while

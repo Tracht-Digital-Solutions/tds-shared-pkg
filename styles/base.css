@@ -698,14 +698,19 @@ body {
 /* Checkboxes and radios were the last unbranded control in the system: every
    settings form in the panel — and there are dozens across the thirteen
    extensions — rendered the operating system's blue tick next to carefully
-   styled `.field` inputs.
+   styled `.field` inputs. This tint was the first answer.
 
-   `accent-color` rather than `appearance: none` + a hand-drawn box, and that
-   is a deliberate limit: re-implementing the control means re-implementing its
-   indeterminate state, its focus ring, its disabled rendering and its
-   high-contrast-mode behaviour, in a library thirteen repos consume blind.
-   This tints the native control and changes nothing else — no layout risk, no
-   size change, no new markup at any call site.
+   IT IS NO LONGER THE WHOLE ANSWER, and the argument that used to stand here
+   ("`accent-color` rather than `appearance: none`, because re-implementing the
+   control means re-implementing its every state") was overtaken on 2026-09-28:
+   `primitives.css` now does exactly that, box, tick, focus ring and well
+   included, so that a checkbox is pressed into the page like every other
+   control. Read that block for the current shape of the control.
+
+   What survives here is the tint for the states the custom box does not paint:
+   `:indeterminate` (which has no `::before` of its own) and any consumer that
+   re-declares `appearance: auto` on a control of its own. Both fall back to the
+   native rendering, and a native rendering should still be brand-coloured.
 
    It follows `--tds-panel-accent` (declared in the `:root` scale below as
    `--color-primary`, so it resolves to the brand navy on the marketing and
@@ -756,6 +761,65 @@ input[type="radio"] {
 @keyframes tds-theme-icon-turn {
   from {
     transform: rotate(-120deg) scale(0.4);
+  }
+}
+
+/* --- Theme preview under the pointer (2026-09-29) --------------------
+   While the toggle is hovered, a circular region around the cursor shows
+   where the page is going: darker in light mode, lighter in dark mode. The
+   element is created and positioned by the shared ThemeToggle; everything
+   it needs beyond the two coordinates lives here.
+
+   A GRADIENT, NOT A CLIP, and that is the whole trick. `clip-path: circle()`
+   would give the same shape and a visibly stepped edge: a clip is a binary
+   per-pixel test, so a circle re-evaluated every frame under a moving cursor
+   staircases along its rim and the staircase crawls. A radial-gradient is
+   filtered — the outer stop fades to nothing over a quarter of the radius, so
+   there is no edge left to alias in the first place. It is also cheaper: one
+   fixed layer the compositor keeps, against a full-viewport repaint per frame.
+
+   `z-index: 45` clears a sticky header (30) and the landingpage's fixed bar
+   (40) — a preview that the chrome punched a hole in would be a bug report.
+   It never takes a pointer or a focus, and it is `aria-hidden`: nothing is
+   being said here that the button's own label does not already say. */
+.tds-theme-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--tds-dur-base) var(--tds-ease-out);
+  /* Ink, radius and falloff. The radius scales with the smaller viewport
+     axis so the circle stays a region on a laptop and does not become a
+     vignette on an ultrawide. */
+  --tds-theme-preview-r: clamp(6rem, 14vmin, 11rem);
+  --tds-theme-preview-ink: 4 8 20;
+  --tds-theme-preview-alpha: 0.58;
+  background: radial-gradient(
+    circle var(--tds-theme-preview-r) at var(--tds-theme-preview-x, 50%)
+      var(--tds-theme-preview-y, 50%),
+    rgb(var(--tds-theme-preview-ink) / var(--tds-theme-preview-alpha)) 0%,
+    rgb(var(--tds-theme-preview-ink) / calc(var(--tds-theme-preview-alpha) * 0.72))
+      52%,
+    rgb(var(--tds-theme-preview-ink) / 0) 78%
+  );
+}
+.tds-theme-preview[data-visible="true"] {
+  opacity: 1;
+}
+/* In the dark theme the button goes the other way, so the preview does too.
+   Paper rather than white, and a lower alpha: light over dark reads far
+   stronger than dark over light at the same value. */
+:root[data-theme="dark"] .tds-theme-preview {
+  --tds-theme-preview-ink: 250 250 247;
+  --tds-theme-preview-alpha: 0.36;
+}
+/* Belt and braces. The component does not create the element under a
+   reduced-motion preference at all; this covers a preference switched on
+   while one is already on screen. */
+@media (prefers-reduced-motion: reduce) {
+  .tds-theme-preview {
+    display: none;
   }
 }
 
