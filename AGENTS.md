@@ -703,6 +703,16 @@ import this — they duplicate the small bit of validation they need, by design.
   here. The tds-content-api `Validator` hand-mirrors this (like the other schemas);
   keep them in sync. Don't move the catalog into a frontend — both the admin editor
   and the blog renderer consume it.
+- **A business card's free blocks (`schemas/cardBlocks`) are the contract between
+  the panel editor and the card renderer**, which live in two different
+  repositories (`tds-ext-cards-pkg` and `tds-card-frontend`) and release
+  separately — a model defined in either would drift. `parseCardDocument` is
+  fail-soft **per block**, unlike `CardDocumentSchema.parse`: it runs while
+  rendering a live page on a customer's own domain, so one broken `href` must
+  cost that block and never the card. An `href` may be empty (a link the author
+  just inserted) but anything non-empty must be `http(s)`, `mailto:` or `tel:` —
+  `javascript:` on a page nobody is watching is a stored script. `Support\CardBlocks`
+  in the extension hand-mirrors this; keep them in sync.
 - **The lightningcss `cssTarget` lives in `src/astro` and nowhere else.**
   `styles/app.css` `.brand-header` authors `backdrop-filter` unprefixed;
   lightningcss only adds `-webkit-` when it sees a Safari build target,
@@ -866,6 +876,27 @@ once. `dist/index.js` is asserted to contain no `node:` import.
 - **`createGenerationCache()`** — the memo a rebuild can throw away.
 - **`PageCacheStore`** — the on-disk layout, mirroring what the static build
   produced (`preise/index.html`), so the web server needs no special knowledge.
+
+### Serving more than one host from one process
+
+`cacheKey` and `rebuildUrl` exist for exactly one site, `tds-card-frontend`,
+which answers every customer's business-card domain from a single app. They are
+**inverses and only work as a pair**: `cacheKey` decides what a render is filed
+under, `rebuildUrl` turns that key back into a URL a rebuild can fetch. Omit
+either and the cache is wrong in a way no single-origin site can reproduce —
+pathname keys make two customer domains share the entry for `/`, so the first
+render answers all of them; a missing `rebuildUrl` makes rebuild request
+`/mira-markt_de/` off its own origin and report the 404.
+
+Two further constraints for such a site:
+
+- A key is a store path. A final segment that looks like a filename
+  (`mira-markt.de`) is stored **as** a file and then collides with the directory
+  that host's sub-pages need, so map the dots out of a host first.
+- Point its store **outside** the document root (`TDS_CACHE_DIR`). The whole
+  point of the default layout is that Apache serves a hit without waking Node —
+  and Apache knows nothing about the key, so it would hand `/index.html` to
+  every domain again.
 
 ### Six things that are easy to get wrong
 

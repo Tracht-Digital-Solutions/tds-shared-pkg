@@ -14,7 +14,7 @@ import type { RuntimeConfig } from "../api/index.js";
  * genuinely live in other places. `auth` is absent on purpose: it runs the
  * wizard but pairs nothing.
  */
-export const PAIRABLE_SITE_PROFILES = ["blog", "landingpage", "tools", "shop"] as const;
+export const PAIRABLE_SITE_PROFILES = ["blog", "cards", "landingpage", "tools", "shop"] as const;
 
 export type PairableSiteProfile = (typeof PAIRABLE_SITE_PROFILES)[number];
 

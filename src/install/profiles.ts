@@ -149,6 +149,30 @@ export const shop: SiteProfile = {
   pairing: true,
 };
 
+/**
+ * `karte.tracht-digital.de` — the business-card pages.
+ *
+ * The one site here that serves more than the origin listed. Each customer's
+ * card runs on the customer's own domain, added in the hosting as an alias of
+ * this app, and the app picks the card by `Host`. Those aliases deliberately do
+ * NOT appear in `origins`: nothing in the browser ever calls the API from a
+ * card page — the whole card is server-rendered — so there is no CORS entry and
+ * no second wizard run to do per domain. Listing them would invite the operator
+ * to pair each one, which would issue keys this site does not use.
+ *
+ * `/content/cards` counts the cards the API knows, which is the only number
+ * that separates "connected, nothing created yet" from "not connected".
+ */
+export const cards: SiteProfile = {
+  id: "cards",
+  name: "Visitenkarten",
+  origins: ["https://karte.tracht-digital.de"],
+  publicRoutes: [{ method: "GET", path: "/content/cards", countKey: "cards" }],
+  probeBase: "api",
+  runtimeKeys: ["apiBase"],
+  pairing: true,
+};
+
 /** `auth.tracht-digital.de` — the central login. */
 export const auth: SiteProfile = {
   id: "auth",
@@ -169,6 +193,6 @@ export const auth: SiteProfile = {
 };
 
 /** Every profile, by id. Used by the tests; sites import their own by name. */
-export const profiles = { landingpage, blog, tools, shop, auth } as const;
+export const profiles = { landingpage, blog, tools, shop, cards, auth } as const;
 
 export type ProfileId = keyof typeof profiles;

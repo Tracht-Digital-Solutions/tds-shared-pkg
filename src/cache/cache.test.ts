@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { cacheLocation, isCacheableMethod } from "./key.js";
 import { forLanguages, resolveEvents, type EventMap } from "./events.js";
 import { createGenerationCache } from "./memo.js";
+import { pageCache } from "./middleware.js";
 import { PageCacheStore, tokenMatches } from "./store.js";
 
 describe("cacheLocation", () => {
@@ -319,3 +320,114 @@ describe("PageCacheStore", () => {
     await expect(stat(dir)).resolves.toBeTruthy();
   });
 });
+
+/**
+ * The multi-host keys, and the collision they exist to stop.
+ *
+ * `tds-card-frontend` serves every customer's business card from one process,
+ * each on its own domain. With the default pathname keys those cards all share
+ * the entry for `/`, so the first render answers every other domain — silently,
+ * correctly-shaped, and wrong. Pinned here because a single-origin site cannot
+ * reproduce it, and because these two options are inverses that only work as a
+ * pair.
+ */
+describe("pageCache with host-scoped keys", () => {
+  let dir: string;
+  let metaDir: string;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "tds-cache-mw-"));
+    metaDir = await mkdtemp(join(tmpdir(), "tds-cache-meta-"));
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+    await rm(metaDir, { recursive: true, force: true });
+  });
+
+  /** A card app's resolver: the host becomes the first segment, dots mapped out. */
+  const hostKey = (ctx: { request: Request; url: URL }): string | null => {
+    const host = (ctx.request.headers.get("host") ?? "").toLowerCase().split(":")[0] ?? "";
+    if (host === "") return null;
+    return `/${host.replace(/\./g, "_")}${ctx.url.pathname}`;
+  };
+
+  const build = (): ReturnType<typeof pageCache> =>
+    pageCache({
+      dir,
+      metaDir,
+      events: {},
+      token: "t",
+      cacheKey: hostKey,
+      rebuildUrl: (key, origin) => {
+        const [host, ...rest] = key.replace(/^\//, "").split("/");
+        return `${new URL(origin).protocol}//${(host ?? "").replace(/_/g, ".")}/${rest.join("/")}`;
+      },
+    });
+
+  const ask = async (cache: ReturnType<typeof pageCache>, host: string, body: string) => {
+    const url = new URL(`https://${host}/`);
+    const request = new Request(url, { headers: { host } });
+    return cache.middleware({ request, url }, async () =>
+      new Response(body, { status: 200, headers: { "content-type": "text/html" } }),
+    );
+  };
+
+  it("does not serve one host's page to another", async () => {
+    const cache = build();
+
+    const first = await ask(cache, "mira-markt.de", "<h1>Mira</h1>");
+    expect(first.headers.get("x-tds-cache")).toBe("MISS");
+
+    // A second domain asking for the same pathname must render its own page.
+    const second = await ask(cache, "nordholz.de", "<h1>Nordholz</h1>");
+    expect(second.headers.get("x-tds-cache")).toBe("MISS");
+    expect(await second.text()).toBe("<h1>Nordholz</h1>");
+
+    // And now both come from the cache — each with its own bytes. The render
+    // function deliberately returns the WRONG body here, so a hit that served
+    // the other host's entry would be visible rather than plausible.
+    const againFirst = await ask(cache, "mira-markt.de", "<h1>never</h1>");
+    expect(againFirst.headers.get("x-tds-cache")).toBe("HIT");
+    expect(await againFirst.text()).toBe("<h1>Mira</h1>");
+
+    const againSecond = await ask(cache, "nordholz.de", "<h1>never</h1>");
+    expect(await againSecond.text()).toBe("<h1>Nordholz</h1>");
+  });
+
+  it("writes each host into its own directory, never as a file", async () => {
+    // `mira-markt.de` as a final segment looks like a filename to
+    // `cacheLocation`, which would store it AS one — and then collide with the
+    // directory that host's sub-pages need. Mapping the dots out is what stops
+    // that, so check the layout, not just the round-trip.
+    await ask(build(), "mira-markt.de", "x");
+    expect(await readFile(join(dir, "mira-markt_de", "index.html"), "utf8")).toBe("x");
+  });
+
+  it("passes a request through uncached when the resolver declines", async () => {
+    const cache = build();
+    const url = new URL("http://localhost/");
+    const res = await cache.middleware(
+      { request: new Request(url), url },
+      async () => new Response("kein Host", { status: 404, headers: { "content-type": "text/html" } }),
+    );
+    expect(res.headers.get("x-tds-cache")).toBe("BYPASS");
+    // The status has to survive, or every unknown host would answer 200.
+    expect(res.status).toBe(404);
+    expect(await store(dir).list()).toEqual([]);
+  });
+
+  it("keys on the pathname when no resolver is given", async () => {
+    const plain = pageCache({ dir, metaDir, events: {}, token: "t" });
+    const url = new URL("https://blog.tracht-digital.de/preise");
+    await plain.middleware(
+      { request: new Request(url), url },
+      async () => new Response("y", { status: 200, headers: { "content-type": "text/html" } }),
+    );
+    expect(await readFile(join(dir, "preise", "index.html"), "utf8")).toBe("y");
+  });
+});
+
+function store(dir: string): PageCacheStore {
+  return new PageCacheStore(dir);
+}

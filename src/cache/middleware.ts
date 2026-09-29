@@ -90,6 +90,39 @@ export interface PageCacheOptions {
   onInvalidate?: () => void;
   /** Paths a "rebuild everything" always includes, even when not yet cached. */
   alwaysPaths?: string[];
+  /**
+   * What to file a render under. Defaults to `url.pathname`; `null` means "do
+   * not cache this request".
+   *
+   * Only a site that serves **more than one host from one process** needs this.
+   * Every other site here answers one origin, where the pathname identifies a
+   * page completely. A multi-host site does not: two customer domains both
+   * render `/`, and with pathname keys the second visitor gets the first
+   * customer's page — the worst failure this component can have, and one no
+   * test on a single-origin site can see.
+   *
+   * A key is a store path, so its segments must survive {@link cacheLocation}:
+   * no `/`, `:` or leading dot, and a final segment that looks like a filename
+   * (`mira-markt.de`) is stored AS a file, which then collides with the
+   * directory the same host's sub-pages need. Map dots out of a host before
+   * using it as a segment.
+   *
+   * Whatever shape this returns is also what the event map must return and what
+   * `purge` deletes — see {@link rebuildUrl} for the way back.
+   */
+  cacheKey?: (context: CacheContext) => string | null;
+  /**
+   * How a rebuild turns a stored key back into a URL it can request.
+   *
+   * The inverse of {@link cacheKey}, and required as soon as that is used:
+   * rebuild works by fetching the page again, and `/mira-markt_de/` is not a
+   * path this site's own origin serves. Without it a multi-host rebuild
+   * cheerfully requests nonsense off its own origin and reports the 404s.
+   *
+   * `origin` is the origin the control request arrived on — take the protocol
+   * from it, so a local run over http does not try https.
+   */
+  rebuildUrl?: (key: string, origin: string) => string;
   /** How many pages to render at once during a rebuild. */
   concurrency?: number;
   /** Where diagnostics go. Defaults to `console`. */
@@ -157,6 +190,8 @@ export function pageCache(options: PageCacheOptions): PageCache {
     enabled = true,
     onInvalidate,
     alwaysPaths = [],
+    cacheKey,
+    rebuildUrl,
     concurrency = 4,
     logger = (m: string) => console.warn(m),
   } = options;
@@ -250,7 +285,10 @@ export function pageCache(options: PageCacheOptions): PageCache {
         const path = queue.shift();
         if (path === undefined) return;
         try {
-          const res = await fetch(new URL(path, url.origin), {
+          const target = rebuildUrl
+            ? rebuildUrl(path, url.origin)
+            : new URL(path, url.origin).toString();
+          const res = await fetch(target, {
             headers: { [REFRESH]: activeToken },
           });
           // Drain the body so the connection is released even when we do not
@@ -294,11 +332,23 @@ export function pageCache(options: PageCacheOptions): PageCache {
 
     if (!enabled || !isCacheableMethod(request.method)) return next();
 
+    // Where this render is filed. `null` from a site's own resolver means the
+    // request is not cacheable at all — a host it does not recognise, say.
+    const key = cacheKey ? cacheKey(context) : url.pathname;
+    if (key === null) {
+      const uncacheable = await next();
+      // `response` as the second argument carries status and headers over; a
+      // hand-written `{ status: 200 }` would turn this site's 404s into 200s.
+      const out = new Response(uncacheable.body, uncacheable);
+      out.headers.set("x-tds-cache", "BYPASS");
+      return out;
+    }
+
     const activeToken = currentToken();
     const refreshing = activeToken !== "" && tokenMatches(activeToken, request.headers.get(REFRESH));
 
     if (!refreshing) {
-      const hit = await store.read(url.pathname);
+      const hit = await store.read(key);
       if (hit) {
         if (request.headers.get("if-none-match") === hit.meta.etag) {
           return new Response(null, {
@@ -344,13 +394,13 @@ export function pageCache(options: PageCacheOptions): PageCache {
     const body = Buffer.from(await response.arrayBuffer());
     let etag: string | undefined;
     try {
-      const meta = await store.write(url.pathname, body, contentType);
+      const meta = await store.write(key, body, contentType);
       etag = meta?.etag;
     } catch (err) {
       // An unwritable cache directory must not take the site down; it just
       // means every request renders, which is what happened before this
       // component existed.
-      logger(`[tds-cache] could not store ${url.pathname}: ${String(err)}`);
+      logger(`[tds-cache] could not store ${key}: ${String(err)}`);
     }
 
     const headers = new Headers(response.headers);

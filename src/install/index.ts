@@ -16,6 +16,7 @@ export type { InstallWizardProps } from "./InstallWizard.js";
 export {
   auth,
   blog,
+  cards,
   landingpage,
   profiles,
   shop,

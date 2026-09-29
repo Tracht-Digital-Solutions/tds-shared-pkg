@@ -7,6 +7,7 @@ import {
 } from "../permissions";
 
 export * from "./blogBlocks";
+export * from "./cardBlocks";
 export * from "./shopBlocks";
 
 /**
