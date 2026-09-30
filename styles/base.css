@@ -652,8 +652,73 @@ html {
 [data-theme="dark"] {
   color-scheme: dark;
 }
-:root[data-theme="light"] {
+:root[data-theme="light"],
+[data-theme="light"] {
   color-scheme: light;
+}
+
+/* --- The light palette, for a SUBTREE (2026-09-30) ---------------------
+
+   The mirror of the `[data-theme="dark"]` half, and it has to exist as a copy
+   rather than as a reference. The light values live in the `@theme inline`
+   block, which declares them on `:root` — so a subtree marked light on a DARK
+   page inherits the dark values and nothing brings the light ones back. There
+   is no CSS for "revert this custom property to its `:root` value": `initial`
+   makes it guaranteed-invalid (every `var()` using it collapses to `unset`) and
+   `revert-layer` on an unlayered declaration reverts to the inherited value,
+   which is the dark one. So the values are restated.
+
+   THE DUPLICATION IS PINNED, not trusted: `design.test.ts` asserts this block
+   covers exactly the token set the dark block overrides, and that every value
+   here matches its source declaration. Add a token to the dark block without
+   adding it here and the test names it.
+
+   The one caller is `ThemeToggle`'s hover preview, in the dark→light direction:
+   the page is dark, the clone is marked light, and the circle shows the light
+   theme. Without this block that circle rendered dark-on-dark — the preview
+   existed and changed nothing, which is what "wenn der Darkmode aktiviert ist,
+   soll die Hoveraction den Lightmode zeigen" was reporting. */
+[data-theme="light"] {
+  --tds-shadow-ink: #050f68;
+  --tds-inset-ink: color-mix(in srgb, var(--color-black) 13%, transparent);
+
+  --color-primary: #050f68;
+  --color-accent: #820933;
+  --color-on-primary: #ffffff;
+  --color-on-accent: #ffffff;
+  --color-paper: #fafaf7;
+  --color-soft: #f1efe8;
+  --color-line: #e3e0d8;
+  --color-muted: #6b6b66;
+  --color-accent-pink: #ff7a9c;
+  --color-black: #0b0a07;
+  --color-ink: #1a1a17;
+  --color-surface-ink: #0b0a07;
+  --color-card: #ffffff;
+  --color-surface-navy: #050f68;
+  --color-surface-accent: #820933;
+  --color-success: #2f7d51;
+  --color-warning: #b9791c;
+  --color-danger: #b3261e;
+  --color-info: #2f5fb0;
+  --color-success-ink: #256740;
+  --color-warning-ink: #855714;
+  --color-cat-violet: #5b3fb0;
+  --color-cat-teal: #0f766e;
+  --color-cat-amber: #a85d12;
+  --color-cat-rose: #a4153f;
+  --color-cat-cyan: #1f6f8b;
+  --color-management: #820933;
+
+  --tds-decor-navy: 5 15 104;
+  --tds-decor-bordeaux: 130 9 51;
+  --tds-decor-coral: 255 122 156;
+  --tds-decor-gold: 185 121 28;
+  --tds-decor-field-strength: 1;
+  --tds-decor-line-opacity: 0.2;
+  --tds-decor-shape-alpha: 0.09;
+
+  --tds-hover-wash: color-mix(in srgb, var(--color-accent-pink) 12%, transparent);
 }
 
 /* WebKit / Blink scrollbar — slender, brand-tinted, with a transparent

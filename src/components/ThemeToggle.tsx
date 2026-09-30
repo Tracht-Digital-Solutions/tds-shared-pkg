@@ -101,6 +101,19 @@ export default function ThemeToggle({
    *  - `inert` + `aria-hidden` on the overlay, so nothing inside is focusable or
    *    announced.
    *
+   * ### `data-theme-preview="skip"`
+   *
+   * A consumer can keep an element out of the copy. There is one kind that has
+   * to be: chrome a script POSITIONS, rather than chrome the layout places. The
+   * landingpage's custom cursor is two `position: fixed` dots moved by a
+   * transform on every `mousemove` — cloned, they freeze at wherever they were
+   * when the copy was taken and render a second, stuck cursor inside the circle.
+   * Reported as "der Pointer geht stuck, wenn man über die modes hovert".
+   *
+   * Fixed chrome the layout places (a bar, a floating pill, the bookmarks) is
+   * NOT skipped: it sits at the same viewport position in the copy, so inside
+   * the circle it correctly appears in the other theme.
+   *
    * It is deliberately built once per hover and thrown away on leave. Caching it
    * across hovers would mean tracking every DOM change on the page for the sake
    * of a preview.
@@ -113,10 +126,17 @@ export default function ThemeToggle({
       // The overlay itself is a child of body by the time a second one opens.
       if (node instanceof HTMLElement && node.classList.contains("tds-theme-preview")) continue;
       if (node.tagName === "SCRIPT" || node.tagName === "LINK") continue;
+      if (node instanceof HTMLElement && node.dataset.themePreview === "skip") continue;
       page.appendChild(node.cloneNode(true));
     }
-    for (const stray of page.querySelectorAll("script, link, [id], [name]")) {
-      if (stray.tagName === "SCRIPT" || stray.tagName === "LINK") {
+    for (const stray of page.querySelectorAll(
+      'script, link, [id], [name], [data-theme-preview="skip"]',
+    )) {
+      if (
+        stray.tagName === "SCRIPT" ||
+        stray.tagName === "LINK" ||
+        (stray as HTMLElement).dataset?.themePreview === "skip"
+      ) {
         stray.remove();
         continue;
       }

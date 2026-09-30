@@ -209,6 +209,47 @@ describe("ThemeToggle", () => {
       }
     });
 
+    it("leaves out what a consumer marks as unclonable", () => {
+      finePointer();
+      // The landingpage's custom cursor: two fixed dots a script moves on every
+      // mousemove. Cloned, they freeze wherever they were and render a second,
+      // stuck cursor inside the circle.
+      const cursor = document.createElement("div");
+      cursor.className = "tds-cursor-ring";
+      cursor.dataset.themePreview = "skip";
+      cursor.textContent = "CURSOR";
+      const kept = document.createElement("main");
+      kept.textContent = "Inhalt";
+      document.body.append(cursor, kept);
+      try {
+        const { getByRole } = render(<ThemeToggle />);
+        fireEvent.pointerEnter(getByRole("button"), { clientX: 10, clientY: 10 });
+        const clone = preview()?.querySelector(".tds-theme-preview__page");
+        expect(clone?.textContent).toContain("Inhalt");
+        expect(clone?.textContent, "the marked element stayed out").not.toContain("CURSOR");
+        expect(clone?.querySelector(".tds-cursor-ring")).toBeNull();
+      } finally {
+        cursor.remove();
+        kept.remove();
+      }
+    });
+
+    it("also skips a marked element nested inside the page", () => {
+      finePointer();
+      const page = document.createElement("main");
+      page.innerHTML = '<p>bleibt</p><span data-theme-preview="skip">WEG</span>';
+      document.body.appendChild(page);
+      try {
+        const { getByRole } = render(<ThemeToggle />);
+        fireEvent.pointerEnter(getByRole("button"), { clientX: 10, clientY: 10 });
+        const clone = preview()?.querySelector(".tds-theme-preview__page");
+        expect(clone?.textContent).toContain("bleibt");
+        expect(clone?.textContent).not.toContain("WEG");
+      } finally {
+        page.remove();
+      }
+    });
+
     it("never clones a preview into a preview", () => {
       finePointer();
       const { getByRole } = render(<ThemeToggle />);

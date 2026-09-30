@@ -2234,6 +2234,53 @@ describe("the theme preview under the pointer", () => {
     );
   });
 
+  it("mirrors the dark subtree block with a light one, token for token", () => {
+    /**
+     * The light values live in `@theme inline`, which declares them on `:root`.
+     * A subtree marked light on a DARK page therefore inherits the dark values,
+     * and no CSS brings the `:root` ones back — `initial` is
+     * guaranteed-invalid and `revert-layer` on an unlayered declaration reverts
+     * to the inherited value, which is the dark one. So `[data-theme="light"]`
+     * restates them, and this test is what keeps the copy honest.
+     *
+     * Without it the dark→light preview rendered dark-on-dark: the feature was
+     * there and changed nothing.
+     */
+    const names = (body: string) =>
+      new Set(Array.from(body.matchAll(/^\s*(--[a-z0-9-]+):/gm), (m) => m[1]));
+
+    /**
+     * The block that declares TOKENS, not the one that declares `color-scheme`.
+     * `[data-theme="light"] {` opens both — the palette and the colour-scheme
+     * pair — and a plain `indexOf` finds the wrong one, which is how the first
+     * run of this test reported all 37 tokens as uncovered.
+     */
+    const paletteBlock = (selector: string) => {
+      let at = -1;
+      for (;;) {
+        at = base.indexOf(`\n${selector} {`, at + 1);
+        expect(at, `no ${selector} block declaring tokens`).toBeGreaterThan(-1);
+        const from = base.indexOf("{", at) + 1;
+        const body = base.slice(from, base.indexOf("\n}", from));
+        if (names(body).size > 0) return body;
+      }
+    };
+
+    // The dark block is a two-selector list; the light subtree block is its own.
+    const darkAt = base.indexOf('[data-theme="dark"] {');
+    const darkBody = base.slice(
+      base.indexOf("{", darkAt) + 1,
+      base.indexOf("\n}", darkAt),
+    );
+    const light = names(paletteBlock('[data-theme="light"]'));
+    const dark = names(darkBody);
+
+    const uncovered = [...dark].filter((token) => !light.has(token));
+    expect(uncovered, `the dark block overrides these and the light block does not: ${uncovered.join(", ")}`).toEqual([]);
+    const extra = [...light].filter((token) => !dark.has(token));
+    expect(extra, `the light block restates these for nothing: ${extra.join(", ")}`).toEqual([]);
+  });
+
   it("can only work because the dark tokens reach a subtree", () => {
     /**
      * The whole feature rests on this: `base.css` matches a bare

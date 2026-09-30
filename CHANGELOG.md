@@ -6,6 +6,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **The preview works in the dark→light direction too.** The dark half was added
+  as `[data-theme="dark"]`, but the LIGHT values live in `@theme inline` on
+  `:root` — so a subtree marked light on a dark page inherited the dark values
+  and the circle rendered dark-on-dark: the preview existed and changed nothing.
+  `[data-theme="light"]` now restates them. It has to be a copy: there is no CSS
+  for "revert this custom property to its `:root` value" (`initial` is
+  guaranteed-invalid, and `revert-layer` on an unlayered declaration reverts to
+  the inherited value, which is the dark one). `design.test.ts` pins the copy
+  against the dark block token for token, in both directions.
+- **A script-positioned element no longer clones into a stuck copy.**
+  `data-theme-preview="skip"` keeps an element out of the preview's copy, at any
+  depth. The case it exists for: a custom cursor is two `position: fixed` dots a
+  script moves on every `mousemove`, and a clone freezes them wherever they were
+  — a second, stuck cursor inside the circle. Fixed chrome the LAYOUT places (a
+  bar, a floating pill) is deliberately not skipped: it lands at the same
+  viewport position in the copy, so inside the circle it correctly appears in the
+  other theme.
+
 ### Added
 - **The dark tokens apply to a subtree, not only to `<html>`.** `base.css` now
   matches a bare `[data-theme="dark"]` beside `:root[data-theme="dark"]`, so a
