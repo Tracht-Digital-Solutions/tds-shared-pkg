@@ -250,6 +250,36 @@ describe("ThemeToggle", () => {
       }
     });
 
+    it("previews the LIGHT theme when the page is dark", () => {
+      finePointer();
+      document.documentElement.setAttribute("data-theme", "dark");
+      const { getByRole } = render(<ThemeToggle />);
+      fireEvent.pointerEnter(getByRole("button"), { clientX: 10, clientY: 10 });
+      expect(
+        preview()?.querySelector(".tds-theme-preview__page")?.getAttribute("data-theme"),
+      ).toBe("light");
+    });
+
+    it("reads the theme from the DOCUMENT, not from stale state", () => {
+      /**
+       * State is seeded on mount and updated by this button's own flip. Any other
+       * writer — the profile page, `startSystemThemeSync`, another tab — leaves
+       * it behind, and a preview built in the theme the page is ALREADY in shows
+       * no difference whatsoever. So `openPreview` reads the attribute.
+       *
+       * Simulated by changing the attribute WITHOUT announcing it, which is the
+       * one case the `tds:theme-change` subscription cannot catch either.
+       */
+      finePointer();
+      const { getByRole } = render(<ThemeToggle />); // mounts light
+      document.documentElement.setAttribute("data-theme", "dark");
+      fireEvent.pointerEnter(getByRole("button"), { clientX: 10, clientY: 10 });
+      expect(
+        preview()?.querySelector(".tds-theme-preview__page")?.getAttribute("data-theme"),
+        "the page is dark, so the preview must be light",
+      ).toBe("light");
+    });
+
     it("never clones a preview into a preview", () => {
       finePointer();
       const { getByRole } = render(<ThemeToggle />);

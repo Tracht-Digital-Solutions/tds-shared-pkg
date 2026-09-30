@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **The toggle follows a theme change it did not make.** Its state was seeded
+  on mount and then only updated by its own flip, so the profile page,
+  `startSystemThemeSync` or another tab left the icon showing the wrong target.
+  One subscription to `tds:theme-change`. The hover preview does not rely on it:
+  it reads `data-theme` at the moment it opens, because a preview built in the
+  theme the page is already in shows nothing at all.
 - **The preview works in the dark→light direction too.** The dark half was added
   as `[data-theme="dark"]`, but the LIGHT values live in `@theme inline` on
   `:root` — so a subtree marked light on a dark page inherited the dark values

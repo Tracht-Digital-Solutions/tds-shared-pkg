@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import { THEME_ATTRIBUTE, type Theme } from "../design/index.js";
-import { applyThemePreference } from "../theme/index.js";
+import { applyThemePreference, onThemeChange } from "../theme/index.js";
 import { cssEase } from "../motion/index.js";
 
 export interface ThemeToggleProps {
@@ -53,6 +53,20 @@ export default function ThemeToggle({
     const current = document.documentElement.getAttribute(THEME_ATTRIBUTE);
     setTheme(current === "dark" ? "dark" : "light");
     setMounted(true);
+    /**
+     * Follow the theme when somebody ELSE changes it.
+     *
+     * The state used to be seeded here and then only ever updated by this
+     * button's own flip, so every other writer left the icon showing the wrong
+     * target: the profile page, `startSystemThemeSync` following the OS, the
+     * panel host restoring a per-user choice. `applyThemePreference` is the
+     * single write path and announces itself, so this is one subscription.
+     *
+     * The hover preview does NOT depend on this — it reads the attribute at the
+     * moment it opens (see `openPreview`), because a preview built in the theme
+     * the page is already in shows nothing at all.
+     */
+    return onThemeChange((detail) => setTheme(detail.theme));
   }, []);
 
   // --- Preview under the pointer --------------------------------------
@@ -220,7 +234,18 @@ export default function ThemeToggle({
       el = document.createElement("div");
       el.className = "tds-theme-preview";
       el.setAttribute("aria-hidden", "true");
-      el.appendChild(buildClone(theme === "dark" ? "light" : "dark"));
+      /**
+       * The target theme is read from the DOCUMENT, not from `theme` state.
+       *
+       * State is seeded once on mount and updated by this button's own flip, so
+       * any other writer leaves it stale — the profile page, `startSystemThemeSync`
+       * following the OS, another tab, or the panel host restoring a per-user
+       * choice. A stale value here does not produce a subtle bug: it builds the
+       * clone in the theme the page is ALREADY in, and the circle shows no
+       * difference at all.
+       */
+      const current = document.documentElement.getAttribute(THEME_ATTRIBUTE);
+      el.appendChild(buildClone(current === "dark" ? "light" : "dark"));
       document.body.appendChild(el);
       previewRef.current = el;
     }
