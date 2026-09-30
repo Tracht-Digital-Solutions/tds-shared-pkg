@@ -75,6 +75,64 @@ export default function ThemeToggle({
   const removeTimerRef = useRef(0);
   const pointRef = useRef({ x: 0, y: 0 });
 
+  /**
+   * A copy of the page, in the TARGET theme.
+   *
+   * This is what makes the region read as the real dark mode rather than as a
+   * dark sheet over the light one (asked for 2026-09-30, after a flat fill was
+   * tried first). The dark tokens reach it because `base.css` matches a bare
+   * `[data-theme="dark"]` as well as `:root[…]` — see the long note there,
+   * including what it cannot reach (Tailwind's non-arbitrary utilities compile
+   * their colours as literals).
+   *
+   * `<body>`'s CHILDREN, not `<body>` itself: cloning the body element would put
+   * a second `<body>` inside a `<div>`, which the parser is entitled to move.
+   * The wrapper paints `--color-paper` for the same reason — the page background
+   * lives on `<body>` and does not come with the children.
+   *
+   * What is stripped, and why each one matters:
+   *  - `id`, everywhere: duplicates break `getElementById`, `:target`,
+   *    label/control pairing and every `aria-*` reference on the REAL page.
+   *  - `name` on form controls, so a cloned radio group cannot steal the
+   *    selection of the real one.
+   *  - `<script>`, `<style id>` and `<link>`: a clone must not re-run or
+   *    re-register anything. (`cloneNode` does not execute scripts, but a
+   *    `<script>` moved into the document by `appendChild` would.)
+   *  - `inert` + `aria-hidden` on the overlay, so nothing inside is focusable or
+   *    announced.
+   *
+   * It is deliberately built once per hover and thrown away on leave. Caching it
+   * across hovers would mean tracking every DOM change on the page for the sake
+   * of a preview.
+   */
+  const buildClone = (target: Theme): HTMLElement => {
+    const page = document.createElement("div");
+    page.className = "tds-theme-preview__page";
+    page.setAttribute("data-theme", target);
+    for (const node of Array.from(document.body.children)) {
+      // The overlay itself is a child of body by the time a second one opens.
+      if (node instanceof HTMLElement && node.classList.contains("tds-theme-preview")) continue;
+      if (node.tagName === "SCRIPT" || node.tagName === "LINK") continue;
+      page.appendChild(node.cloneNode(true));
+    }
+    for (const stray of page.querySelectorAll("script, link, [id], [name]")) {
+      if (stray.tagName === "SCRIPT" || stray.tagName === "LINK") {
+        stray.remove();
+        continue;
+      }
+      stray.removeAttribute("id");
+      stray.removeAttribute("name");
+    }
+    page.inert = true;
+    return page;
+  };
+
+  /** Lines the clone up with the real page at the current scroll position. */
+  const alignClone = () => {
+    const page = previewRef.current?.firstElementChild as HTMLElement | null;
+    if (page) page.style.top = `${-window.scrollY}px`;
+  };
+
   const paintPreview = () => {
     frameRef.current = 0;
     const el = previewRef.current;
@@ -142,6 +200,7 @@ export default function ThemeToggle({
       el = document.createElement("div");
       el.className = "tds-theme-preview";
       el.setAttribute("aria-hidden", "true");
+      el.appendChild(buildClone(theme === "dark" ? "light" : "dark"));
       document.body.appendChild(el);
       previewRef.current = el;
     }
@@ -149,6 +208,7 @@ export default function ThemeToggle({
     // centre of the viewport and slides to the cursor.
     pointRef.current = { x: event.clientX, y: event.clientY };
     paintPreview();
+    alignClone();
     const target = el;
     requestAnimationFrame(() => {
       if (previewRef.current === target) target.setAttribute("data-visible", "true");
@@ -179,7 +239,14 @@ export default function ThemeToggle({
     // on the toggle while the visitor tabs away is the one case
     // `pointerleave` never fires for.
     button.addEventListener("blur", closePreview);
+    // A page that scrolls while the preview is open would slide out from under
+    // the copy. Passive and a no-op whenever nothing is open.
+    const onScroll = () => {
+      if (previewRef.current) alignClone();
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
+      window.removeEventListener("scroll", onScroll);
       button.removeEventListener("pointerenter", onEnter);
       button.removeEventListener("pointermove", onMove);
       button.removeEventListener("pointerleave", closePreview);

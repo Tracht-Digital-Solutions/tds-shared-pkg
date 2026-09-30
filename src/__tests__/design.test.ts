@@ -2193,34 +2193,62 @@ describe("the theme preview under the pointer", () => {
     // Asked for: a bounded region, not a smudge. The stops are lengths rather
     // than percentages so the edge is 1.5px at every step of the radius clamp —
     // a percentage would be 1.6px at 6rem and 0.9px at 11rem.
-    expect(base).toMatch(
-      /calc\(var\(--tds-theme-preview-r\)\s*-\s*1\.5px\)/,
-    );
+    expect(base).toMatch(/calc\(var\(--tds-theme-preview-r\)\s*-\s*1\.5px\)/);
     // ...and it ends AT the radius, so nothing fades past it.
-    expect(base).toMatch(
-      /rgb\(var\(--tds-theme-preview-ink\) \/ 0\) var\(--tds-theme-preview-r\)/,
-    );
+    expect(base).toMatch(/transparent var\(--tds-theme-preview-r\)/);
   });
 
-  it("is a gradient, never a clip-path", () => {
-    // A clip is a binary per-pixel test: a circle re-evaluated every frame under
-    // a moving cursor aliases along its rim AND the staircase crawls, which is
-    // more visible than the softness it removes. It is also not
-    // compositor-animatable in Chromium, so it would repaint a full-viewport
-    // layer per frame. The 1.5px above is what buys a hard look without either.
+  it("is a MASK over real content, never a clip-path and never a flat fill", () => {
+    /**
+     * Both halves of this are load-bearing.
+     *
+     * `mask` and not `clip-path`: both are per-pixel, but a mask's own 1.5px ramp
+     * is anti-aliased where a clip is a binary test whose rim staircases — and
+     * whose staircase crawls as the pointer moves, which is more visible than the
+     * softness it removes.
+     *
+     * A mask over a CLONE and not a `background` fill: the fill was the first
+     * attempt (2026-09-29) and it read as a dark sheet laid over the light page
+     * rather than as the dark theme, which is what was asked for.
+     */
     const rule = base.slice(base.indexOf(".tds-theme-preview {"));
     const body = rule.slice(0, rule.indexOf("}"));
-    expect(body).toContain("radial-gradient");
+    expect(body).toMatch(/mask-image:\s*radial-gradient/);
     expect(body).not.toContain("clip-path");
+    expect(body, "no flat fill — the region is the cloned page").not.toMatch(
+      /\n\s*background:\s*radial-gradient/,
+    );
   });
 
-  it("previews the OTHER theme's paper, stated as a literal", () => {
-    // `var(--color-paper)` inside this rule is whatever the CURRENT theme says,
-    // which is the opposite of what a preview needs. Light mode previews the
-    // dark paper (#070a14) and dark mode the light one (#fafaf7).
-    expect(base).toMatch(/--tds-theme-preview-ink:\s*7 10 20;/);
+  it("holds a cloned page that carries its own ground", () => {
+    // The clone is `<body>`'s CHILDREN, so the page background does not come with
+    // it — without a ground of its own the region would show the light page
+    // through the gaps between blocks.
+    const rule = base.slice(base.indexOf(".tds-theme-preview__page {"));
+    const body = rule.slice(0, rule.indexOf("}"));
+    expect(body).toContain("background-color: var(--color-paper)");
+    expect(body).toContain("pointer-events: none");
+    // It is a photograph of the page: nothing inside may replay its entrance.
     expect(base).toMatch(
-      /:root\[data-theme="dark"\] \.tds-theme-preview \{[^}]*--tds-theme-preview-ink:\s*250 250 247;/,
+      /\.tds-theme-preview__page \*[^{]*\{[^}]*animation:\s*none\s*!important/,
+    );
+  });
+
+  it("can only work because the dark tokens reach a subtree", () => {
+    /**
+     * The whole feature rests on this: `base.css` matches a bare
+     * `[data-theme="dark"]` beside `:root[data-theme="dark"]`, so a marked
+     * subtree gets the dark tokens. Drop the bare selector and the preview
+     * silently renders the LIGHT page inside the circle — no error, no
+     * difference from the page around it.
+     *
+     * The `:root` form stays because every consumer's own override is written
+     * as `:global(:root[data-theme="dark"])` and counts on (0,2,0).
+     */
+    expect(base).toMatch(/:root\[data-theme="dark"\],\s*\[data-theme="dark"\] \{/);
+    // And the same pair for `color-scheme`, so a dark region gets dark controls.
+    expect(base).toMatch(
+      /:root\[data-theme="dark"\],\s*\[data-theme="dark"\] \{\s*color-scheme:\s*dark/,
     );
   });
 

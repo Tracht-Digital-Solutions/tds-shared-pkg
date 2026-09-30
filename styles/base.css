@@ -171,8 +171,32 @@
    brighter/cleaner and `--color-muted` is lifted to ~0.70 so secondary
    text clears AA on the darker ground. Still one navy family — the panels,
    periwinkle primary and pink accent all belong together; text stays warm
-   ivory for a deliberate warm-on-cool editorial contrast. */
-:root[data-theme="dark"] {
+   ivory for a deliberate warm-on-cool editorial contrast.
+
+   ### Why a SUBTREE selector sits beside the `:root` one (2026-09-30)
+
+   `[data-theme="dark"]` on its own was added so a REGION of a light page can be
+   rendered in the dark theme. The one caller is `ThemeToggle`'s hover preview: it
+   clones the page into an overlay, marks the clone dark and masks it to a circle
+   at the cursor, so the region shows the real dark theme rather than a dark sheet
+   laid over the light one.
+
+   Both selectors, not one. `:root[…]` is (0,2,0) and the bare attribute (0,1,0),
+   and the bare one only has to out-rank the `@theme inline` block's `:root` —
+   also (0,1,0) — which it does on source order, being ~140 lines later. Dropping
+   the `:root` form would still work for `<html>`, but it would quietly lower the
+   specificity that every consumer's own `:global(:root[data-theme="dark"])`
+   override is written against.
+
+   What it does NOT reach: Tailwind utilities. The colour block above is `@theme
+   inline`, so `text-muted` compiles with the literal hex substituted and no
+   cascade can touch it — the note at the surface scale below spells this out. An
+   arbitrary value (`text-[var(--color-ink)]`, which is what these repos use)
+   compiles to `color: var(--color-ink)` and does follow a subtree override. That
+   is why the preview reads as the dark theme rather than as a pixel-perfect copy
+   of it. */
+:root[data-theme="dark"],
+[data-theme="dark"] {
   /* Black disappears on this ground; the hard shadow is a periwinkle
      offset instead, still one navy family. */
   --tds-shadow-ink: rgb(147 167 255 / 0.32);
@@ -622,7 +646,10 @@ html {
     transparent;
 }
 
-:root[data-theme="dark"] {
+/* The subtree form is here too, so a dark-themed region gets dark form controls
+   and scrollbars rather than light ones on a dark ground. */
+:root[data-theme="dark"],
+[data-theme="dark"] {
   color-scheme: dark;
 }
 :root[data-theme="light"] {
@@ -808,38 +835,60 @@ input[type="radio"] {
   inset: 0;
   z-index: 45;
   pointer-events: none;
+  /* The clone must not be scrollable or selectable, and must never add a
+     scrollbar of its own. */
+  overflow: hidden;
   opacity: 0;
   transition: opacity var(--tds-dur-base) var(--tds-ease-out);
   /* The radius scales with the smaller viewport axis, so the region stays a
      region on a laptop and does not become a vignette on an ultrawide. */
   --tds-theme-preview-r: clamp(6rem, 14vmin, 11rem);
-  /* The dark theme's `--color-paper` (#070a14), as a triplet. Stated rather
-     than `var(--color-paper)`, because inside this rule that token is whatever
-     the CURRENT theme says — the preview needs the other one. */
-  --tds-theme-preview-ink: 7 10 20;
-  --tds-theme-preview-alpha: 0.92;
-  /* The stops are LENGTHS, not percentages, so the edge is exactly 1.5px at
-     every step of the radius clamp. A percentage would be 1.6px at 6rem and
-     0.9px at 11rem. (`calc()` cannot divide by a length, so deriving a
-     percentage from the radius is not expressible anyway.) */
-  background: radial-gradient(
+  /* The window, as a mask rather than a fill. The stops are LENGTHS, not
+     percentages, so the edge is exactly 1.5px at every step of the radius
+     clamp — a percentage would be 1.6px at 6rem and 0.9px at 11rem, and
+     `calc()` cannot divide by a length, so deriving one from the radius is not
+     expressible at all.
+
+     `mask` and not `clip-path`: both are per-pixel, but a mask's own 1.5px ramp
+     is anti-aliased, where a clip is a binary test whose rim staircases and
+     whose staircase crawls as the pointer moves. */
+  mask-image: radial-gradient(
     circle var(--tds-theme-preview-r) at var(--tds-theme-preview-x, 50%)
       var(--tds-theme-preview-y, 50%),
-    rgb(var(--tds-theme-preview-ink) / var(--tds-theme-preview-alpha)) 0,
-    rgb(var(--tds-theme-preview-ink) / var(--tds-theme-preview-alpha))
-      calc(var(--tds-theme-preview-r) - 1.5px),
-    rgb(var(--tds-theme-preview-ink) / 0) var(--tds-theme-preview-r)
+    #000 0,
+    #000 calc(var(--tds-theme-preview-r) - 1.5px),
+    transparent var(--tds-theme-preview-r)
   );
 }
 .tds-theme-preview[data-visible="true"] {
   opacity: 1;
 }
-/* In the dark theme the button goes the other way, so the preview does too:
-   the LIGHT theme's paper (#fafaf7). A touch less opaque — light over dark
-   reads stronger than dark over light at the same value. */
-:root[data-theme="dark"] .tds-theme-preview {
-  --tds-theme-preview-ink: 250 250 247;
-  --tds-theme-preview-alpha: 0.88;
+
+/* The cloned page inside it.
+
+   `position: absolute` with a top offset the component writes, so the copy lines
+   up with the real page under it at the current scroll position. It carries the
+   TARGET theme (`data-theme` on this element), which is what makes the region the
+   real dark theme instead of a dark sheet — see the note at the dark token block.
+
+   A ground of its own is required: the clone is `<body>`'s children, not `<body>`,
+   so the page background does not come with it and the region would otherwise
+   show the light page through the gaps between blocks. */
+.tds-theme-preview__page {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  background-color: var(--color-paper);
+  /* Nothing inside may animate, transition, or catch a pointer: it is a
+     photograph of the page, and a clone whose reveal animations replay would
+     flicker every time the pointer entered the button. */
+  pointer-events: none;
+}
+.tds-theme-preview__page *,
+.tds-theme-preview__page *::before,
+.tds-theme-preview__page *::after {
+  animation: none !important;
+  transition: none !important;
 }
 /* Belt and braces. The component does not create the element under a
    reduced-motion preference at all; this covers a preference switched on

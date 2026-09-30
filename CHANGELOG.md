@@ -6,6 +6,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **The dark tokens apply to a subtree, not only to `<html>`.** `base.css` now
+  matches a bare `[data-theme="dark"]` beside `:root[data-theme="dark"]`, so a
+  marked region of a light page renders in the dark theme. Both selectors are
+  kept: the `:root` form is (0,2,0) and every consumer's own
+  `:global(:root[data-theme="dark"])` override is written against it. The same
+  pair carries `color-scheme`, so a dark region gets dark controls and
+  scrollbars. It does not reach Tailwind's non-arbitrary utilities — the colour
+  block is `@theme inline`, which substitutes literals — but it does reach
+  `text-[var(--color-ink)]`, which is the form these repos use.
+
+### Changed
+- **The theme preview shows the REAL other theme, not a dark sheet.** It was a
+  flat translucent fill; it now clones the page into the overlay, marks the copy
+  with the target theme and masks it to the circle, so the region is the dark
+  theme rather than a dim patch of the light one. The 1.5px hard edge moves from
+  the fill to `mask-image` — a mask's own ramp is anti-aliased, where
+  `clip-path` staircases and the staircase crawls with the pointer.
+
+  The clone is `<body>`'s children (cloning `<body>` into a `<div>` is not
+  something the parser has to honour) and carries `--color-paper` itself,
+  because the page background lives on `<body>`. `id` and `name` are stripped
+  throughout, `<script>` and `<link>` are dropped, and it is `inert` inside an
+  `aria-hidden` overlay — a duplicate id breaks `getElementById`, `:target`,
+  label pairing and every aria reference on the live page. Animations and
+  transitions inside it are `none`, so it is a photograph rather than a page
+  replaying its entrance. Built per hover and discarded on leave; it realigns to
+  `scrollY` while open.
+
 ### Changed
 - **The theme preview under the pointer has a hard edge and shows the other
   theme's ground.** It faded out over a quarter of its radius and read as a

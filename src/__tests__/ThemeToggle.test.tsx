@@ -175,6 +175,54 @@ describe("ThemeToggle", () => {
       expect(preview()?.getAttribute("data-visible")).toBeNull();
     });
 
+    it("shows a CLONE of the page in the target theme", () => {
+      finePointer();
+      // Something identifiable on the page, with an id and a script beside it.
+      const page = document.createElement("main");
+      page.innerHTML =
+        '<h1 id="headline">Hallo</h1><script>window.__ran = 1;<\/script><input name="email">';
+      document.body.appendChild(page);
+      try {
+        const { getByRole } = render(<ThemeToggle />);
+        fireEvent.pointerEnter(getByRole("button"), { clientX: 10, clientY: 10 });
+        const clone = preview()?.querySelector(".tds-theme-preview__page");
+        expect(clone, "the preview holds a copy of the page").not.toBeNull();
+        // The copy is in the OTHER theme — that is the whole point, and it works
+        // only because base.css matches a bare `[data-theme="dark"]`.
+        expect(clone?.getAttribute("data-theme")).toBe("dark");
+        expect(clone?.textContent).toContain("Hallo");
+
+        // No duplicate ids: a second `#headline` breaks getElementById,
+        // `:target`, label pairing and every aria reference on the REAL page.
+        expect(document.querySelectorAll("#headline")).toHaveLength(1);
+        // No duplicate control names: a cloned radio group would steal the
+        // real one's selection.
+        expect(clone?.querySelector("[name]")).toBeNull();
+        // Scripts never travel. `cloneNode` does not run them, but appending one
+        // to the document would.
+        expect(clone?.querySelector("script")).toBeNull();
+        // Nothing inside is focusable or announced.
+        expect((clone as HTMLElement).inert).toBe(true);
+        expect(preview()?.getAttribute("aria-hidden")).toBe("true");
+      } finally {
+        page.remove();
+      }
+    });
+
+    it("never clones a preview into a preview", () => {
+      finePointer();
+      const { getByRole } = render(<ThemeToggle />);
+      const btn = getByRole("button");
+      fireEvent.pointerEnter(btn, { clientX: 10, clientY: 10 });
+      fireEvent.pointerLeave(btn);
+      // Still in the DOM during its fade, and it is a child of body — so the
+      // next open would copy it into itself and nest a page per hover.
+      fireEvent.pointerEnter(btn, { clientX: 20, clientY: 20 });
+      expect(
+        document.querySelectorAll(".tds-theme-preview .tds-theme-preview"),
+      ).toHaveLength(0);
+    });
+
     it("takes the overlay with it when unmounted mid-hover", () => {
       finePointer();
       const { getByRole, unmount } = render(<ThemeToggle />);
