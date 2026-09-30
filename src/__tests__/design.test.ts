@@ -2184,6 +2184,55 @@ describe("view transitions under reduced motion", () => {
   });
 });
 
+describe("the theme preview under the pointer", () => {
+  /**
+   * Two decisions here look like taste and are not, and both were reached the
+   * long way round (2026-09-29 soft, 2026-09-30 hard on request).
+   */
+  it("draws a HARD edge, as an exact 1.5px length step", () => {
+    // Asked for: a bounded region, not a smudge. The stops are lengths rather
+    // than percentages so the edge is 1.5px at every step of the radius clamp —
+    // a percentage would be 1.6px at 6rem and 0.9px at 11rem.
+    expect(base).toMatch(
+      /calc\(var\(--tds-theme-preview-r\)\s*-\s*1\.5px\)/,
+    );
+    // ...and it ends AT the radius, so nothing fades past it.
+    expect(base).toMatch(
+      /rgb\(var\(--tds-theme-preview-ink\) \/ 0\) var\(--tds-theme-preview-r\)/,
+    );
+  });
+
+  it("is a gradient, never a clip-path", () => {
+    // A clip is a binary per-pixel test: a circle re-evaluated every frame under
+    // a moving cursor aliases along its rim AND the staircase crawls, which is
+    // more visible than the softness it removes. It is also not
+    // compositor-animatable in Chromium, so it would repaint a full-viewport
+    // layer per frame. The 1.5px above is what buys a hard look without either.
+    const rule = base.slice(base.indexOf(".tds-theme-preview {"));
+    const body = rule.slice(0, rule.indexOf("}"));
+    expect(body).toContain("radial-gradient");
+    expect(body).not.toContain("clip-path");
+  });
+
+  it("previews the OTHER theme's paper, stated as a literal", () => {
+    // `var(--color-paper)` inside this rule is whatever the CURRENT theme says,
+    // which is the opposite of what a preview needs. Light mode previews the
+    // dark paper (#070a14) and dark mode the light one (#fafaf7).
+    expect(base).toMatch(/--tds-theme-preview-ink:\s*7 10 20;/);
+    expect(base).toMatch(
+      /:root\[data-theme="dark"\] \.tds-theme-preview \{[^}]*--tds-theme-preview-ink:\s*250 250 247;/,
+    );
+  });
+
+  it("never takes a pointer, and is gone under reduced motion", () => {
+    const rule = base.slice(base.indexOf(".tds-theme-preview {"));
+    expect(rule.slice(0, rule.indexOf("}"))).toContain("pointer-events: none");
+    expect(base).toMatch(
+      /prefers-reduced-motion: reduce\)\s*\{\s*\.tds-theme-preview\s*\{\s*display:\s*none/,
+    );
+  });
+});
+
 describe("hard 2D shadows (public surfaces only)", () => {
   const TOKENS = ["--tds-shadow-hard", "--tds-shadow-hard-sm", "--tds-shadow-hard-press", "--tds-shadow-hard-hover", "--tds-shadow-hard-sm-hover"];
 

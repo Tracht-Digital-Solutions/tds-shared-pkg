@@ -6,6 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **The theme preview under the pointer has a hard edge and shows the other
+  theme's ground.** It faded out over a quarter of its radius and read as a
+  smudge rather than as a window; asked for as a bounded region in the target
+  theme. The region is now the other theme's `--color-paper` at 0.92 (0.88 the
+  other way, because light over dark reads stronger), and its rim is an exact
+  1.5px step.
+
+  Still a `radial-gradient`, not `clip-path: circle()`: 1.5px is a hard edge at
+  any normal viewing distance, and it is what keeps the rim from staircasing —
+  a clip is a binary per-pixel test, so a circle re-evaluated every frame under
+  a moving cursor aliases AND the staircase crawls, which is more visible than
+  the softness it removes. The stops are lengths rather than percentages, so the
+  edge stays 1.5px at every step of the radius clamp.
+
+  It is not a true re-render: the page's own text, cards and photos keep their
+  current theme underneath. Doing that would mean cloning the document and
+  giving the dark tokens a non-`:root` selector — a cascade change across every
+  consumer. `design.test.ts` now pins the edge, the gradient, the two inks and
+  the reduced-motion opt-out.
+
 ### Added
 - **The theme toggle previews the flip under the pointer.** On a fine pointer,
   hovering `ThemeToggle` draws a circular region that follows the cursor and
