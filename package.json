@@ -127,6 +127,11 @@
       "import": "./dist/connection/index.js",
       "require": "./dist/connection/index.cjs"
     },
+    "./site": {
+      "types": "./dist/site/index.d.ts",
+      "import": "./dist/site/index.js",
+      "require": "./dist/site/index.cjs"
+    },
     "./styles/primitives.css": "./styles/primitives.css",
     "./styles/prose.css": "./styles/prose.css",
     "./styles/page-transitions.css": "./styles/page-transitions.css",

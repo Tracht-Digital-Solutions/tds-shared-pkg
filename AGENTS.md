@@ -968,6 +968,25 @@ a public origin is free render amplification. The token belongs in the host's
 Node environment and **never** in `tds-runtime.json`, which is served publicly
 from the docroot; same rule as the site key.
 
+## `src/site/` — what the public sites shared by copy (0.46.0)
+
+Server-side, no `node:` imports, never re-exported from the root entry.
+
+- `createSiteKeyGuard(connection, { label, reconnectHint })` — the site key
+  headers and `assertKeyAccepted`, which COUNTS a 401/403 on `globalThis`
+  before it throws. `guardSiteKey(next)` marks a render that grew the count
+  `no-store`; mount it inside the cache middleware. Four sites carried a
+  byte-identical copy apart from the log prefix.
+- `createContentReader(guard)` — fetch with the key, a 10s timeout, and a
+  THROW (`ContentHttpError`) on any non-2xx. `isConnectionFailure(err)` is the
+  only test for "demo content is a fair stand-in".
+- `memoisedOr(cache, key, load, fallback)` — remembers successes only.
+  `createGenerationCache` evicts only a rejection, so a loader that resolved
+  `{}` on failure pinned the fallback for a whole generation and a rejected
+  key was counted once.
+- `escapeXml`, `renderSitemapIndex(sitemaps, lastmod?)`, `serializeJsonLd`
+  (escapes `<` and U+2028/2029 so panel text cannot close the script tag).
+
 ## `src/install/` — the host-side setup wizard
 
 **It is a React island, and it used to be PHP. That was a mistake worth naming.**

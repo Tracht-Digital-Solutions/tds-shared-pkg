@@ -51,6 +51,9 @@ export default defineConfig({
     // Server-only: private credentials and the filesystem-backed pairing
     // state. Never re-export from the browser-safe root entry.
     "connection/index": "src/connection/index.ts",
+    // Server-side helpers the public sites shared by copy: site-key guard,
+    // content reader, success-only memo, sitemap/JSON-LD serialisers.
+    "site/index": "src/site/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,
