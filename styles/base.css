@@ -1102,6 +1102,18 @@ input[type="radio"] {
 .cookie-notice-btn:hover {
   background: color-mix(in srgb, var(--color-surface-navy) 88%, #fff);
 }
+/* Dark theme (2026-10-05): the navy button on the dark notice card measured
+   1.34:1 against it and read as a hole, not as the action. It takes the dark
+   theme's pastel pair, periwinkle and coral, with dark type. The ghost button
+   keeps its own rules below. */
+:root[data-theme="dark"] .cookie-notice-btn:not(.cookie-notice-btn--ghost) {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+:root[data-theme="dark"] .cookie-notice-btn:not(.cookie-notice-btn--ghost):hover {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
 /* Consent mode: an Accept + a secondary (ghost) Decline button side by side. */
 .cookie-notice-actions {
   flex: none;
