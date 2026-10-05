@@ -895,6 +895,16 @@ input[type="radio"] {
    (40) — a preview that the chrome punched a hole in would be a bug report.
    It never takes a pointer or a focus, and it is `aria-hidden`: nothing is
    being said here that the button's own label does not already say. */
+/* The radius is a REGISTERED length so it can transition: the circle grows
+   from nothing when the preview opens and shrinks back to nothing when it
+   closes (2026-10-05), in either direction — dark over light, light over
+   dark. An unregistered custom property cannot be interpolated; it would
+   jump. */
+@property --tds-theme-preview-r {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
 .tds-theme-preview {
   position: fixed;
   inset: 0;
@@ -904,10 +914,13 @@ input[type="radio"] {
      scrollbar of its own. */
   overflow: hidden;
   opacity: 0;
-  transition: opacity var(--tds-dur-base) var(--tds-ease-out);
-  /* The radius scales with the smaller viewport axis, so the region stays a
-     region on a laptop and does not become a vignette on an ultrawide. */
-  --tds-theme-preview-r: clamp(6rem, 14vmin, 11rem);
+  /* Closing: the circle shrinks to a point, quickly and without a bounce.
+     The radius is listed FIRST — the component reads the first transition
+     duration to know when the closed preview may leave the DOM. */
+  transition:
+    --tds-theme-preview-r var(--tds-dur-fast) var(--tds-ease-in-out),
+    opacity var(--tds-dur-fast) var(--tds-ease-in-out);
+  --tds-theme-preview-r: 0px;
   /* The window, as a mask rather than a fill. The stops are LENGTHS, not
      percentages, so the edge is exactly 1.5px at every step of the radius
      clamp — a percentage would be 1.6px at 6rem and 0.9px at 11rem, and
@@ -927,6 +940,13 @@ input[type="radio"] {
 }
 .tds-theme-preview[data-visible="true"] {
   opacity: 1;
+  /* The radius scales with the smaller viewport axis, so the region stays a
+     region on a laptop and does not become a vignette on an ultrawide.
+     Opening: it grows from the pointer with a small overshoot. */
+  --tds-theme-preview-r: clamp(6rem, 14vmin, 11rem);
+  transition:
+    --tds-theme-preview-r var(--tds-dur-slow) var(--tds-ease-bounce-in),
+    opacity var(--tds-dur-fast) var(--tds-ease-out);
 }
 
 /* The cloned page inside it.

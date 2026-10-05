@@ -2220,6 +2220,20 @@ describe("the theme preview under the pointer", () => {
     );
   });
 
+  it("grows from nothing when it opens and shrinks back when it closes (2026-10-05)", () => {
+    // The radius must be a REGISTERED length, or it cannot transition at all.
+    expect(base).toMatch(/@property --tds-theme-preview-r\s*\{[^}]*syntax:\s*"<length>"/);
+    const rule = base.slice(base.indexOf(".tds-theme-preview {"));
+    const closed = rule.slice(0, rule.indexOf("}"));
+    expect(closed).toMatch(/--tds-theme-preview-r:\s*0px/);
+    // Listed first: ThemeToggle reads the FIRST duration to time the removal.
+    expect(closed).toMatch(/transition:\s*--tds-theme-preview-r\s/);
+    const open = base.slice(base.indexOf('.tds-theme-preview[data-visible="true"] {'));
+    const openBody = open.slice(0, open.indexOf("}"));
+    expect(openBody).toMatch(/--tds-theme-preview-r:\s*clamp\(/);
+    expect(openBody).toMatch(/transition:\s*--tds-theme-preview-r\s/);
+  });
+
   it("holds a cloned page that carries its own ground", () => {
     // The clone is `<body>`'s CHILDREN, so the page background does not come with
     // it — without a ground of its own the region would show the light page
