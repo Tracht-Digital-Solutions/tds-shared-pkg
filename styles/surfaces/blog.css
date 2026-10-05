@@ -80,6 +80,22 @@
   --tds-shell-wide: 132rem;
 }
 
+/* The colour-derived half of the block above, restated for a themed SUBTREE.
+   Declared on <html>, these resolve against the page's palette and reach a
+   `[data-theme]` region as literals — the hover preview's dark circle showed
+   the light tint on the language switch, the search field and every tinted
+   band. Re-declared here they resolve against the region's palette instead.
+   Keep the values identical to the block above; design.test.ts compares them. */
+[data-surface="blog"] [data-theme] {
+  --tds-shadow-hard: 6px 6px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-sm: 3px 3px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-press: 1px 1px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-hover: 8px 8px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-sm-hover: 5px 5px 0 0 var(--tds-shadow-ink);
+  --tds-flat-tint: color-mix(in srgb, var(--color-primary) 9%, var(--color-paper));
+  --tds-flat-hover: color-mix(in srgb, var(--color-soft) 70%, var(--color-line));
+}
+
 /* === The FLAT variant ==============================================
    The same opt-in `data-flat` the panel layer carries, paired with this
    surface — `tds-tools-frontend` (the public tools site) is its consumer.

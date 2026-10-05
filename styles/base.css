@@ -721,6 +721,32 @@ html {
   --tds-hover-wash: color-mix(in srgb, var(--color-accent-pink) 12%, transparent);
 }
 
+/* --- Derived tokens, re-resolved in a themed SUBTREE (2026-10-05) ------
+
+   The two blocks above swap the palette for a region; this one makes the
+   tokens BUILT from that palette follow. A custom property's computed value
+   has its var()s substituted on the element that declares it, so the aliases
+   declared on `:root` (`--color-border: var(--color-line)` and friends) reach
+   a `[data-theme]` region as LITERALS of the page's theme. In the hover
+   preview that meant every border, eyebrow and page-card reference inside the
+   dark circle still carried the light value.
+
+   Restating them here re-resolves them against the region's own palette.
+   `:not(:root)` keeps `<html>` on the original declarations (same values, but
+   the surface layers' overrides are written against those). Every
+   `var(--color-…)` alias on `:root` belongs in this list; design.test.ts names
+   the one that is missing. Surface layers restate their own derived tokens
+   the same way, under `[data-surface="…"] [data-theme]`. */
+[data-theme]:not(:root) {
+  --color-border: var(--color-line);
+  --color-cranberry: var(--color-cat-rose);
+  --color-gold: var(--color-warning);
+  --tds-eyebrow-color: var(--color-cranberry);
+  --tds-page-card: var(--color-card);
+  --tds-page-line: var(--color-line);
+  --tds-page-muted: var(--color-muted);
+}
+
 /* WebKit / Blink scrollbar — slender, brand-tinted, with a transparent
    track. The 3px transparent border + padding-box background-clip trick
    shrinks the thumb visually inside the 10px channel so the bar reads as
@@ -964,6 +990,11 @@ input[type="radio"] {
   left: 0;
   width: 100%;
   background-color: var(--color-paper);
+  /* And a text colour of its own, for the same reason: `<body>`'s `color`
+     reaches the clone as the page theme's computed value, so any text without
+     a colour rule of its own (the account menu's name) stayed dark on the
+     dark circle. */
+  color: var(--color-ink);
   /* Nothing inside may animate, transition, or catch a pointer: it is a
      photograph of the page, and a clone whose reveal animations replay would
      flicker every time the pointer entered the button. */

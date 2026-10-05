@@ -73,3 +73,16 @@
   --tds-weight-display: 700;
   --tds-tracking-display: -0.03em;
 }
+
+/* The colour-derived half of the block above, restated for a themed SUBTREE
+   (the theme toggle's hover preview). Declared on <html>, these resolve
+   against the page's palette and reach a `[data-theme]` region as literals;
+   re-declared here they follow the region's palette. Keep the values identical
+   to the block above; design.test.ts compares them. */
+[data-surface="marketing"] [data-theme] {
+  --tds-shadow-hard: 6px 6px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-sm: 3px 3px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-press: 1px 1px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-hover: 8px 8px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-sm-hover: 5px 5px 0 0 var(--tds-shadow-ink);
+}

@@ -2241,6 +2241,9 @@ describe("the theme preview under the pointer", () => {
     const rule = base.slice(base.indexOf(".tds-theme-preview__page {"));
     const body = rule.slice(0, rule.indexOf("}"));
     expect(body).toContain("background-color: var(--color-paper)");
+    // `<body>`'s colour arrives as the page theme's literal; text without a
+    // colour of its own needs this one.
+    expect(body).toContain("color: var(--color-ink)");
     expect(body).toContain("pointer-events: none");
     // It is a photograph of the page: nothing inside may replay its entrance.
     expect(base).toMatch(
@@ -2293,6 +2296,62 @@ describe("the theme preview under the pointer", () => {
     expect(uncovered, `the dark block overrides these and the light block does not: ${uncovered.join(", ")}`).toEqual([]);
     const extra = [...light].filter((token) => !dark.has(token));
     expect(extra, `the light block restates these for nothing: ${extra.join(", ")}`).toEqual([]);
+  });
+
+  it("re-resolves every palette-derived token inside a themed subtree", () => {
+    /**
+     * A custom property computes its var()s on the element that DECLARES it.
+     * An alias declared on <html> (`--tds-flat-tint: color-mix(… var(--color-
+     * primary) …)`) therefore reaches the preview clone as a literal of the
+     * PAGE's theme: the dark circle on the journal, the tools site and the
+     * shop showed the light tint on the language switch, the search field and
+     * every tinted band. Each such token has to be restated for the subtree,
+     * with the same value, or it silently keeps the other theme.
+     */
+    const derived = /var\(--(?:color-|tds-shadow-ink)/;
+    const decls = (body: string) =>
+      new Map<string, string>(
+        Array.from(body.matchAll(/^\s*(--[a-z0-9-]+):\s*([^;]+);/gm), (m) => [
+          m[1]!,
+          m[2]!.replace(/\s+/g, " ").trim(),
+        ]),
+      );
+    const blocksOf = (css: string, selector: string) => {
+      const out: string[] = [];
+      let at = css.indexOf(`\n${selector} {`);
+      while (at !== -1) {
+        const from = css.indexOf("{", at) + 1;
+        out.push(css.slice(from, css.indexOf("\n}", from)));
+        at = css.indexOf(`\n${selector} {`, from);
+      }
+      return out;
+    };
+    const expectRestated = (source: Map<string, string>, subtree: Map<string, string>, where: string) => {
+      for (const [token, value] of source) {
+        if (!derived.test(value)) continue;
+        expect(subtree.get(token), `${token} is not restated for a themed subtree in ${where}`).toBe(value);
+      }
+    };
+
+    // base.css: the plain `:root` aliases. The dark and light blocks restate
+    // their own tokens already; `--tds-panel-*` belongs to the panel layer,
+    // whose per-frontend overrides a base restatement would clobber.
+    const darkAt = base.indexOf('[data-theme="dark"] {');
+    const themed = new Set(decls(base.slice(darkAt, base.indexOf("\n}", darkAt))).keys());
+    const rootAliases = new Map(
+      blocksOf(base, ":root")
+        .flatMap((body) => [...decls(body)])
+        .filter(([token]) => !themed.has(token) && !token.startsWith("--tds-panel-")),
+    );
+    const baseSubtree = blocksOf(base, "[data-theme]:not(:root)");
+    expect(baseSubtree).toHaveLength(1);
+    expectRestated(rootAliases, decls(baseSubtree[0]!), "base.css");
+
+    for (const surface of ["blog", "marketing"] as const) {
+      const subtree = blocksOf(surfaceCss[surface], `[data-surface="${surface}"] [data-theme]`);
+      expect(subtree, `surfaces/${surface}.css has no subtree block`).toHaveLength(1);
+      expectRestated(decls(baseBlockOf(surface)), decls(subtree[0]!), `surfaces/${surface}.css`);
+    }
   });
 
   it("can only work because the dark tokens reach a subtree", () => {
