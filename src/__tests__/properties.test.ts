@@ -10,14 +10,17 @@ import { PROPERTY_ORIGINS, propertyContact, propertyHome, propertyNav } from "..
  * here is exactly what made moving between them feel like three sites.
  */
 describe("propertyNav", () => {
-  it("lists the four properties in one order, under the same names in both languages", () => {
+  it("lists the four properties in one order, under one set of names per language", () => {
+    // The main site is named "Startseite" / "Home" since 2026-10-06 — what it
+    // is to a reader on a sibling property. The product names stay as they are.
+    const names = { de: "Startseite", en: "Home" } as const;
     for (const lang of ["de", "en"] as const) {
       for (const current of ["journal", "tools", "shop"] as const) {
         expect(propertyNav(current, lang, "/").map((l) => l.label)).toEqual([
           "Journal",
           "Tools",
           "Shop",
-          "Tracht Digital",
+          names[lang],
         ]);
       }
     }

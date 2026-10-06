@@ -2381,21 +2381,21 @@ describe("the theme preview under the pointer", () => {
   });
 });
 
-describe("hard 2D shadows (public surfaces only)", () => {
+describe("hard 2D shadows (public surfaces and, since 2026-10-06, the panels)", () => {
   const TOKENS = ["--tds-shadow-hard", "--tds-shadow-hard-sm", "--tds-shadow-hard-press", "--tds-shadow-hard-hover", "--tds-shadow-hard-sm-hover"];
 
-  it("default to none in base.css, so the panels never draw one", () => {
+  it("default to none in base.css, so only a surface that opts in draws one", () => {
     for (const token of TOKENS) {
       expect(base).toMatch(new RegExp(`${token}:\\s*none;`));
     }
     expect(base).toContain("--tds-shadow-ink:");
   });
 
-  it("are set by the marketing and blog surfaces, and by no other", () => {
+  it("are set by the marketing, blog and panel surfaces, and by no other", () => {
     for (const surface of SURFACES) {
       const css = surfaceCss[surface];
       for (const token of TOKENS) {
-        if (surface === "marketing" || surface === "blog") {
+        if (surface === "marketing" || surface === "blog" || surface === "panel") {
           expect(css, `${surface} ${token}`).toMatch(new RegExp(`${token}:\\s*\\d+px \\d+px 0 0 var\\(--tds-shadow-ink\\)`));
         } else {
           expect(css, `${surface} ${token}`).not.toContain(`${token}:`);
@@ -2410,6 +2410,7 @@ describe("hard 2D shadows (public surfaces only)", () => {
     for (const selector of uses) {
       expect(selector).toContain('[data-surface="marketing"]');
       expect(selector).toContain('[data-surface="blog"]');
+      expect(selector).toContain('[data-surface="panel"]');
     }
   });
 });

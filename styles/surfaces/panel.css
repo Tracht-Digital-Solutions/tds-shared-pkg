@@ -41,13 +41,10 @@
  * panel repo ever actually applied it, so panel chips rendered with the
  * marketing pill geometry.
  *
- * Elevation — the panel used to be dead flat (`--tds-elevation-card:
- * none`), leaving the tint convention to carry ALL hierarchy. On a
- * dashboard of a dozen equal-weight cards that read as an undifferentiated
- * sheet. Resting cards now take the smallest shadow and lift to
- * `--tds-elevation-raised` on hover (app.css). This is an intentional
- * change of character, not drift — design.test.ts asserts the panel
- * DECLARES an elevation rather than that it is `none`.
+ * Depth — since 2026-10-06 the hard 2D offset of the public sites
+ * (`--tds-shadow-hard*`), not a blurred elevation: cards, panels, dialogs and
+ * buttons read as printed layers, and lift 2px toward the pointer on hover,
+ * exactly as on the journal and the landingpage.
  *
  * Usage — `data-surface="panel"` on <html>, plus:
  *
@@ -68,9 +65,17 @@
   --tds-radius-chip: 0.75rem;
   --tds-radius-badge: 0.75rem;
 
-  /* Softly elevated: the tint convention still carries the colour-coding,
-     but a 1px shadow separates a card from the canvas it sits on. */
-  --tds-elevation-card: var(--tds-shadow-sm);
+  /* Since 2026-10-06 the panels (and the central login, which renders on
+     this surface) take the public sites' hard 2D offset instead of a blurred
+     lift — one depth language across everything a customer sees. The blurred
+     elevation goes to none so a card never draws both. */
+  --tds-elevation-card: none;
+  --tds-elevation-raised: none;
+  --tds-shadow-hard: 6px 6px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-sm: 3px 3px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-press: 1px 1px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-hover: 8px 8px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-sm-hover: 5px 5px 0 0 var(--tds-shadow-ink);
 
   /* Product display voice. Dashboards are read, not announced — but the
      page title is the one place the panel is allowed to be loud, so it

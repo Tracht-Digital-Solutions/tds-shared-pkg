@@ -21,6 +21,14 @@ import this — they duplicate the small bit of validation they need, by design.
   apply. `startAccountPrefsSync()` reconciles with `/me/preferences` for a
   signed-in visitor — apply server values with `announce: false`, or the sync
   saves them straight back.
+- **0.48 (2026-10-06):** no top bar on a phone — `.tds-app .tds-app-header`
+  becomes the page's first line (static, transparent) below 64rem; sheets
+  swipe in from their tab's side (`data-from`); a tab or the language switch
+  hands the next page's slide direction over `sessionStorage["tds-nav-dir"]`
+  to `pageDirectionScript`; the theme segmented control swipes
+  (`swipeTransition`). The main site's link is "Startseite"/"Home"
+  (`propertyLabel`). The panel surface (panels + central login) now draws the
+  hard 2D shadows too. Sitemaps: `renderSectionedSitemapIndex` + `newestDay`.
 - **Phones get an app shell (`./app` + `styles/app-shell.css`, opt-in).**
   `.tds-tabbar` publishes its measured height as `--tds-tabbar-lane`; every
   bottom-fixed element adds it (pinned in `prefs.test.ts`) and the cookie

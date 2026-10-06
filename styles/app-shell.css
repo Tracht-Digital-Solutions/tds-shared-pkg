@@ -115,16 +115,31 @@
 .tds-tabbar__badge:empty,
 .tds-tabbar__badge[data-count="0"] { display: none; }
 
-/* ---- Collapsing app header (phones) ----
-   `transform` only: the header keeps its box, so nothing below it reflows
-   while it slides, and the compositor does the work (clip-path would not be). */
+/* ---- No top bar on a phone (since 0.48) ----
+   Below the desktop breakpoint the site's header is not a bar any more: no
+   sticky position, no frosted fill, no hairline, no blur. What is left — the
+   logo and the account control — sits at the top of the page like the first
+   line of its content and scrolls away with it. Navigation is the tab bar at
+   the bottom, so nothing needs to stay pinned at the top.
+   `.tds-app` on <html> scopes it to the sites that opted into the shell. */
 @media (max-width: 63.99rem) {
-  .tds-app-header {
-    transition: transform var(--tds-dur-base, 240ms) var(--tds-ease-out, ease-out);
-    will-change: transform;
+  .tds-app .tds-app-header {
+    position: relative;
+    top: auto;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-bottom: 0;
+    box-shadow: none;
+    transform: none;
   }
-  .tds-app-header.is-tucked {
-    transform: translateY(-100%);
+  .tds-app .tds-app-header::before,
+  .tds-app .tds-app-header::after {
+    display: none;
+  }
+  /* The logo a touch larger than in a bar: it is the page's signature now. */
+  .tds-app .tds-app-header .tds-sitebar__brand {
+    font-size: 1.125rem;
   }
 }
 
@@ -161,6 +176,20 @@ dialog.tds-sheet::backdrop {
     animation: tds-sheet-fade var(--tds-dur-base, 240ms) ease-out;
   }
 }
+/* A sheet comes in from the side its tab sits on (`data-from`, set by
+   `mountSheet` from the trigger's position in the bar): a tab on the left
+   swipes in from the left, one on the right from the right — the bar reads as
+   a row of places, and each one opens where it is. */
+@media (prefers-reduced-motion: no-preference) {
+  dialog.tds-sheet[open][data-from="left"] {
+    animation: tds-sheet-in-left var(--tds-dur-base, 240ms) var(--tds-ease-out, ease-out);
+  }
+  dialog.tds-sheet[open][data-from="right"] {
+    animation: tds-sheet-in-right var(--tds-dur-base, 240ms) var(--tds-ease-out, ease-out);
+  }
+}
+dialog.tds-sheet.is-closing[data-from="left"] { transform: translateX(-100%); }
+dialog.tds-sheet.is-closing[data-from="right"] { transform: translateX(100%); }
 dialog.tds-sheet.is-dragging { transition: none; }
 dialog.tds-sheet.is-closing {
   transition: transform var(--tds-dur-fast, 160ms) ease-in;
@@ -270,6 +299,12 @@ dialog.tds-sheet.is-closing {
 @keyframes tds-sheet-in {
   from { transform: translateY(100%); }
 }
+@keyframes tds-sheet-in-left {
+  from { transform: translateX(-100%); }
+}
+@keyframes tds-sheet-in-right {
+  from { transform: translateX(100%); }
+}
 @keyframes tds-sheet-fade {
   from { opacity: 0; }
 }
@@ -305,6 +340,15 @@ dialog.tds-sheet.is-closing {
    the notch inset the browser would otherwise have absorbed. */
 @media (display-mode: standalone) {
   .tds-app-header { padding-top: env(safe-area-inset-top, 0px); }
+}
+
+/* Theme and language swipes (tds-shared/app `swipeTransition`): the new
+   state slides in over the old one, horizontally, from the side of the
+   control that was tapped. Transform only, so the compositor moves two
+   finished snapshots and nothing repaints. */
+:root:active-view-transition-type(swipe-left)::view-transition-group(root),
+:root:active-view-transition-type(swipe-right)::view-transition-group(root) {
+  animation-duration: var(--tds-dur-slow, 360ms);
 }
 
 @media print {

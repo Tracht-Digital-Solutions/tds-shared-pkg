@@ -16,4 +16,5 @@ export {
   type SiteKeySource,
 } from "./siteKey";
 export { ContentHttpError, createContentReader, isConnectionFailure, memoisedOr } from "./contentFetch";
-export { escapeXml, renderSitemapIndex, serializeJsonLd } from "./seo";
+export { escapeXml, newestDay, renderSectionedSitemapIndex, renderSitemapIndex, serializeJsonLd } from "./seo";
+export type { SitemapIndexEntry } from "./seo";

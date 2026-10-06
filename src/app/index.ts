@@ -21,6 +21,62 @@ const LANE = "--tds-tabbar-lane";
 const HAS_TABBAR = "tds-has-tabbar";
 
 /**
+ * The direction the NEXT page should slide in from, handed across a
+ * navigation. `pageDirectionScript` (tds-shared/astro) reads it on the
+ * incoming page's `pagereveal` and tags the transition `forward` or `back`.
+ * sessionStorage, not a URL parameter: it must not reach the page cache, and it
+ * is one hop old at most (the reader clears it, and it expires after 4 s).
+ */
+export const NAV_DIRECTION_KEY = "tds-nav-dir";
+
+export type SlideDirection = "forward" | "back";
+
+/** Remember which way the next navigation goes (best-effort). */
+export function setNavDirection(direction: SlideDirection): void {
+  try {
+    sessionStorage.setItem(NAV_DIRECTION_KEY, JSON.stringify({ d: direction, t: Date.now() }));
+  } catch {
+    /* storage disabled — the default direction applies */
+  }
+}
+
+/**
+ * Run `apply` as a horizontal swipe: the new state slides in from the right
+ * (`forward`) or from the left (`back`) over the old one, which gives way a
+ * little in the same direction. A View Transition of the whole page, animated
+ * with transform only, so nothing repaints during it. Without View Transitions
+ * or with reduced motion, `apply` simply runs.
+ */
+export function swipeTransition(apply: () => void, direction: SlideDirection): void {
+  const start = (
+    document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } }
+  ).startViewTransition;
+  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (!start || reduce) {
+    apply();
+    return;
+  }
+  const sign = direction === "forward" ? 1 : -1;
+  const transition = start.call(document, apply);
+  transition.ready
+    .then(() => {
+      const root = document.documentElement;
+      const timing = { duration: 380, easing: "cubic-bezier(0.22, 1, 0.36, 1)" };
+      root.animate(
+        { transform: [`translateX(${sign * 100}%)`, "translateX(0)"] },
+        { ...timing, pseudoElement: "::view-transition-new(root)" },
+      );
+      root.animate(
+        { transform: ["translateX(0)", `translateX(${sign * -30}%)`], opacity: [1, 0.6] },
+        { ...timing, pseudoElement: "::view-transition-old(root)" },
+      );
+    })
+    .catch(() => {
+      /* transition skipped — the state already applied */
+    });
+}
+
+/**
  * Mark the current tab, and publish the bar's measured height as
  * `--tds-tabbar-lane` while it is shown.
  *
@@ -46,6 +102,18 @@ export function mountAppTabBar(bar: HTMLElement): () => void {
     if (hit) item.setAttribute("aria-current", "page");
   }
 
+  // A tab to the right of the current one slides the next page in from the
+  // right, a tab to the left from the left — the bar is a row of places.
+  const items = Array.from(bar.querySelectorAll<HTMLElement>(".tds-tabbar__item"));
+  const currentIndex = items.findIndex((item) => item.getAttribute("aria-current") === "page");
+  const onTabClick = (event: Event) => {
+    const item = (event.currentTarget as HTMLElement) ?? null;
+    if (!item || item.tagName !== "A") return;
+    const index = items.indexOf(item);
+    setNavDirection(currentIndex === -1 || index >= currentIndex ? "forward" : "back");
+  };
+  for (const item of items) item.addEventListener("click", onTabClick);
+
   const mq = window.matchMedia?.(APP_SHELL_QUERY);
   const publish = () => {
     if (mq && !mq.matches) {
@@ -62,6 +130,7 @@ export function mountAppTabBar(bar: HTMLElement): () => void {
   mq?.addEventListener?.("change", publish);
 
   return () => {
+    for (const item of items) item.removeEventListener("click", onTabClick);
     ro?.disconnect();
     mq?.removeEventListener?.("change", publish);
     root.style.removeProperty(LANE);
@@ -129,6 +198,15 @@ export function mountSheet(options: SheetOptions): SheetHandle {
   const open = (trigger?: HTMLElement) => {
     if (dialog.open) return;
     opener = trigger ?? (document.activeElement as HTMLElement | null);
+    // Swipe in from the side the trigger sits on; a centred trigger keeps the
+    // sheet's rise from the bottom.
+    const rect = trigger?.getBoundingClientRect();
+    if (rect && window.innerWidth > 0) {
+      const centre = (rect.left + rect.right) / 2 / window.innerWidth;
+      if (centre < 0.42) dialog.dataset.from = "left";
+      else if (centre > 0.58) dialog.dataset.from = "right";
+      else delete dialog.dataset.from;
+    }
     dialog.classList.remove("is-closing");
     dialog.style.transform = "";
     dialog.showModal();
@@ -318,11 +396,19 @@ export function mountPreferenceControls(container: HTMLElement): () => void {
     for (const b of themeButtons) b.setAttribute("aria-pressed", String(b.dataset.themeChoice === current));
   };
   const onTheme = (e: Event) => {
-    const choice = (e.currentTarget as HTMLElement).dataset.themeChoice;
-    if (choice === "light" || choice === "dark" || choice === "system") {
+    const button = e.currentTarget as HTMLElement;
+    const choice = button.dataset.themeChoice;
+    if (choice !== "light" && choice !== "dark" && choice !== "system") return;
+    if (choice === readThemePreference()) return;
+    // The new theme swipes in from the side of the option that was tapped
+    // relative to the one that was on: a choice to the right comes in from
+    // the right.
+    const from = themeButtons.findIndex((b) => b.dataset.themeChoice === readThemePreference());
+    const to = themeButtons.indexOf(button as HTMLButtonElement);
+    swipeTransition(() => {
       applyThemePreference(choice);
       sync();
-    }
+    }, from === -1 || to >= from ? "forward" : "back");
   };
   for (const b of themeButtons) b.addEventListener("click", onTheme);
   const unTheme = onThemeChange(sync);
@@ -331,7 +417,11 @@ export function mountPreferenceControls(container: HTMLElement): () => void {
   const localeLinks = Array.from(container.querySelectorAll<HTMLAnchorElement>("a[data-locale-link]"));
   const onLocale = (e: Event) => {
     const value = (e.currentTarget as HTMLElement).dataset.localeLink;
-    if (value === "de" || value === "en") rememberLocale(value);
+    if (value === "de" || value === "en") {
+      rememberLocale(value);
+      // DE → EN slides forward, EN → DE back: the switch reads left to right.
+      setNavDirection(value === "en" ? "forward" : "back");
+    }
   };
   for (const a of localeLinks) a.addEventListener("click", onLocale);
 

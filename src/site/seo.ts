@@ -36,6 +36,48 @@ export function renderSitemapIndex(sitemaps: readonly string[], lastmod?: string
   );
 }
 
+/** One entry of a sectioned sitemap index: a child sitemap and its own date. */
+export interface SitemapIndexEntry {
+  loc: string;
+  /** `YYYY-MM-DD` of the newest URL inside that child; omitted when unknown. */
+  lastmod?: string;
+}
+
+/**
+ * A sitemap index whose children each carry THEIR OWN `lastmod`.
+ *
+ * The structure every public site uses since 2026-10-06: one child per kind of
+ * page (`sitemap-pages.xml`, `sitemap-posts.xml`, `sitemap-tools.xml`, …), so a
+ * crawler re-reads only the section that moved and Search Console reports
+ * coverage per section. Empty sections are dropped — a child with no `<url>`
+ * is reported as an error.
+ */
+export function renderSectionedSitemapIndex(entries: readonly SitemapIndexEntry[]): string {
+  const items = entries
+    .map(
+      (e) =>
+        `<sitemap><loc>${escapeXml(e.loc)}</loc>${e.lastmod ? `<lastmod>${escapeXml(e.lastmod)}</lastmod>` : ""}</sitemap>`,
+    )
+    .join("");
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
+    items +
+    "</sitemapindex>"
+  );
+}
+
+/** Newest `YYYY-MM-DD` among `dates`, ignoring anything that is not a date. */
+export function newestDay(dates: ReadonlyArray<string | null | undefined>): string | undefined {
+  let newest: string | undefined;
+  for (const raw of dates) {
+    const day = (raw ?? "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) continue;
+    if (!newest || day > newest) newest = day;
+  }
+  return newest;
+}
+
 /**
  * JSON-LD for an inline `<script type="application/ld+json">`.
  *

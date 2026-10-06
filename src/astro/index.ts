@@ -178,6 +178,13 @@ export const pageDirectionScript: string = `(function () {
       if (!e.viewTransition || !window.navigation || !navigation.activation) return;
       var a = navigation.activation;
       var back = a.navigationType === "traverse" && a.from && a.entry && a.entry.index < a.from.index;
+      /* A tab or the language switch said which way (tds-shared/app
+         setNavDirection); one hop, at most 4 s old. */
+      try {
+        var hint = JSON.parse(sessionStorage.getItem("tds-nav-dir") || "null");
+        sessionStorage.removeItem("tds-nav-dir");
+        if (hint && Date.now() - hint.t < 4000 && a.navigationType !== "traverse") back = hint.d === "back";
+      } catch (err) {}
       e.viewTransition.types.add(back ? "back" : "forward");
     } catch (err) { /* older engine — the fade applies */ }
   });

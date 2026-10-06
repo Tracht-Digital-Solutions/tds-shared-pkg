@@ -37,12 +37,24 @@ export const PROPERTY_ORIGINS: Readonly<Record<PublicProperty, string>> = {
   main: "https://tracht-digital.de",
 };
 
-const LABELS: Readonly<Record<PublicProperty, string>> = {
-  journal: "Journal",
-  tools: "Tools",
-  shop: "Shop",
-  main: "Tracht Digital",
+/**
+ * The link names. Journal, Tools and Shop are proper names and stay the same
+ * in both languages. The main site is named by what it is to a reader who is
+ * on a sibling property — its home page — since 2026-10-06: "Tracht Digital"
+ * beside "Journal · Tools · Shop" read as a fourth product, and every one of
+ * the four is Tracht Digital.
+ */
+const LABELS: Readonly<Record<PublicProperty, Record<"de" | "en", string>>> = {
+  journal: { de: "Journal", en: "Journal" },
+  tools: { de: "Tools", en: "Tools" },
+  shop: { de: "Shop", en: "Shop" },
+  main: { de: "Startseite", en: "Home" },
 };
+
+/** A property's link name in the given language. */
+export function propertyLabel(key: PublicProperty, lang: "de" | "en"): string {
+  return LABELS[key][lang];
+}
 
 const ORDER: readonly PublicProperty[] = ["journal", "tools", "shop", "main"];
 
@@ -74,7 +86,7 @@ export function propertyNav(
 ): PropertyLink[] {
   return ORDER.map((key) => ({
     key,
-    label: LABELS[key],
+    label: LABELS[key][lang],
     href: key === current ? homeHref : propertyHome(key, lang),
     current: key === current,
   }));

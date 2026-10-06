@@ -183,3 +183,16 @@ describe("pwa", () => {
     expect(() => new Function(src)).not.toThrow();
   });
 });
+
+describe("sectioned sitemap index", () => {
+  it("gives every child its own lastmod and escapes the loc", async () => {
+    const { renderSectionedSitemapIndex, newestDay } = await import("../site");
+    const xml = renderSectionedSitemapIndex([
+      { loc: "https://x.de/sitemap-posts.xml", lastmod: "2026-10-01" },
+      { loc: "https://x.de/sitemap-pages.xml?a=1&b=2" },
+    ]);
+    expect(xml).toContain("<loc>https://x.de/sitemap-posts.xml</loc><lastmod>2026-10-01</lastmod>");
+    expect(xml).toContain("a=1&amp;b=2");
+    expect(newestDay(["2026-01-02T10:00:00Z", null, "nope", "2026-03-04"])).toBe("2026-03-04");
+  });
+});
