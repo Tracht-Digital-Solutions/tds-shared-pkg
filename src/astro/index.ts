@@ -20,6 +20,7 @@
  */
 
 import { THEME_ATTRIBUTE, THEME_STORAGE_KEY } from "../design/index.js";
+import { PREFS_COOKIE } from "../prefs/cookie.js";
 
 /**
  * lightningcss prefixing targets for the CSS minify step. Includes a
@@ -130,6 +131,15 @@ export const pageTransitionOptIn: string =
  * a router the listener never fires and this costs nothing.
  */
 export const themeBootstrapScript: string = `(function () {
+  /* The cross-site preference cookie (tds-shared/prefs), parsed once and
+     published as window.__tdsPrefs for the other pre-paint scripts of a site
+     (reader zoom, sidebar state) — so none of them re-implements the parse. */
+  var prefs = {};
+  try {
+    var m = document.cookie.match(/(?:^|;\\s*)${PREFS_COOKIE}=([^;]*)/);
+    if (m) prefs = JSON.parse(decodeURIComponent(m[1])) || {};
+  } catch (e) { prefs = {}; }
+  window.__tdsPrefs = prefs;
   function apply(root) {
     try {
       var saved = localStorage.getItem("${THEME_STORAGE_KEY}");
@@ -137,7 +147,11 @@ export const themeBootstrapScript: string = `(function () {
         root.setAttribute("${THEME_ATTRIBUTE}", saved);
         return;
       }
-    } catch (e) { /* storage disabled — fall through to OS */ }
+    } catch (e) { /* storage disabled — fall through to the cookie / OS */ }
+    if (prefs.theme === "light" || prefs.theme === "dark") {
+      root.setAttribute("${THEME_ATTRIBUTE}", prefs.theme);
+      return;
+    }
     var dark = window.matchMedia &&
       window.matchMedia("(prefers-color-scheme: dark)").matches;
     root.setAttribute("${THEME_ATTRIBUTE}", dark ? "dark" : "light");
@@ -147,3 +161,52 @@ export const themeBootstrapScript: string = `(function () {
     apply(event.newDocument.documentElement);
   });
 })();`;
+
+/**
+ * Tags each cross-document view transition `forward` or `back`, so the app
+ * shell (`styles/app-shell.css`) can slide pages on a phone the way native
+ * apps push and pop screens. Desktop keeps the plain cross-fade.
+ *
+ * Inline in `<head>` with `set:html`, right after {@link pageTransitionOptIn}:
+ * `pagereveal` fires before the first frame of the incoming page, so a
+ * bundled (deferred) script would miss it. Where the Navigation API or
+ * `pagereveal` is missing it does nothing and the fade applies.
+ */
+export const pageDirectionScript: string = `(function () {
+  window.addEventListener("pagereveal", function (e) {
+    try {
+      if (!e.viewTransition || !window.navigation || !navigation.activation) return;
+      var a = navigation.activation;
+      var back = a.navigationType === "traverse" && a.from && a.entry && a.entry.index < a.from.index;
+      e.viewTransition.types.add(back ? "back" : "forward");
+    } catch (err) { /* older engine — the fade applies */ }
+  });
+})();`;
+
+/**
+ * Speculation rules for near-instant navigation between pages of one site:
+ * a same-origin link is PRERENDERED once the visitor shows intent (hover or
+ * the start of a tap — `eagerness: "moderate"`), so the tap lands on a page
+ * that is already rendered. Chromium only; elsewhere the script tag is inert.
+ *
+ * `excludePrefixes` are never prerendered: anything that writes state or must
+ * not be fetched speculatively (the control plane, install, cart, checkout,
+ * account). Consume as `<script type="speculationrules" set:html={...} />`.
+ */
+export function speculationRules(excludePrefixes: readonly string[] = []): string {
+  const never = ["/tds/", "/install", "/api/", ...excludePrefixes];
+  return JSON.stringify({
+    prerender: [
+      {
+        where: {
+          and: [
+            { href_matches: "/*" },
+            ...never.map((p) => ({ not: { href_matches: `${p.replace(/\/$/, "")}*` } })),
+            { not: { selector_matches: "[rel~=nofollow], [target=_blank], [download], [data-no-prerender]" } },
+          ],
+        },
+        eagerness: "moderate",
+      },
+    ],
+  });
+}

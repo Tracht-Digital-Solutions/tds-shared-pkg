@@ -76,11 +76,27 @@
       "require": "./dist/astro/index.cjs"
     },
     "./styles/base.css": "./styles/base.css",
+    "./styles/app-shell.css": "./styles/app-shell.css",
     "./styles/app.css": "./styles/app.css",
     "./design": {
       "types": "./dist/design/index.d.ts",
       "import": "./dist/design/index.js",
       "require": "./dist/design/index.cjs"
+    },
+    "./prefs": {
+      "types": "./dist/prefs/index.d.ts",
+      "import": "./dist/prefs/index.js",
+      "require": "./dist/prefs/index.cjs"
+    },
+    "./app": {
+      "types": "./dist/app/index.d.ts",
+      "import": "./dist/app/index.js",
+      "require": "./dist/app/index.cjs"
+    },
+    "./pwa": {
+      "types": "./dist/pwa/index.d.ts",
+      "import": "./dist/pwa/index.js",
+      "require": "./dist/pwa/index.cjs"
     },
     "./theme": {
       "types": "./dist/theme/index.d.ts",

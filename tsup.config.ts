@@ -35,6 +35,12 @@ export default defineConfig({
     "astro/index": "src/astro/index.ts",
     "design/index": "src/design/index.ts",
     "theme/index": "src/theme/index.ts",
+    // Cross-site visitor preferences (cookie + account sync).
+    "prefs/index": "src/prefs/index.ts",
+    // App-shell mechanics for the public sites on a phone (tab bar, sheets).
+    "app/index": "src/app/index.ts",
+    // Manifest + service worker generators — pure strings, server-safe.
+    "pwa/index": "src/pwa/index.ts",
     "toast/index": "src/toast/index.ts",
     "nav/index": "src/nav/index.ts",
     "api/index": "src/api/index.ts",

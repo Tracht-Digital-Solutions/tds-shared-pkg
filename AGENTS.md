@@ -12,6 +12,26 @@ import this — they duplicate the small bit of validation they need, by design.
 
 ## Rules of thumb
 
+- **Visitor preferences follow the person (`./prefs`, 0.47).** The
+  `tds_prefs` cookie on `.tracht-digital.de` holds theme, locale and the
+  blog's reader settings (`PREF_VALUES`, mirrored by
+  `PreferenceWhitelist.php` in tds-core-frontend-api). `themeBootstrapScript`
+  reads it before first paint and publishes it as `window.__tdsPrefs` for a
+  site's other pre-paint scripts; `applyThemePreference` writes it on every
+  apply. `startAccountPrefsSync()` reconciles with `/me/preferences` for a
+  signed-in visitor — apply server values with `announce: false`, or the sync
+  saves them straight back.
+- **Phones get an app shell (`./app` + `styles/app-shell.css`, opt-in).**
+  `.tds-tabbar` publishes its measured height as `--tds-tabbar-lane`; every
+  bottom-fixed element adds it (pinned in `prefs.test.ts`) and the cookie
+  notice rides on the bar. Sheets are modal `<dialog class="tds-sheet">` with
+  the counted scroll lock; pointer capture starts only after a few pixels of
+  drag, or the close button inside the grab area stops receiving clicks.
+- **PWA (`./pwa`): pages network-first, only `/_astro/` cache-first.** A
+  worker that answered pages from cache would hide a broken deploy. Serve
+  `/sw.js` and `/manifest.webmanifest` from PRERENDERED endpoints so the
+  worker version changes per build, not per server restart.
+
 - **The public sites draw HARD 2D shadows; the panels draw none** (0.42.0).
   `--tds-shadow-hard`, `-sm` and `-press` default to `none` in base.css and
   are set only by `surfaces/marketing.css` and `surfaces/blog.css`

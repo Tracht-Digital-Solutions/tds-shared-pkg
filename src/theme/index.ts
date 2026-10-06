@@ -35,6 +35,7 @@ import {
   type ThemeChangeDetail,
   type ThemePreference,
 } from "../design/index.js";
+import { readPrefsCookie, writePrefsCookie } from "../prefs/cookie.js";
 
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 
@@ -74,6 +75,10 @@ export function readThemePreference(): ThemePreference {
   } catch {
     // Safari private mode / storage disabled — treat as "no choice made".
   }
+  // Not chosen on THIS origin — but maybe on a sibling site. The cookie on
+  // `.tracht-digital.de` is what carries a choice from the blog to the shop.
+  const shared = readPrefsCookie().theme;
+  if (shared === "light" || shared === "dark") return shared;
   return "system";
 }
 
@@ -112,6 +117,11 @@ export function applyThemePreference(
   } catch {
     // Storage disabled — the attribute below still applies for this page.
   }
+
+  // The cross-site copy, so the sibling properties paint the same theme on
+  // their first frame. Written on every apply (also server-applied values),
+  // announced only when the user made the change.
+  writePrefsCookie({ theme: preference }, { announce: options.announce });
 
   if (hasDocument()) {
     document.documentElement.setAttribute(THEME_ATTRIBUTE, theme);

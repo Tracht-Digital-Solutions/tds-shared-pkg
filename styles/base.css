@@ -1440,7 +1440,7 @@ input[type="radio"] {
      design.test.ts matches `bottom:\s*calc\([^)]*--tds-bottom-lane`, and
      `env()` before it would put a `)` in that span and fail the assertion
      for a reason that looks nothing like the change being made. */
-  bottom: calc(var(--tds-bottom-lane, 0px) + 1rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--tds-bottom-lane, 0px) + var(--tds-tabbar-lane, 0px) + 1rem + env(safe-area-inset-bottom, 0px));
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -1592,7 +1592,7 @@ input[type="radio"] {
     left: 0.75rem;
     right: 0.75rem;
     /* Lane first — see the note on the base rule. */
-    bottom: calc(var(--tds-bottom-lane, 0px) + 0.75rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--tds-bottom-lane, 0px) + var(--tds-tabbar-lane, 0px) + 0.75rem + env(safe-area-inset-bottom, 0px));
     width: auto;
   }
 }
@@ -1723,7 +1723,7 @@ input[type="radio"] {
      `bottom:\s*calc\([^)]*--tds-bottom-lane`, and an `env()` ahead of it would
      put a `)` inside that span and fail the assertion for a reason that looks
      nothing like the change being made. */
-  bottom: calc(var(--tds-bottom-lane, 0px) + 1.25rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--tds-bottom-lane, 0px) + var(--tds-tabbar-lane, 0px) + 1.25rem + env(safe-area-inset-bottom, 0px));
   z-index: 95;
   font-family: var(--font-body);
   --lc-accent: var(--color-surface-navy);
