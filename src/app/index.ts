@@ -431,3 +431,6 @@ export function mountPreferenceControls(container: HTMLElement): () => void {
     unTheme();
   };
 }
+
+export { mountTabPages, mountLiveFilter } from "./tabPages.js";
+export type { TabPagesHandle, LiveFilterOptions } from "./tabPages.js";

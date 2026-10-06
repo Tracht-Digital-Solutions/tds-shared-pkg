@@ -21,6 +21,17 @@ import this — they duplicate the small bit of validation they need, by design.
   apply. `startAccountPrefsSync()` reconciles with `/me/preferences` for a
   signed-in visitor — apply server values with `announce: false`, or the sync
   saves them straight back.
+- **0.49 (2026-10-06): tab pages instead of sheets.** `mountTabPages(bar)`
+  (src/app/tabPages.ts): a tab with `data-tab-page` opens a full-screen
+  `.tds-tabpage` above the content and below the bar, sliding in from its
+  tab's side; a horizontal swipe moves to the neighbouring tab (a link tab
+  navigates); Back closes (one pushed entry, replaced while switching). The
+  rest of the body is `inert`, not the bar — never a modal `<dialog>`, which
+  would make the bar dead. An in-page `#` link closes the page by rewriting
+  the entry (a Back would restore the old scroll and undo the jump).
+  `mountLiveFilter` is the Discover pattern (present while empty, search
+  while typing, diacritics folded). `.tds-linkgroup` = joined button row,
+  `.tds-segmented--icons` = icon options, `.tds-tile`/`.tds-searchfield`.
 - **0.48 (2026-10-06):** no top bar on a phone — `.tds-app .tds-app-header`
   becomes the page's first line (static, transparent) below 64rem; sheets
   swipe in from their tab's side (`data-from`); a tab or the language switch

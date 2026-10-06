@@ -115,6 +115,155 @@
 .tds-tabbar__badge:empty,
 .tds-tabbar__badge[data-count="0"] { display: none; }
 
+/* ---- Tab pages (since 0.49) ----
+   A tab that is not a plain link opens a full-screen PAGE (tds-shared/app
+   `mountTabPages`): above the content, below the tab bar, sliding in from the
+   side of its tab. The bar stays live underneath so the reader switches pages
+   the way an app does. Below the desktop breakpoint only. */
+.tds-tabpage {
+  position: fixed;
+  inset: 0 0 var(--tds-tabbar-lane, 0px) 0;
+  z-index: 78;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  will-change: transform;
+}
+.tds-tabpage[hidden] { display: none; }
+@media (min-width: 64rem) {
+  .tds-tabpage { display: none !important; }
+}
+/* App-style large title. */
+.tds-tabpage__head {
+  flex: none;
+  padding: calc(1.25rem + env(safe-area-inset-top, 0px)) 1.25rem 0.5rem;
+}
+.tds-tabpage__head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: var(--tds-weight-display, 800);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  outline: none;
+}
+.tds-tabpage__head p {
+  margin: 0.375rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+}
+.tds-tabpage__body {
+  flex: 1 0 auto;
+  padding: 0.75rem 1.25rem 2rem;
+}
+/* A section inside a page. */
+.tds-tabpage__section + .tds-tabpage__section { margin-top: 1.75rem; }
+
+/* The selected tab while a page is open: the page's own tab carries the
+   marker; the link tab of the content underneath steps back. */
+.tds-tabbar.has-open-page .tds-tabbar__item[aria-current="page"]:not(.is-active) { color: var(--color-muted); }
+.tds-tabbar.has-open-page .tds-tabbar__item[aria-current="page"]:not(.is-active)::before { display: none; }
+.tds-tabbar__item.is-active { color: var(--color-primary); }
+.tds-tabbar__item.is-active::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  inset-inline: 28%;
+  height: 2px;
+  background: var(--color-accent);
+}
+
+/* ---- Search field of a Discover page ---- */
+.tds-searchfield {
+  position: relative;
+  display: block;
+}
+.tds-searchfield svg {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  translate: 0 -50%;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--color-muted);
+  pointer-events: none;
+}
+.tds-searchfield input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0 0.875rem 0 2.625rem;
+  border: 1px solid var(--color-ink);
+  background: var(--color-card, var(--color-paper));
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 1rem; /* 16px: iOS does not zoom the page on focus */
+  box-shadow: var(--tds-shadow-hard-sm, 3px 3px 0 0 var(--tds-shadow-ink));
+}
+.tds-searchfield input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* A presentation tile grid (categories) on a Discover page. */
+.tds-tilegrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.tds-tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 5.5rem;
+  padding: 0.875rem;
+  background: var(--color-soft);
+  color: var(--color-ink);
+  text-decoration: none;
+  box-shadow: var(--tds-shadow-hard-sm, 3px 3px 0 0 var(--tds-shadow-ink));
+  transition: translate 160ms ease;
+}
+.tds-tile strong { font-weight: 700; line-height: 1.2; }
+.tds-tile small { color: var(--color-muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.tds-tile:active { translate: 2px 2px; box-shadow: none; }
+
+/* ---- Joined link group (since 0.49) ----
+   The sibling properties as ONE row of buttons with no gap between them —
+   shared borders, one hard shadow under the whole row. */
+.tds-linkgroup {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  border: 1px solid var(--color-ink);
+  background: var(--color-card, var(--color-paper));
+  box-shadow: var(--tds-shadow-hard-sm, 3px 3px 0 0 var(--tds-shadow-ink));
+}
+.tds-linkgroup > a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.5rem 0.25rem;
+  color: var(--color-ink);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.tds-linkgroup > a + a { border-left: 1px solid var(--color-ink); }
+.tds-linkgroup > a:hover,
+.tds-linkgroup > a:focus-visible { background: var(--color-soft); color: var(--color-primary); }
+.tds-linkgroup > a:active { background: var(--color-ink); color: var(--color-paper); }
+
+/* Icon-only segmented options (theme: sun · moon · auto). */
+.tds-segmented--icons > :is(button, a) svg { width: 1.25rem; height: 1.25rem; }
+
 /* ---- No top bar on a phone (since 0.48) ----
    Below the desktop breakpoint the site's header is not a bar any more: no
    sticky position, no frosted fill, no hairline, no blur. What is left — the
@@ -352,5 +501,5 @@ dialog.tds-sheet.is-closing {
 }
 
 @media print {
-  .tds-tabbar, dialog.tds-sheet { display: none !important; }
+  .tds-tabbar, dialog.tds-sheet, .tds-tabpage { display: none !important; }
 }
