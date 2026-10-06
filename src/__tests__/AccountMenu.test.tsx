@@ -65,6 +65,10 @@ beforeEach(() => {
   routes = [];
   calls = [];
   localStorage.clear();
+  // tds-auth-api's script-readable hint: "someone signed in on this browser".
+  // Every suite below describes such a browser unless it clears the cookie —
+  // without it the menu does not probe at all (see the last describe).
+  document.cookie = "tds_signed_in=1; Path=/";
   invalidateAccount();
   resetApiBase();
   resetRuntimeConfig();
@@ -100,6 +104,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  document.cookie = "tds_signed_in=; Path=/; Max-Age=0";
   cleanup();
   vi.unstubAllGlobals();
   clearAccountHint();
@@ -337,5 +342,25 @@ describe("signing out", () => {
     // The READ side is free to follow the proxy — that is the whole point of
     // the two bases.
     expect(requests(/\/me$/).some((call) => call.url === "/api/auth/me")).toBe(true);
+  });
+});
+
+describe("a browser nobody has signed in on", () => {
+  beforeEach(() => {
+    document.cookie = "tds_signed_in=; Path=/; Max-Age=0";
+  });
+
+  it("sends no /me probe at all — an anonymous page view costs no 401", async () => {
+    render(<AccountMenu loggedOut="login" />);
+    expect(screen.getByRole("link", { name: "Anmelden" })).toBeTruthy();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(requests(/\/auth\/me$/)).toHaveLength(0);
+  });
+
+  it("still probes when THIS origin has seen an account before", async () => {
+    respond(/\/auth\/me$/, 200, ME);
+    setAccountHint();
+    render(<AccountMenu />);
+    await waitFor(() => expect(requests(/\/auth\/me$/).length).toBeGreaterThan(0));
   });
 });

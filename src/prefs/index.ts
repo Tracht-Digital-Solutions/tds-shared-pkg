@@ -20,7 +20,7 @@
  */
 import { applyThemePreference } from "../theme/index.js";
 import { THEME_CHANGE_EVENT, type ThemeChangeDetail } from "../design/index.js";
-import { accountEndpoints, fetchAccount, type AccountEndpointFallbacks } from "../components/accountAuth.js";
+import { accountEndpoints, fetchAccount, mayHaveSession, type AccountEndpointFallbacks } from "../components/accountAuth.js";
 import { runtimeSetting, DEFAULT_API_BASE } from "../api/index.js";
 import {
   PREFS_CHANGE_EVENT,
@@ -85,6 +85,8 @@ let syncStarted = false;
 export async function startAccountPrefsSync(fallbacks: AccountEndpointFallbacks = {}): Promise<boolean> {
   if (syncStarted || typeof window === "undefined") return false;
   syncStarted = true;
+  // Anonymous on this browser: nothing to sync, and no /me probe (a 401).
+  if (!mayHaveSession()) return false;
 
   let account: unknown = null;
   try {

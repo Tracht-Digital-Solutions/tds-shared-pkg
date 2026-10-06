@@ -200,6 +200,30 @@ export async function logoutAccount(endpoints: AccountEndpoints): Promise<void> 
   clearAccountHint();
 }
 
+/**
+ * The script-readable "signed in on this browser" cookie tds-auth-api (≥ 0.10)
+ * writes beside the HttpOnly session, on the shared cookie domain.
+ */
+export const SIGNED_IN_COOKIE = "tds_signed_in";
+
+/**
+ * Is a session worth probing for?
+ *
+ * True when this origin has seen an account before (the localStorage hint) or
+ * the auth API says someone signed in on this browser (the shared cookie). An
+ * anonymous visitor has neither, and then `GET /me` is not sent at all: it
+ * could only answer 401, which the browser logs to the console on every page
+ * of a public site — and which Lighthouse counts against every one of them.
+ */
+export function mayHaveSession(): boolean {
+  if (hasAccountHint()) return true;
+  try {
+    return typeof document !== "undefined" && new RegExp(`(?:^|;\\s*)${SIGNED_IN_COOKIE}=1`).test(document.cookie);
+  } catch {
+    return false;
+  }
+}
+
 /** `localStorage` throws in Safari's private mode; a hint is never worth a crash. */
 function storage(): Storage | null {
   try {

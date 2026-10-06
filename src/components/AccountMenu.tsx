@@ -8,6 +8,7 @@ import {
   DEFAULT_LOGIN_URL,
   fetchAccount,
   hasAccountHint,
+  mayHaveSession,
   invalidateAccount,
   loginHref,
   logoutAccount,
@@ -188,6 +189,13 @@ export default function AccountMenu({
       const resolved = await accountEndpoints({ apiBase, authApi, loginUrl });
       if (cancelled) return;
       setEndpoints(resolved);
+
+      // Nobody signed in on this browser: no probe, no 401 in the console.
+      if (!mayHaveSession()) {
+        setMe(null);
+        setLoading(false);
+        return;
+      }
 
       let principal = await fetchAccount(resolved);
 
