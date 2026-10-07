@@ -849,3 +849,14 @@
     left: calc(4.5rem + 1rem); /* .portal-sidebar.collapsed */
   }
 }
+
+/* === Disclosure rows on a touch screen (2026-10-07) ================
+   A bare <summary> is one line of text tall — 24px in the help centre, the
+   API reference and the time tracker's "Eintrag manuell erfassen", well under
+   the 44px a finger needs. Padding rather than flex: `display: flex` on a
+   summary drops its disclosure marker in Safari and Firefox. */
+@media (pointer: coarse) {
+  [data-surface="panel"] summary {
+    padding-block: 0.625rem;
+  }
+}
