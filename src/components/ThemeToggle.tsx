@@ -38,6 +38,41 @@ export interface ThemeToggleProps {
  * `.tds-theme-preview` in base.css for the shape, and the note there on why it
  * is a gradient rather than a `clip-path`.
  */
+/** A scrolled box in the copy and the offsets its original had. */
+type ScrollState = [copy: Element, left: number, top: number];
+
+/**
+ * Carries over the state `cloneNode` leaves behind. Walks the original and the
+ * copy in parallel — they have the same shape, because nothing has been
+ * stripped yet.
+ *
+ *  - Running animations: the CURRENT animated transform and opacity, inline.
+ *  - Scroll offsets of inner scroll boxes (a carousel, a code block). They can
+ *    only be applied once the copy is in the document, so they are collected.
+ */
+function syncCloneState(
+  original: Element,
+  copy: Element,
+  animated: Set<Element>,
+  scrolled: ScrollState[],
+): void {
+  if (original.scrollLeft || original.scrollTop) {
+    scrolled.push([copy, original.scrollLeft, original.scrollTop]);
+  }
+  if (animated.has(original) && (copy instanceof HTMLElement || copy instanceof SVGElement)) {
+    const cs = getComputedStyle(original);
+    const style = copy.style;
+    style.setProperty("transform", cs.transform);
+    style.setProperty("translate", cs.translate);
+    style.setProperty("rotate", cs.rotate);
+    style.setProperty("scale", cs.scale);
+    style.setProperty("opacity", cs.opacity);
+  }
+  const a = original.children;
+  const b = copy.children;
+  for (let i = 0; i < a.length && i < b.length; i++) syncCloneState(a[i]!, b[i]!, animated, scrolled);
+}
+
 export default function ThemeToggle({
   labelToDark = "Auf Dunkel umschalten",
   labelToLight = "Auf Hell umschalten",
@@ -105,8 +140,6 @@ export default function ThemeToggle({
    * lives on `<body>` and does not come with the children.
    *
    * What is stripped, and why each one matters:
-   *  - `id`, everywhere: duplicates break `getElementById`, `:target`,
-   *    label/control pairing and every `aria-*` reference on the REAL page.
    *  - `name` on form controls, so a cloned radio group cannot steal the
    *    selection of the real one.
    *  - `<script>`, `<style id>` and `<link>`: a clone must not re-run or
@@ -114,6 +147,26 @@ export default function ThemeToggle({
    *    `<script>` moved into the document by `appendChild` would.)
    *  - `inert` + `aria-hidden` on the overlay, so nothing inside is focusable or
    *    announced.
+   *
+   * ### `id`s are KEPT (2026-10-07)
+   *
+   * They used to be stripped, to keep ids unique. That cost every stylesheet
+   * rule written against an id — the landingpage's whole contact section is
+   * `#contact .contact-…` — so inside the circle those elements fell back to
+   * browser defaults, wrapped differently, and everything below them slid out
+   * of line with the real page ("die Darkmode-Preview wird verschoben
+   * angezeigt"; measured: 1090 misplaced elements on the landingpage, 11 with
+   * the ids kept). The duplicates are harmless because of ORDER: the overlay
+   * is appended as the last child of `<body>`, and `getElementById`,
+   * `querySelector`, `<label for>` and every `aria-*` reference resolve to the
+   * FIRST match in tree order — the real element. The copy lives for one hover.
+   *
+   * ### Running animations are frozen, not reset
+   *
+   * `animation: none` inside the copy (base.css) would snap an animated element
+   * back to its resting transform — the landingpage's floating hero shapes sat
+   * 60px away from the real ones. Each animated element's copy takes the
+   * current computed transform and opacity as inline style instead.
    *
    * ### `data-theme-preview="skip"`
    *
@@ -132,19 +185,27 @@ export default function ThemeToggle({
    * across hovers would mean tracking every DOM change on the page for the sake
    * of a preview.
    */
-  const buildClone = (target: Theme): HTMLElement => {
+  const buildClone = (target: Theme): { page: HTMLElement; restoreScroll: () => void } => {
     const page = document.createElement("div");
     page.className = "tds-theme-preview__page";
     page.setAttribute("data-theme", target);
+    const animated = new Set<Element>();
+    const scrolled: ScrollState[] = [];
+    for (const animation of document.getAnimations?.() ?? []) {
+      const target = (animation.effect as KeyframeEffect | null)?.target;
+      if (target) animated.add(target);
+    }
     for (const node of Array.from(document.body.children)) {
       // The overlay itself is a child of body by the time a second one opens.
       if (node instanceof HTMLElement && node.classList.contains("tds-theme-preview")) continue;
       if (node.tagName === "SCRIPT" || node.tagName === "LINK") continue;
       if (node instanceof HTMLElement && node.dataset.themePreview === "skip") continue;
-      page.appendChild(node.cloneNode(true));
+      const copy = node.cloneNode(true) as Element;
+      syncCloneState(node, copy, animated, scrolled);
+      page.appendChild(copy);
     }
     for (const stray of page.querySelectorAll(
-      'script, link, [id], [name], [data-theme-preview="skip"]',
+      'script, link, [name], [data-theme-preview="skip"]',
     )) {
       if (
         stray.tagName === "SCRIPT" ||
@@ -154,11 +215,16 @@ export default function ThemeToggle({
         stray.remove();
         continue;
       }
-      stray.removeAttribute("id");
       stray.removeAttribute("name");
     }
     page.inert = true;
-    return page;
+    // Scroll offsets take effect only in the document: the caller runs this
+    // after appending the overlay. `instant`, or a `scroll-behavior: smooth`
+    // box would glide into place inside the circle.
+    const restoreScroll = () => {
+      for (const [copy, left, top] of scrolled) copy.scrollTo?.({ left, top, behavior: "instant" });
+    };
+    return { page, restoreScroll };
   };
 
   /** Lines the clone up with the real page at the current scroll position. */
@@ -245,8 +311,10 @@ export default function ThemeToggle({
        * difference at all.
        */
       const current = document.documentElement.getAttribute(THEME_ATTRIBUTE);
-      el.appendChild(buildClone(current === "dark" ? "light" : "dark"));
+      const clone = buildClone(current === "dark" ? "light" : "dark");
+      el.appendChild(clone.page);
       document.body.appendChild(el);
+      clone.restoreScroll();
       previewRef.current = el;
     }
     // Place it BEFORE it becomes visible, or the first frame fades in at the

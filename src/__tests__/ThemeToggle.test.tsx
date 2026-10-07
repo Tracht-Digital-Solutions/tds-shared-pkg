@@ -192,9 +192,12 @@ describe("ThemeToggle", () => {
         expect(clone?.getAttribute("data-theme")).toBe("dark");
         expect(clone?.textContent).toContain("Hallo");
 
-        // No duplicate ids: a second `#headline` breaks getElementById,
-        // `:target`, label pairing and every aria reference on the REAL page.
-        expect(document.querySelectorAll("#headline")).toHaveLength(1);
+        // Ids are KEPT, or every `#id` stylesheet rule misses the copy and the
+        // circle shows the page out of line. The real element still wins every
+        // lookup, because the overlay is the LAST child of body.
+        expect(clone?.querySelector("h1")?.id).toBe("headline");
+        expect(document.getElementById("headline")?.closest(".tds-theme-preview")).toBeNull();
+        expect(document.body.lastElementChild).toBe(preview());
         // No duplicate control names: a cloned radio group would steal the
         // real one's selection.
         expect(clone?.querySelector("[name]")).toBeNull();
