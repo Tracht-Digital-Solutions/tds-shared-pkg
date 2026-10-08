@@ -481,11 +481,13 @@
 
 /* The widget host on the panel dashboard. `.dashboard-grid` carried no
    `display: grid` at all for a long time, so the "grid" was a plain block
-   stack; widgets size themselves via `data-size`. */
+   stack; widgets size themselves via `data-size`.
+   The gap carries each tile's 6px hard offset: at 1rem the shadow ate more
+   than a third of it and the tiles read as one block. */
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
   align-items: start;
 }
 .widget-slot {
@@ -543,6 +545,13 @@
 @media (min-width: 40rem) {
   .panel-topbar {
     padding-inline: 1.5rem;
+  }
+}
+/* Matches the host's `lg:px-10` on `<main>`, so the avatar's right edge
+   lines up with the content column under it. */
+@media (min-width: 64rem) {
+  .panel-topbar {
+    padding-inline: 2.5rem;
   }
 }
 
@@ -671,6 +680,14 @@
 [data-surface="panel"] .tds-page h3:not([class]):not(.tds-prose *) {
   font-size: 1rem;
   font-weight: 600;
+}
+
+/* A stack of cards (users, invoices, any record list built from
+   `.tds-stack` + `.tds-card`) needs room for each card's 6px hard offset:
+   at the stack's 0.75rem the shadow left 6px of air and the cards read as
+   one slab. The public sites space their cards at 1.5rem and more. */
+[data-surface="panel"] .tds-stack:has(> .tds-card) {
+  gap: 1.25rem;
 }
 
 /* === Hued dashboard widgets ======================================= */

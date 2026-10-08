@@ -86,8 +86,11 @@ declared). The panel surface draws them too since 0.48. Blurred `--tds-shadow-*`
   accent stops being `--color-primary`.
 - `--color-management`'s dark twin is `#e8536f` (`--color-accent`'s dark value equals `--color-cat-rose`).
 - When the accent moves, re-check nav zones (the host's `panelHues.ts`); the rail suite asserts ΔE > 15 between admin zones.
-- **Elevation:** `--tds-elevation-card: var(--tds-shadow-sm)` at rest, `--tds-elevation-raised` on hover
-  (`@media (hover: hover)`).
+- **Depth:** the hard offset, blurred elevation `none`. The ink is the landingpage's `rgb(5 15 104 / 0.6)` (opaque navy
+  fused a navy button with its offset); `.btn-primary` / `.btn-accent` cast a 45 %-into-black shade of their own fill.
+  A light themed subtree restates the ink, `[data-surface="panel"] [data-theme]` the offsets.
+- **Spacing carries the offset:** `.dashboard-grid` gaps 1.5rem, a `.tds-stack` of `.tds-card`s 1.25rem. At 0.75–1rem
+  the 6 px shadow ate the gap and cards read as one slab.
 - `--tds-panel-*` and `--tds-page-*` live in `base.css` with inert defaults. `--tds-page-card|line|muted` escape the
   rail's token remap.
 - **`--nav-hue` must never be declared on `.nav-item`** (set per section on `.nav-group`, white fallback on

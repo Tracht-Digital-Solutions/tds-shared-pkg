@@ -71,6 +71,14 @@
      elevation goes to none so a card never draws both. */
   --tds-elevation-card: none;
   --tds-elevation-raised: none;
+  /* The landingpage's ink, not base.css's opaque navy: at full strength a
+     navy button and its navy offset fused into one slab with a chamfered
+     corner, and a column of cards read as a black-edged table. 60% lets the
+     canvas through, so the offset reads as a shadow. The dark theme's own
+     ink (`:root[data-theme="dark"]`, higher specificity) is translucent
+     already and wins. Filled buttons take a shade of their own fill —
+     see the panel block at the end of primitives.css. */
+  --tds-shadow-ink: rgb(5 15 104 / 0.6);
   --tds-shadow-hard: 6px 6px 0 0 var(--tds-shadow-ink);
   --tds-shadow-hard-sm: 3px 3px 0 0 var(--tds-shadow-ink);
   --tds-shadow-hard-press: 1px 1px 0 0 var(--tds-shadow-ink);
@@ -131,6 +139,22 @@
      remap app.css applies inside it. */
   --tds-panel-rail-from: var(--color-surface-navy);
   --tds-panel-rail-to: color-mix(in srgb, var(--tds-panel-accent) 55%, var(--color-surface-ink));
+}
+
+/* The shadow half of the block above, restated for a themed SUBTREE (the
+   theme toggle's hover preview), as on the marketing and blog surfaces:
+   declared on <html> the offsets resolve against the page's ink and reach a
+   `[data-theme]` region as literals. Light needs its ink restated too,
+   because base.css's `[data-theme="light"]` puts the opaque navy back. */
+[data-surface="panel"] [data-theme="light"] {
+  --tds-shadow-ink: rgb(5 15 104 / 0.6);
+}
+[data-surface="panel"] [data-theme] {
+  --tds-shadow-hard: 6px 6px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-sm: 3px 3px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-press: 1px 1px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-hover: 8px 8px 0 0 var(--tds-shadow-ink);
+  --tds-shadow-hard-sm-hover: 5px 5px 0 0 var(--tds-shadow-ink);
 }
 
 /* Dark theme deepens the rail instead of brightening it.
