@@ -466,6 +466,14 @@ a.chip:focus-visible {
 .field:focus {
   border-bottom-color: var(--color-accent);
 }
+/* The underline field has no well to colour, so its line does the work: it
+   thickens to 2px in the focus colour, and the ring goes (base.css explains
+   why `transparent` and not `none`). */
+.field:focus-visible {
+  outline-color: transparent;
+  border-bottom-color: var(--tds-focus-ink, var(--color-accent));
+  box-shadow: inset 0 -1px 0 0 var(--tds-focus-ink, var(--color-accent));
+}
 .field::placeholder {
   color: var(--color-muted);
 }
@@ -488,9 +496,10 @@ a.chip:focus-visible {
   box-shadow: var(--tds-shadow-inset);
   transition: border-color var(--tds-dur-base) var(--tds-ease-out);
 }
-/* Same correction as `.field:focus` above — the outline stays. */
+/* The ring is gone (base.css draws the coloured well); the border follows
+   the focus colour so the edge and the well agree. */
 .field-boxed:focus {
-  border-color: var(--color-accent);
+  border-color: var(--tds-focus-ink, var(--color-accent));
 }
 
 /* === Checkbox and radio ============================================
@@ -1542,6 +1551,8 @@ button.tds-row:focus-visible {
      today already carries its own `text-white/…` utility, which still wins.
      This is what catches the next one that doesn't. */
   --tds-eyebrow-color: var(--color-accent-pink);
+  /* Bordeaux sinks into these grounds, so a focused field's well is coral. */
+  --tds-focus-ink: var(--color-accent-pink);
 }
 .tds-tone-navy {
   background-color: var(--color-surface-navy);
@@ -3085,17 +3096,23 @@ button.tds-row:focus-visible {
   --tds-shadow-hard-sm-hover: 5px 5px 0 0 var(--tds-shadow-ink);
 }
 
-/* A filled button on the panel casts a shade of its OWN fill — the
-   landingpage's CTA rule (`--lp-fill` 45% into black), so a navy button and
-   its offset stay two shapes instead of fusing into one slab. Restated
-   offsets for the same reason as the tones above. */
-[data-surface="panel"] .btn-primary {
-  --tds-shadow-ink: color-mix(in srgb, var(--color-primary) 45%, #000);
+/* NO NAVY SHADOW UNDER A NAVY FILL (2026-10-09). The ink is the brand navy
+   on paper, and a navy button over a navy offset — or a navy offset mixed from
+   its own fill, as the panel used to do — fuses into one slab that reads as a
+   thicker button rather than a lifted one. Every navy-filled control casts the
+   coral of the brand accent instead, on every surface and in both themes
+   (where the dark fills are light, coral still parts from them). The bordeaux
+   button keeps a shade of its own fill: red over dark red is two shapes.
+   Restated offsets for the same reason as the tones above. */
+:is([data-surface="marketing"], [data-surface="blog"], [data-surface="panel"])
+  :is(.btn-primary, .cookie-notice-btn:not(.cookie-notice-btn--ghost), .live-chat-cta__launcher) {
+  --tds-shadow-ink: var(--color-accent-pink);
 }
-[data-surface="panel"] .btn-accent {
+:is([data-surface="marketing"], [data-surface="blog"], [data-surface="panel"]) .btn-accent {
   --tds-shadow-ink: color-mix(in srgb, var(--color-accent) 45%, #000);
 }
-[data-surface="panel"] :is(.btn-primary, .btn-accent) {
+:is([data-surface="marketing"], [data-surface="blog"], [data-surface="panel"])
+  :is(.btn-primary, .btn-accent, .cookie-notice-btn:not(.cookie-notice-btn--ghost), .live-chat-cta__launcher) {
   --tds-shadow-hard-sm: 3px 3px 0 0 var(--tds-shadow-ink);
   --tds-shadow-hard-press: 1px 1px 0 0 var(--tds-shadow-ink);
   --tds-shadow-hard-sm-hover: 5px 5px 0 0 var(--tds-shadow-ink);

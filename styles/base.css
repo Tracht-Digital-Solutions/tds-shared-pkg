@@ -813,6 +813,51 @@ body {
   outline-offset: 4px;
 }
 
+/* FIELDS ANSWER FOCUS WITH THEIR SHADOW, NOT WITH A RING (2026-10-09).
+   A field is pressed into the page (`--tds-shadow-inset`); on focus the well
+   deepens to 3px and takes the focus colour, and the ring around it goes.
+   That colour change IS the indicator — a 3px L in bordeaux on a card is
+   9:1, well above 2.4.11's 3:1 — so this rule carries both halves at once:
+   nothing may hide the ring without also drawing the well.
+
+   `outline-color: transparent`, never `outline: none`: in forced-colors mode
+   the system repaints a transparent outline in its own colour, so a Windows
+   high-contrast user still gets a ring where the shadow is stripped.
+
+   High specificity on purpose ((0,3,1)): a consumer's `.x { box-shadow }`
+   would otherwise remove the well and leave a focused field with NO
+   indicator. The underline `.field` and switches built on a hidden checkbox
+   draw their own (primitives.css, and the consumer's track rule).
+   `--tds-focus-ink` is re-pointed by the dark tones, where bordeaux sinks. */
+:is(
+    input:not(
+        [type="button"],
+        [type="submit"],
+        [type="reset"],
+        [type="image"],
+        [type="range"],
+        [type="color"],
+        [type="file"],
+        [type="hidden"],
+        [type="checkbox"],
+        [type="radio"]
+      ),
+    select,
+    textarea
+  ):not(.field):focus-visible {
+  outline-color: transparent;
+  box-shadow: inset 3px 3px 0 0 var(--tds-focus-ink, var(--color-accent));
+}
+/* Checkbox and radio: same well, same colour change. A checked box is filled
+   navy, where bordeaux would vanish (1.3:1), so the checked well takes coral. */
+:is(input[type="checkbox"], input[type="radio"]):focus-visible {
+  outline-color: transparent;
+  box-shadow: inset 3px 3px 0 0 var(--tds-focus-ink, var(--color-accent));
+}
+:is(input[type="checkbox"], input[type="radio"]):checked:focus-visible {
+  box-shadow: inset 3px 3px 0 0 var(--color-accent-pink);
+}
+
 /* Checkboxes and radios were the last unbranded control in the system: every
    settings form in the panel — and there are dozens across the thirteen
    extensions — rendered the operating system's blue tick next to carefully

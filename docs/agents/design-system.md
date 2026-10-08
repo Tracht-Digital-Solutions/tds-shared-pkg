@@ -81,6 +81,10 @@ declared). The panel surface draws them too since 0.48. Blurred `--tds-shadow-*`
 tracks draw their depth inside the box (`--tds-shadow-inset`, own `--tds-inset-ink` on dark grounds); the outer
 `--tds-shadow-hard*` offset is for boxes and buttons only. `design.test.ts` fails on an outer shadow on a control rule.
 
+**No navy shadow under a navy fill** (0.49.5): `.btn-primary`, the filled `.cookie-notice-btn` and
+`.live-chat-cta__launcher` cast `--color-accent-pink` on every surface and theme; `.btn-accent` keeps a shade of its
+own fill. A consumer that derives an ink from a fill (the landingpage's `--lp-fill`) must special-case navy too.
+
 ## The panel surface
 
 - **`--tds-panel-accent` is the single knob**: rail gradient, canvas tint, ambient glow and page-head rule are
@@ -138,6 +142,12 @@ mode is free. The asset URL stays app-local (`--tds-brand-logo-mask`); `--tds-br
 
 ## Focus and interaction rules
 
+- **Fields show no focus ring; the well changes colour instead** (0.49.5). `base.css` gives every text-entry
+  control, select, textarea, checkbox and radio `outline-color: transparent` (never `none`: forced-colors repaints it)
+  plus `inset 3px 3px 0 0 var(--tds-focus-ink, var(--color-accent))` in ONE rule at (0,3,1), so no consumer
+  `box-shadow` can strip the indicator while the ring is hidden. Checked boxes take coral; dark tones set
+  `--tds-focus-ink` to coral; the underline `.field` thickens its line. A local input with its own focus design must
+  draw an equivalent indicator. `design.test.ts` pins the pairing.
 - **Never `outline: none` in a `:focus` rule**; it beats the global `:focus-visible`. `design.test.ts` fails on one,
   and on a `border-radius` inside `:focus-visible`.
 - **`:hover` on a container needs `:focus-within` beside it.**

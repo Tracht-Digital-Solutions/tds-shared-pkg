@@ -944,6 +944,32 @@ describe("motion and focus contracts", () => {
     }
   });
 
+  it("trades every field's focus ring for a coloured well, never one without the other", () => {
+    // A focused field shows no ring (2026-10-09); its pressed-in shadow deepens
+    // and takes the focus colour instead. Hiding the ring without drawing the
+    // well would leave a keyboard user with no indicator at all, so the two
+    // must live in the same rule — and the ring is made transparent, never
+    // removed, so forced-colors mode still paints it.
+    const rules = [...base.matchAll(/([^{}]*):focus-visible\s*\{([^}]*)\}/g)].filter((m) =>
+      /outline-color:\s*transparent/.test(m[2]!),
+    );
+    expect(rules.length).toBeGreaterThanOrEqual(2);
+    for (const [, selector, body] of rules) {
+      expect(body, selector).toMatch(/box-shadow:\s*inset 3px 3px 0 0 var\(--tds-focus-ink, var\(--color-accent\)\)/);
+    }
+    expect(base).toMatch(/textarea\s*\):not\(\.field\):focus-visible/);
+    expect(primitives).toMatch(/\.field:focus-visible\s*\{[^}]*outline-color:\s*transparent;[^}]*box-shadow:/);
+  });
+
+  it("never casts a navy shadow under a navy fill", () => {
+    // A navy button over the navy ink (or a shade mixed from its own navy fill)
+    // fuses into one slab. Navy-filled controls cast coral on every surface.
+    expect(primitives).toMatch(
+      /\.btn-primary, \.cookie-notice-btn:not\(\.cookie-notice-btn--ghost\), \.live-chat-cta__launcher\)\s*\{\s*--tds-shadow-ink:\s*var\(--color-accent-pink\);/,
+    );
+    expect(primitives).not.toMatch(/--tds-shadow-ink:\s*color-mix\(in srgb, var\(--color-primary\)/);
+  });
+
   it("never transitions box-shadow", () => {
     // Interpolating a blurred shadow re-rasterises the blur every frame, and
     // the panel's hover also translates the element — so the repaint landed

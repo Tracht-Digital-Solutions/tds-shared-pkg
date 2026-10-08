@@ -21,6 +21,7 @@
 
 import { THEME_ATTRIBUTE, THEME_STORAGE_KEY } from "../design/index.js";
 import { PREFS_COOKIE } from "../prefs/cookie.js";
+import { BOUNCE_KEYFRAMES, BOUNCE_OPTIONS } from "../motion/bounce.js";
 
 /**
  * lightningcss prefixing targets for the CSS minify step. Includes a
@@ -217,3 +218,115 @@ export function speculationRules(excludePrefixes: readonly string[] = []): strin
     ],
   });
 }
+
+/**
+ * The error bounce, installed on every page: when something goes wrong, the
+ * thing that went wrong shakes once from side to side (see `bounce` in
+ * `./motion`).
+ *
+ * Inline in `<head>` with `set:html`, next to {@link themeBootstrapScript}, so
+ * it is listening before the first island hydrates. It reacts to what the page
+ * already does when it fails — nothing has to opt in:
+ *
+ * - a field the browser refuses on submit (`invalid` event), and a field whose
+ *   `aria-invalid` turns `"true"`;
+ * - an error appearing or changing: `[role="alert"]`, `.form-alert`,
+ *   `.tds-toast--error`, `.tds-alert--danger`, `[data-error]` — the shared
+ *   feedback primitives and every hand-rolled alert;
+ * - and the button that caused it: the last button pressed (or the form's
+ *   submitter), if the error follows within four seconds.
+ *
+ * Markup that is PARSED is not an error appearing: mutations are ignored until
+ * `DOMContentLoaded`, and again across an Astro client-side swap, so a page
+ * that arrives with a message in it does not shake on load. Nodes inside
+ * `[inert]` or the theme preview clone never shake. A no-op under
+ * `prefers-reduced-motion: reduce`. `[data-bounce="off"]` opts an alert out.
+ *
+ * An error that does not change the markup (the same message twice) is
+ * invisible to this watcher — call `bounce(el)` from `./motion` there.
+ */
+export const errorBounceScript: string = `(function () {
+  if (window.__tdsBounce) return;
+  var KF = ${JSON.stringify(BOUNCE_KEYFRAMES)};
+  var OPT = ${JSON.stringify(BOUNCE_OPTIONS)};
+  var ERR = '[role="alert"], .form-alert, .tds-toast--error, .tds-alert--danger, [data-error]';
+  function still() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+  function bounce(el) {
+    if (!el || !el.animate || still()) return;
+    if (el.closest && el.closest("[inert], .tds-theme-preview")) return;
+    var running = el.getAnimations ? el.getAnimations() : [];
+    for (var i = 0; i < running.length; i++) if (running[i].id === "tds-bounce") running[i].cancel();
+    try { el.animate(KF, OPT).id = "tds-bounce"; } catch (e) { /* no Web Animations */ }
+  }
+  window.__tdsBounce = bounce;
+
+  var last = null, lastAt = 0;
+  function remember(el) { if (el) { last = el; lastAt = Date.now(); } }
+  function blame() {
+    if (last && last.isConnected && Date.now() - lastAt < 4000) bounce(last);
+    last = null;
+  }
+  document.addEventListener("submit", function (e) { remember(e.submitter); }, true);
+  document.addEventListener("click", function (e) {
+    var t = e.target;
+    remember(t && t.closest ? t.closest('button, [role="button"], input[type="submit"], input[type="button"]') : null);
+  }, true);
+  document.addEventListener("invalid", function (e) { bounce(e.target); blame(); }, true);
+
+  var live = document.readyState !== "loading";
+  if (!live) document.addEventListener("DOMContentLoaded", function () { live = true; });
+  document.addEventListener("astro:before-swap", function () { live = false; });
+  document.addEventListener("astro:after-swap", function () {
+    requestAnimationFrame(function () { live = true; });
+  });
+
+  function errorIn(node) {
+    if (node.nodeType !== 1) return null;
+    if (node.matches(ERR)) return node;
+    return node.firstElementChild ? node.querySelector(ERR) : null;
+  }
+  new MutationObserver(function (records) {
+    if (!live) return;
+    var hits = [];
+    function add(el) {
+      if (!el || el.getAttribute("data-bounce") === "off" || hits.indexOf(el) >= 0) return;
+      if (!(el.textContent || "").trim() && !el.matches("[aria-invalid]")) return;
+      hits.push(el);
+    }
+    for (var i = 0; i < records.length; i++) {
+      var r = records[i];
+      if (r.type === "attributes") {
+        if (r.target.getAttribute("aria-invalid") === "true" && r.oldValue !== "true") add(r.target);
+        continue;
+      }
+      var found = false;
+      for (var j = 0; j < r.addedNodes.length; j++) {
+        var n = r.addedNodes[j];
+        var err = errorIn(n);
+        if (err) { add(err); found = true; }
+        if (n.nodeType === 1 && n.matches('[aria-invalid="true"]')) { add(n); found = true; }
+      }
+      if (!found) {
+        var host = r.target.nodeType === 1 ? r.target : r.target.parentElement;
+        var owner = host && host.closest ? host.closest(ERR) : null;
+        if (owner && (r.type === "characterData" || r.addedNodes.length)) add(owner);
+      }
+    }
+    if (!hits.length) return;
+    for (var k = 0; k < hits.length; k++) {
+      var nested = false;
+      for (var m = 0; m < hits.length; m++) if (m !== k && hits[m].contains(hits[k])) nested = true;
+      if (!nested) bounce(hits[k]);
+    }
+    blame();
+  }).observe(document.documentElement, {
+    subtree: true,
+    childList: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ["aria-invalid"],
+    attributeOldValue: true,
+  });
+})();`;

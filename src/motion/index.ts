@@ -6,6 +6,7 @@
  * `motion` runtime, so any page may import this entry for free.
  */
 export { transitionUpdate, VIEW_TRANSITION_SCOPE } from "./viewTransition";
+export { bounce, BOUNCE_KEYFRAMES, BOUNCE_OPTIONS } from "./bounce";
 
 /**
  * Decelerates smoothly into the final position.

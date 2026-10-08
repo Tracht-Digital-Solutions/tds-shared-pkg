@@ -12,6 +12,16 @@
 - `THEME_STORAGE_KEY` / `THEME_ATTRIBUTE` (`./design`) are the contract between bootstrap, `ThemeToggle` and `base.css`.
   Import them; don't retype `"tds-theme"`.
 
+## `errorBounceScript` (`src/astro`): errors shake (0.49.5)
+
+Inline next to the theme bootstrap in every layout: `<script is:inline set:html={errorBounceScript} />`. It shakes
+(`BOUNCE_KEYFRAMES`, `translate` with `composite: "add"`) a field refused by the browser (`invalid`), a field whose
+`aria-invalid` turns `"true"`, any `[role="alert"]` / `.form-alert` / `.tds-toast--error` / `.tds-alert--danger` /
+`[data-error]` that appears or changes text, and the button pressed (or form submitter) within 4 s before. Parsed
+markup is ignored (until `DOMContentLoaded`, and across an Astro swap); `[inert]`, the theme preview and
+`[data-bounce="off"]` never shake; reduced motion turns it off. The same failure twice changes no markup: call
+`bounce(el)` from `./motion` there. Tests: `errorBounce.test.ts`.
+
 ## `applyThemePreference` (`./theme`): the only write path
 
 It raises `tds:theme-change`, which the account sync listens to; a hand-rolled write stays per browser.
