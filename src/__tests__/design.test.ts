@@ -2429,10 +2429,10 @@ describe("form controls are pressed in, never lifted", () => {
   it("no control rule carries an outer box-shadow", () => {
     for (const [name, css] of Object.entries(sheets)) {
       for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-        const selector = m[1].trim();
+        const selector = (m[1] ?? "").trim();
         if (!control.test(selector) || /::picker|-row\b|__(label|head|hint)/.test(selector)) continue;
-        for (const shadow of m[2].matchAll(/box-shadow\s*:\s*([^;]+)/g)) {
-          const value = shadow[1].trim();
+        for (const shadow of (m[2] ?? "").matchAll(/box-shadow\s*:\s*([^;]+)/g)) {
+          const value = (shadow[1] ?? "").trim();
           expect(
             value === "none" || /^(inset\b|var\(--tds-shadow-inset)/.test(value),
             `${selector} in ${name} casts an outer shadow: ${value}`,
