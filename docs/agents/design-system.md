@@ -145,7 +145,7 @@ mode is free. The asset URL stays app-local (`--tds-brand-logo-mask`); `--tds-br
 - **Fields show no focus ring; the well changes colour instead** (0.49.5). `base.css` gives every text-entry
   control, select, textarea, checkbox and radio `outline-color: transparent` (never `none`: forced-colors repaints it)
   plus `inset 3px 3px 0 0 var(--tds-focus-ink, var(--color-accent))` in ONE rule at (0,3,1), so no consumer
-  `box-shadow` can strip the indicator while the ring is hidden. Checked boxes take coral; dark tones set
+  `box-shadow` can strip the indicator while the ring is hidden. The border keeps its resting colour (no frame on focus). Checked boxes take coral; dark tones set
   `--tds-focus-ink` to coral; the underline `.field` thickens its line. A local input with its own focus design must
   draw an equivalent indicator. `design.test.ts` pins the pairing.
 - **Never `outline: none` in a `:focus` rule**; it beats the global `:focus-visible`. `design.test.ts` fails on one,

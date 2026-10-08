@@ -496,11 +496,9 @@ a.chip:focus-visible {
   box-shadow: var(--tds-shadow-inset);
   transition: border-color var(--tds-dur-base) var(--tds-ease-out);
 }
-/* The ring is gone (base.css draws the coloured well); the border follows
-   the focus colour so the edge and the well agree. */
-.field-boxed:focus {
-  border-color: var(--tds-focus-ink, var(--color-accent));
-}
+/* No `.field-boxed:focus` border change (2026-10-09, asked for): a focused
+   field shows no frame at all — neither the ring nor a recoloured border.
+   Only the well changes colour (base.css), and that is the indicator. */
 
 /* === Checkbox and radio ============================================
    Pressed into the page like every other control (2026-09-28), which
