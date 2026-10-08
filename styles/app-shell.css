@@ -202,7 +202,9 @@
   color: var(--color-ink);
   font: inherit;
   font-size: 1rem; /* 16px: iOS does not zoom the page on focus */
-  box-shadow: var(--tds-shadow-hard-sm, 3px 3px 0 0 var(--tds-shadow-ink));
+  /* Pressed in, like every field: a control you reach into sits below the
+     page, so its depth is drawn inside the box, never as an offset outside. */
+  box-shadow: var(--tds-shadow-inset);
 }
 .tds-searchfield input:focus-visible {
   outline: 2px solid var(--color-accent);

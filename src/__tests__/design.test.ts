@@ -2414,3 +2414,31 @@ describe("hard 2D shadows (public surfaces and, since 2026-10-06, the panels)", 
     }
   });
 });
+
+describe("form controls are pressed in, never lifted", () => {
+  // A text field, a select, a checkbox, a radio and a switch track draw their
+  // depth INSIDE the box. An outer offset on one makes it read as a button.
+  const sheets = {
+    "base.css": base,
+    "primitives.css": primitives,
+    "app.css": app,
+    "app-shell.css": stripComments(read("app-shell.css")),
+  };
+  const control = /\b(input|textarea|select)\b|field|checkbox|radio|switch/;
+
+  it("no control rule carries an outer box-shadow", () => {
+    for (const [name, css] of Object.entries(sheets)) {
+      for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const selector = m[1].trim();
+        if (!control.test(selector) || /::picker|-row\b|__(label|head|hint)/.test(selector)) continue;
+        for (const shadow of m[2].matchAll(/box-shadow\s*:\s*([^;]+)/g)) {
+          const value = shadow[1].trim();
+          expect(
+            value === "none" || /^(inset\b|var\(--tds-shadow-inset)/.test(value),
+            `${selector} in ${name} casts an outer shadow: ${value}`,
+          ).toBe(true);
+        }
+      }
+    }
+  });
+});

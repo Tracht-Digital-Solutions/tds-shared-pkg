@@ -77,6 +77,10 @@ into it with `translate`. Dark tones re-declare them with black ink (a `var()` i
 declared). The panel surface draws them too since 0.48. Blurred `--tds-shadow-*` / `--tds-elevation-*` are unchanged.
 **Nothing transitions `box-shadow`**; the panel's hover elevation is an `opacity` fade on a pseudo-element.
 
+**Form controls are pressed in, never lifted.** Text fields, selects, checkboxes, radios, search fields and switch
+tracks draw their depth inside the box (`--tds-shadow-inset`, own `--tds-inset-ink` on dark grounds); the outer
+`--tds-shadow-hard*` offset is for boxes and buttons only. `design.test.ts` fails on an outer shadow on a control rule.
+
 ## The panel surface
 
 - **`--tds-panel-accent` is the single knob**: rail gradient, canvas tint, ambient glow and page-head rule are
