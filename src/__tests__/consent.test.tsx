@@ -190,6 +190,14 @@ describe("the banner", () => {
     expect(readConsent()?.choices).toMatchObject({ analytics: true, marketing: true });
   });
 
+  it("grants only the categories it showed on Alle akzeptieren", () => {
+    // A site that asks about advertising only must not record a consent to
+    // statistics nobody described to the visitor.
+    const { getByText } = render(<ConsentBanner categories={["marketing"]} />);
+    fireEvent.click(getByText("Alle akzeptieren"));
+    expect(readConsent()?.choices).toMatchObject({ analytics: false, functional: false, marketing: true });
+  });
+
   it("stores a refusal on Nur notwendige", () => {
     const { getByText } = render(<ConsentBanner {...asking} />);
     fireEvent.click(getByText("Nur notwendige"));

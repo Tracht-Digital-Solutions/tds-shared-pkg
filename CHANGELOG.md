@@ -6,6 +6,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`./analytics` — consent-gated, first-party audience measurement.**
+  `startAnalytics({ site, lang })` does nothing until the visitor grants
+  `analytics`, and deletes its ids the moment they withdraw. It records page
+  views (path only), clicks on `[data-track]` and outbound hosts, scroll depth
+  and reached `section[id]`, form progress on `form[data-track-form]` (field
+  names, never values) and engaged time, batched into `text/plain` beacons to
+  `{apiBase}/analytics/collect` (no preflight). A 30-day visitor id with a fixed
+  expiry and a 30-minute session id; prerendered pages count when shown,
+  bfcache restores count again, Global Privacy Control is honoured.
+  `forgetAnalytics()` erases the visitor's rows server-side.
+
+### Changed
+- **`CONSENT_VERSION` 1 → 2: every visitor is asked again.** `analytics` now
+  describes a real, pseudonymous measurement, and its copy no longer calls it
+  anonymous.
+
+### Fixed
+- **"Alle akzeptieren" grants only what the banner showed.** It stored all four
+  categories, so a blog visitor asked about advertising also "consented" to
+  statistics nobody had described. `grantShown()` / `restrictToShown()`; the
+  settings dialog's save is restricted the same way.
+
 ### Fixed
 - **The toggle follows a theme change it did not make.** Its state was seeded
   on mount and then only updated by its own flip, so the profile page,

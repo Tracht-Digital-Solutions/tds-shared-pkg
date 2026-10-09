@@ -32,6 +32,9 @@ export default defineConfig({
     // `/api` beside the islands that use it: the bus is reachable without the
     // UI that happens to be its most common caller.
     "consent/store": "src/consent/store.ts",
+    // Consent-gated first-party audience measurement for the public sites.
+    // Plain DOM, no React: it runs in every public layout.
+    "analytics/index": "src/analytics/index.ts",
     "astro/index": "src/astro/index.ts",
     "design/index": "src/design/index.ts",
     "theme/index": "src/theme/index.ts",

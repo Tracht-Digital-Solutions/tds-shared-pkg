@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { translations, type Language } from "../i18n/translations";
 import {
-  allGranted,
+  grantShown,
   necessaryOnly,
   type ConsentChoices,
   type OptionalCategory,
@@ -204,7 +204,7 @@ export default function ConsentSettings({
           >
             {t.necessaryOnly}
           </button>
-          <button type="button" className="btn btn-ghost" onClick={() => onSave(allGranted())}>
+          <button type="button" className="btn btn-ghost" onClick={() => onSave(grantShown(categories))}>
             {t.acceptAll}
           </button>
           <button type="button" className="btn btn-primary" onClick={() => onSave(choices)}>

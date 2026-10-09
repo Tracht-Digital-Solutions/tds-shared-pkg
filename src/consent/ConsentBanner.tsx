@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { translations, type Language } from "../i18n/translations";
 import ConsentSettings from "./ConsentSettings";
 import {
+  grantShown,
   necessaryOnly,
+  restrictToShown,
   type ConsentChoices,
   type OptionalCategory,
 } from "./categories";
@@ -149,12 +151,13 @@ export default function ConsentBanner({
 
   const save = useCallback(
     (choices: ConsentChoices) => {
-      writeConsent(choices, lang);
-      setInitial(choices);
+      const stored = restrictToShown(choices, categories);
+      writeConsent(stored, lang);
+      setInitial(stored);
       setSettingsOpen(false);
       setDecided(true);
     },
-    [lang],
+    [lang, categories],
   );
 
   return (
@@ -198,7 +201,7 @@ export default function ConsentBanner({
               <button
                 type="button"
                 className="cookie-notice-btn"
-                onClick={() => save({ necessary: true, functional: true, analytics: true, marketing: true })}
+                onClick={() => save(grantShown(categories))}
               >
                 {t.acceptAll}
               </button>

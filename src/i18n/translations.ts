@@ -410,7 +410,7 @@ export const translations = {
         analytics: {
           label: "Statistik",
           description:
-            "Hilft uns zu verstehen, welche Seiten gelesen werden und wo Besucher abbrechen. Die Auswertung ist anonym und wird nicht mit Ihrer Person verknüpft.",
+            "Eigene Reichweitenmessung: welche Seiten gelesen werden, woher Besucher kommen, welche Schaltflächen sie nutzen und wo sie abbrechen. Dafür speichert Ihr Browser eine zufällige Kennung für 30 Tage. Ihre IP-Adresse wird nicht gespeichert, die Daten liegen auf unserem Server in Deutschland und gehen an niemanden weiter.",
         },
         marketing: {
           label: "Werbung",
@@ -838,7 +838,7 @@ export const translations = {
         analytics: {
           label: "Statistics",
           description:
-            "Helps us understand which pages get read and where visitors drop off. The evaluation is anonymous and is not linked to you as a person.",
+            "Our own audience measurement: which pages get read, where visitors come from, which buttons they use and where they drop off. Your browser stores a random identifier for 30 days. Your IP address is not stored; the data stays on our server in Germany and is shared with no one.",
         },
         marketing: {
           label: "Advertising",

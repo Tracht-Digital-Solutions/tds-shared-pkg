@@ -65,6 +65,11 @@
       "import": "./dist/consent/index.js",
       "require": "./dist/consent/index.cjs"
     },
+    "./analytics": {
+      "types": "./dist/analytics/index.d.ts",
+      "import": "./dist/analytics/index.js",
+      "require": "./dist/analytics/index.cjs"
+    },
     "./consent/store": {
       "types": "./dist/consent/store.d.ts",
       "import": "./dist/consent/store.js",

@@ -37,7 +37,11 @@ export type ConsentChoices = Record<ConsentCategory, boolean>;
  * copy edits; asking again for no reason trains people to click the first
  * button.
  */
-export const CONSENT_VERSION = 1;
+export const CONSENT_VERSION = 2;
+// v2 (2026-10): `analytics` now covers a real, pseudonymous measurement (a
+// 30-day visitor id), and v1 records could carry `analytics: true` from an
+// "Alle akzeptieren" on a banner that never showed that category. Neither
+// was a consent to what is collected now, so every visitor is asked again.
 
 /**
  * What gets stored. `ts` is the proof of WHEN — Art. 7 Abs. 1 DSGVO puts the
@@ -71,6 +75,28 @@ export const allGranted = (): ConsentChoices => ({
   analytics: true,
   marketing: true,
 });
+
+/**
+ * Everything the visitor was SHOWN, granted; everything else off.
+ *
+ * "Alle akzeptieren" agrees to the categories on the screen, not to the ones a
+ * site might add later. Granting a category the banner never presented would
+ * be a consent to a purpose nobody described (Art. 4 Nr. 11 DSGVO: "in
+ * informierter Weise"), so a site that asks only about `marketing` must store
+ * `analytics: false` on accept-all.
+ */
+export const grantShown = (shown: readonly OptionalCategory[]): ConsentChoices =>
+  restrictToShown(allGranted(), shown);
+
+/** Force every category the visitor was not shown to `false`. */
+export const restrictToShown = (
+  choices: ConsentChoices,
+  shown: readonly OptionalCategory[],
+): ConsentChoices => {
+  const out = necessaryOnly();
+  for (const cat of shown) out[cat] = choices[cat] === true;
+  return out;
+};
 
 /** Narrowing helper for values arriving from storage or a query string. */
 export const isConsentCategory = (v: unknown): v is ConsentCategory =>
