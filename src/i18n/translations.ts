@@ -405,7 +405,7 @@ export const translations = {
         functional: {
           label: "Komfort",
           description:
-            "Merkt sich Einstellungen, die die Bedienung angenehmer machen, für den Betrieb aber nicht nötig sind — etwa eine eingeklappte Seitenleiste oder eine zuletzt gewählte Ansicht.",
+            "Merkt sich Einstellungen, die die Bedienung angenehmer machen, für den Betrieb aber nicht nötig sind — etwa eine zuletzt gewählte Ansicht oder, im Journal, welche Themen Sie gelesen haben, um passende Artikel vorzuschlagen. Gespeichert nur in Ihrem Browser, höchstens 180 Tage.",
         },
         analytics: {
           label: "Statistik",
@@ -833,7 +833,7 @@ export const translations = {
         functional: {
           label: "Convenience",
           description:
-            "Remembers settings that make the site nicer to use but are not required to operate it — a collapsed sidebar, say, or the view you last picked.",
+            "Remembers settings that make the site nicer to use but are not required to operate it — the view you last picked, say, or, in the journal, which topics you read so it can suggest matching articles. Stored only in your browser, for at most 180 days.",
         },
         analytics: {
           label: "Statistics",

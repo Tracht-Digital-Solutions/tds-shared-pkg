@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **"Komfort" / "Convenience" names the journal's reading suggestions.** The
+  blog now gates its `tds-interests` cookie on `functional`, so the category's
+  description says what it covers. No `CONSENT_VERSION` bump: no site showed
+  the category before, and `restrictToShown()` (0.50.0) stored it as `false`
+  everywhere, so nobody has consented to the old wording.
+
 ### Added
 - **`./analytics` — consent-gated, first-party audience measurement.**
   `startAnalytics({ site, lang })` does nothing until the visitor grants
