@@ -313,3 +313,23 @@ describe("wrapped list items", () => {
     expect(renderMarkdown("text\n  more")).toBe("<p>text more</p>");
   });
 });
+
+describe("numbered lists", () => {
+  it("renders 1. / 2) steps as an ordered list, not one paragraph", () => {
+    expect(renderMarkdown("1. Termin\n2. Umsetzung\n3) Abnahme")).toBe(
+      "<ol><li>Termin</li><li>Umsetzung</li><li>Abnahme</li></ol>",
+    );
+  });
+
+  it("closes a bullet list when a numbered one starts", () => {
+    expect(renderMarkdown("- a\n1. b")).toBe("<ul><li>a</li></ul>\n<ol><li>b</li></ol>");
+  });
+
+  it("escapes HTML inside a numbered item", () => {
+    expect(renderMarkdown("1. <b>x</b>")).toBe("<ol><li>&lt;b&gt;x&lt;/b&gt;</li></ol>");
+  });
+
+  it("leaves a sentence that merely starts with a year alone", () => {
+    expect(renderMarkdown("2026 war gut.")).toBe("<p>2026 war gut.</p>");
+  });
+});
