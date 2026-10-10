@@ -105,9 +105,16 @@ export function isPriceStale(
  * it is the licence term that keeps the partner programme.
  */
 export function displayPrice(
-  offer: Pick<ShopOffer, "priceCheckedAt" | "priceCents" | "currency">,
+  offer: Pick<ShopOffer, "priceCheckedAt" | "priceCents" | "currency"> & { kind?: ShopOffer["kind"] },
   now: number = Date.now(),
 ): { cents: number; currency: string } | null {
+  // The 24-hour rule is about quoting SOMEBODY ELSE's price. An own offer's
+  // price is ours to state, never expires, and the API therefore serves it
+  // without `priceCheckedAt` — treating that as "never fetched" hid every
+  // fixed price in the shop behind "Preis beim Anbieter prüfen".
+  if (offer.kind === "own" && offer.priceCents !== null) {
+    return { cents: offer.priceCents, currency: offer.currency };
+  }
   if (isPriceStale(offer, now)) return null;
   return { cents: offer.priceCents as number, currency: offer.currency };
 }

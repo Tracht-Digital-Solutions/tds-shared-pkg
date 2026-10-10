@@ -33,6 +33,14 @@ const offer = (checkedAgoMs: number | null, priceCents: number | null = 4999) =>
 });
 
 describe("price freshness", () => {
+  it("shows an own price without a retrieval time, but never an affiliate one", () => {
+    const own = { ...offer(null), kind: "own" as const };
+    expect(displayPrice(own, NOW)).toEqual({ cents: 4999, currency: "EUR" });
+    expect(displayPrice({ ...offer(null), kind: "affiliate" as const }, NOW)).toBeNull();
+    expect(displayPrice({ ...offer(25 * HOUR), kind: "affiliate" as const }, NOW)).toBeNull();
+    expect(displayPrice({ ...offer(null, null), kind: "own" as const }, NOW)).toBeNull();
+  });
+
   it("keeps a quote fetched within the last 24 hours", () => {
     expect(isPriceStale(offer(23 * HOUR), NOW)).toBe(false);
     expect(displayPrice(offer(23 * HOUR), NOW)).toEqual({ cents: 4999, currency: "EUR" });
