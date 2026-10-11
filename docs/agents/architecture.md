@@ -49,6 +49,10 @@ Each directory with consumers is its own `exports` entry (`./api`, `./data`, `./
 - **Never import `motion` statically from `./components`.** Astro hydrates the barrel as a whole namespace, so it
   would ship to every public page (+175 KB once). `ToastHost` and `FormAlert` reach their animated half via
   `import()`; a test enforces it.
+- **Hydrate islands from `./islands/<name>`, not `./components`** (0.55): `theme-toggle`, `live-chat`,
+  `account-menu`. Hydrating from the barrel shipped every component (landing: barrel chunk 43.6 KB → 16.3 KB).
+  A new island the sites hydrate gets its own entry (tsup + `exports`); `barrelWeight.test.ts` checks the shape
+  and that no barrel component takes a value from a zod schema module (zod rode along once, 85 KB).
 - **The lightningcss `cssTarget` lives in `src/astro` only.** `.brand-header` authors `backdrop-filter` (and `mask`)
   unprefixed; lightningcss adds `-webkit-` only with a Safari target. Consumers spread `tdsViteBuild`.
 - **Every SSR consumer spreads `motionSsrNoExternal`** into `vite.ssr.noExternal` (`./components` imports

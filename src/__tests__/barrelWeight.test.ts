@@ -27,3 +27,17 @@ describe("the component barrel stays light", () => {
     }
   });
 });
+
+describe("islands have entries of their own", () => {
+  // A site hydrating an island from `./components` ships the whole barrel;
+  // from `./islands/<name>` it ships that island. Each entry exports exactly
+  // one value, or it becomes a second barrel.
+  const islands = join(__dirname, "../islands");
+  it.each(readdirSync(islands))("%s exports one component", (file) => {
+    const source = readFileSync(join(islands, file), "utf8");
+    const values = [...source.matchAll(/^export \{([^}]*)\} from/gm)].flatMap((m) => m[1]!.split(","));
+    expect(values).toHaveLength(1);
+    const pkg = JSON.parse(readFileSync(join(__dirname, "../../package.json"), "utf8"));
+    expect(pkg.exports[`./islands/${file.replace(/\.ts$/, "")}`]).toBeDefined();
+  });
+});

@@ -15,6 +15,12 @@ export default defineConfig({
     // for the same reason: only a page that asks for it pays for it.
     "motion/dom": "src/motion/dom.ts",
     "components/index": "src/components/index.ts",
+    // One entry per island the sites hydrate from their layouts and headers.
+    // Astro hydrates through the module's whole namespace, so the barrel
+    // above shipped every component to every page (0.55).
+    "islands/theme-toggle": "src/islands/theme-toggle.ts",
+    "islands/live-chat": "src/islands/live-chat.ts",
+    "islands/account-menu": "src/islands/account-menu.ts",
     // The consent manager. Its own entry rather than a re-export from
     // `components`: a page that mounts the banner should not have to pull the
     // entire component barrel.

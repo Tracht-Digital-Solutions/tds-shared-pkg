@@ -60,6 +60,21 @@
       "import": "./dist/components/index.js",
       "require": "./dist/components/index.cjs"
     },
+    "./islands/theme-toggle": {
+      "types": "./dist/islands/theme-toggle.d.ts",
+      "import": "./dist/islands/theme-toggle.js",
+      "require": "./dist/islands/theme-toggle.cjs"
+    },
+    "./islands/live-chat": {
+      "types": "./dist/islands/live-chat.d.ts",
+      "import": "./dist/islands/live-chat.js",
+      "require": "./dist/islands/live-chat.cjs"
+    },
+    "./islands/account-menu": {
+      "types": "./dist/islands/account-menu.d.ts",
+      "import": "./dist/islands/account-menu.js",
+      "require": "./dist/islands/account-menu.cjs"
+    },
     "./consent": {
       "types": "./dist/consent/index.d.ts",
       "import": "./dist/consent/index.js",
