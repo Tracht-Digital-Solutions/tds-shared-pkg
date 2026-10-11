@@ -1,10 +1,9 @@
 import type { CSSProperties } from "react";
 
-import {
-  displayPrice,
-  type ShopOffer,
-  type ShopProductRef,
-} from "../schemas/shopBlocks";
+import type { ShopOffer, ShopProductRef } from "../schemas/shopBlocks";
+// Never a value import from `../schemas/shopBlocks`: it loads zod, and this
+// card is in the barrel every site hydrates (see `../schemas/shopPrice`).
+import { displayPrice } from "../schemas/shopPrice";
 
 /**
  * The one TDShop product card, rendered by all three surfaces: the shop itself,
