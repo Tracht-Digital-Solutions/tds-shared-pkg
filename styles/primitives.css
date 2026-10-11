@@ -1722,8 +1722,10 @@ button.tds-row:focus-visible {
     min-width: 0;
     min-height: 2.75rem;
     /* A 44px control (the CTA, a coarse-pointer link) keeps a frame of the
-       island's fill around it instead of touching the edge. */
-    padding: 0.25rem 0.25rem 0.25rem 0.75rem;
+       island's fill around it, wide enough for a button's own 3px hard
+       offset — at 0.25rem the tools site's sign-in button drew its shadow
+       over the island's edge. */
+    padding: 0.375rem 0.5rem 0.375rem 0.75rem;
     background: var(--tds-sitebar-fill, var(--color-card));
     border: 1px solid color-mix(in srgb, var(--color-primary) 14%, var(--color-line));
     border-radius: var(--tds-radius-bar);
@@ -1732,7 +1734,7 @@ button.tds-row:focus-visible {
   }
   .tds-sitebar__island + .tds-sitebar__island {
     margin-inline-start: auto;
-    padding-inline-start: 0.25rem;
+    padding-inline-start: 0.375rem;
   }
   .tds-sitebar__island .tds-sitebar__actions {
     margin-inline-start: 0;
