@@ -41,3 +41,12 @@ describe("islands have entries of their own", () => {
     expect(pkg.exports[`./islands/${file.replace(/\.ts$/, "")}`]).toBeDefined();
   });
 });
+
+describe("fonts are never inlined", () => {
+  it("keeps font files out of data: URIs and leaves other assets to Vite", async () => {
+    const { tdsViteBuild } = await import("../astro");
+    expect(tdsViteBuild.assetsInlineLimit("/x/lato-latin-ext-400-normal.woff")).toBe(false);
+    expect(tdsViteBuild.assetsInlineLimit("/x/lato-latin-400-normal.woff2")).toBe(false);
+    expect(tdsViteBuild.assetsInlineLimit("/x/icon.svg")).toBeUndefined();
+  });
+});

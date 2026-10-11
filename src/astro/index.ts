@@ -31,12 +31,24 @@ import { BOUNCE_KEYFRAMES, BOUNCE_OPTIONS } from "../motion/bounce.js";
 export const cssTarget: string[] = ["chrome90", "edge90", "firefox103", "safari15"];
 
 /**
+ * Never inline a font file as a `data:` URI (0.55.1). Vite inlines assets
+ * under 4 KB, and Fontsource lists a small `.woff` beside each `.woff2`: the
+ * two Lato latin-ext fallbacks landed in the landing page's inlined CSS as
+ * ~10 KB of base64 on EVERY page, for a format no current browser picks.
+ * Other assets keep Vite's default (`undefined`).
+ */
+export function tdsAssetsInlineLimit(filePath: string): boolean | undefined {
+  return /\.(woff2?|ttf|otf|eot)$/i.test(filePath) ? false : undefined;
+}
+
+/**
  * Drop-in `vite.build` fragment for a TDS Astro site:
  * `vite: { build: { ...tdsViteBuild } }`.
  */
 export const tdsViteBuild = {
   cssMinify: "lightningcss" as const,
   cssTarget,
+  assetsInlineLimit: tdsAssetsInlineLimit,
 };
 
 /**

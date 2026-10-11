@@ -86,7 +86,7 @@ describe("tdsViteBuild", () => {
   });
 
   it("is a spreadable vite.build fragment (only known keys)", () => {
-    expect(Object.keys(tdsViteBuild).sort()).toEqual(["cssMinify", "cssTarget"]);
+    expect(Object.keys(tdsViteBuild).sort()).toEqual(["assetsInlineLimit", "cssMinify", "cssTarget"]);
   });
 });
 
