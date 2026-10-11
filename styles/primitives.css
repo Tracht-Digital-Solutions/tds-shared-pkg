@@ -2411,7 +2411,7 @@ button.tds-row:focus-visible {
        <h2>…</h2>
        <button type="button" class="btn btn-primary tds-filterbar__toggle"
                data-filter-toggle aria-expanded="false" aria-controls="listing-filter">
-         <svg class="tds-filterbar__icon" …/> Filter <span class="tds-filterbar__count"></span>
+         <svg class="tds-filterbar__icon" …/> <span class="tds-filterbar__label">Filter</span> <span class="tds-filterbar__count"></span>
        </button>
      </div>
      <div class="tds-filterbar__panel" id="listing-filter" hidden>
@@ -2440,6 +2440,25 @@ button.tds-row:focus-visible {
   width: 1rem;
   height: 1rem;
   flex: none;
+}
+/* On a phone the heading row has no room for the word: the toggle keeps its
+   icon, count and chevron on the heading's line, and the label stays for
+   screen readers only (wrap it in `.tds-filterbar__label`). */
+@media (max-width: 30rem) {
+  .tds-filterbar__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+  .tds-filterbar__toggle {
+    padding-inline: 0.75rem;
+  }
 }
 /* The chevron is drawn, not shipped as an icon: it turns with the state. */
 .tds-filterbar__toggle::after {

@@ -2237,6 +2237,8 @@ describe("page motion (CSS)", () => {
     // The panel sets `display: flex`, which would beat the UA's [hidden]: a
     // closed panel must stay closed.
     expect(primitives).toMatch(/\.tds-filterbar__panel\[hidden\]\s*\{\s*display:\s*none/);
+    // Phones keep the toggle on the heading line: the label is visually hidden, never removed.
+    expect(primitives).toMatch(/max-width: 30rem\)\s*\{\s*\.tds-filterbar__label\s*\{[^}]*clip-path:\s*inset\(50%\)/);
     // Open = pressed into the offset; the toggle's look is otherwise .btn.btn-primary's.
     expect(primitives).toMatch(/\.tds-filterbar__toggle\[aria-expanded="true"\]:not\(:hover\):not\(:focus-visible\)\s*\{[^}]*--tds-shadow-hard-press/);
   });
