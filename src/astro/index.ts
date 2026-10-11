@@ -330,3 +330,89 @@ export const errorBounceScript: string = `(function () {
     attributeOldValue: true,
   });
 })();`;
+
+/**
+ * Endless animations rest while they are off screen (0.54).
+ *
+ * A spinner in a closed section, a pulsing dot in the footer, a drifting
+ * decoration under the hero: an animation with `iterations: Infinity` keeps
+ * the compositor (and for some properties the main thread) busy every frame
+ * whether anyone can see it or not. This watcher finds them and stops them
+ * while they are outside the viewport.
+ *
+ * - **Found, not declared.** `document.getAnimations()` lists every running
+ *   animation; the ones with infinite iterations are watched by ONE
+ *   IntersectionObserver (128 px margin, so they are running again before they
+ *   come into view). CSS animations announce themselves with `animationstart`;
+ *   Web Animations (`el.animate`, Motion's hardware-accelerated tweens) are
+ *   found by a rescan after load, after DOM changes (debounced) and after an
+ *   Astro page swap.
+ * - **CSS animations** are paused by the `[data-tds-offscreen]` rule in
+ *   `styles/base.css`, so one that STARTS while its element is off screen is
+ *   paused from its first frame. **Web Animations** are paused with `pause()`
+ *   and resumed with `play()` — only those this script paused, never one a
+ *   component paused itself.
+ * - Not reached: animation loops written as JavaScript (`requestAnimationFrame`
+ *   or Motion's own frame loop for springs and independent transforms). Those
+ *   gate themselves with an IntersectionObserver where they live.
+ *
+ * Inline next to the theme bootstrap in every layout:
+ * `<script is:inline set:html={offscreenAnimationScript} />`. Installs once;
+ * a no-op without IntersectionObserver or Web Animations.
+ */
+export const offscreenAnimationScript: string = `(function () {
+  if (window.__tdsOffscreen || !window.IntersectionObserver || !document.getAnimations) return;
+  window.__tdsOffscreen = true;
+  var ATTR = "data-tds-offscreen";
+  var watched = new WeakSet();
+  var ours = new WeakSet();
+  function endless(a) {
+    var t = a.effect && a.effect.getComputedTiming ? a.effect.getComputedTiming() : null;
+    return !!t && t.iterations === Infinity;
+  }
+  function isCss(a) { return typeof a.animationName === "string"; }
+  var io = new IntersectionObserver(function (entries) {
+    for (var i = 0; i < entries.length; i++) {
+      var el = entries[i].target, off = !entries[i].isIntersecting;
+      if (off) el.setAttribute(ATTR, ""); else el.removeAttribute(ATTR);
+      var list = el.getAnimations ? el.getAnimations() : [];
+      for (var j = 0; j < list.length; j++) {
+        var a = list[j];
+        if (isCss(a) || !endless(a)) continue;
+        if (off && a.playState === "running") { a.pause(); ours.add(a); }
+        else if (!off && ours.has(a)) { ours.delete(a); a.play(); }
+      }
+    }
+  }, { rootMargin: "128px" });
+  function watch(el) {
+    if (!el || el.nodeType !== 1 || watched.has(el)) return;
+    watched.add(el);
+    io.observe(el);
+  }
+  function scan() {
+    var all = document.getAnimations();
+    for (var i = 0; i < all.length; i++) {
+      var a = all[i];
+      var el = a.effect && a.effect.target;
+      if (!el || !endless(a)) continue;
+      watch(el);
+      if (!isCss(a) && a.playState === "running" && el.hasAttribute(ATTR)) { a.pause(); ours.add(a); }
+    }
+  }
+  document.addEventListener("animationstart", function (e) {
+    var el = e.target;
+    if (!el || !el.getAnimations) return;
+    var list = el.getAnimations();
+    for (var i = 0; i < list.length; i++) if (endless(list[i])) { watch(el); return; }
+  }, true);
+  var timer = 0;
+  function later(ms) {
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      if (window.requestIdleCallback) requestIdleCallback(scan, { timeout: 1000 }); else scan();
+    }, ms);
+  }
+  new MutationObserver(function () { later(400); }).observe(document.documentElement, { childList: true, subtree: true });
+  if (document.readyState === "complete") later(0); else window.addEventListener("load", function () { later(0); setTimeout(scan, 3000); });
+  document.addEventListener("astro:page-load", function () { later(200); });
+})();`;

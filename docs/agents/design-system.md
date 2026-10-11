@@ -128,7 +128,9 @@ own fill. A consumer that derives an ink from a fill (the landingpage's `--lp-fi
 - `.tds-shape` — constructed geometry. **`--quarter-*` names the rounded corner.**
 - `.tds-circuit` — conduit lines in a decorative `<svg aria-hidden="true">`; animated parts need `pathLength="1"` and
   `data-circuit-line` / `data-circuit-node`.
-- `.tds-brandbar` — bordeaux · coral · gold accent; punctuation, not wallpaper.
+- `.tds-brandbar` — bordeaux · coral · gold accent; punctuation, not wallpaper. Every segment is a pill at every
+  size (0.54): an SVG pill mask per segment (`ry="50%"`, no viewBox), shared with the panel page head. Never
+  scale a bar or a segment with `transform` — that flattens the ends; animate a clip, a width or a height.
 - `.tds-tone-*` — four grounds; dark ones remap page tokens.
 - Alphas go through `--tds-decor-*` tokens; decoration never takes a click or focus.
 - Small geometry doesn't read as geometry; make it a dot or drop it.

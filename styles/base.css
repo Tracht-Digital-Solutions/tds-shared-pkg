@@ -1703,6 +1703,22 @@ input[type="radio"] {
   }
 }
 
+/* === Off screen, endless animations rest (0.54) =====================
+
+   `offscreenAnimationScript` (`./astro`) marks the target of every endless
+   animation with `data-tds-offscreen` while it is outside the viewport. A
+   spinner, pulse or drift nobody can see then costs no frames. Paused, not
+   removed: it resumes where it stopped when it scrolls back in. Pseudo-element
+   animations live on the same element, so they rest with it. */
+[data-tds-offscreen],
+[data-tds-offscreen]::before,
+[data-tds-offscreen]::after,
+[data-tds-offscreen] *,
+[data-tds-offscreen] *::before,
+[data-tds-offscreen] *::after {
+  animation-play-state: paused !important;
+}
+
 /* === Motion preferences =========================================== */
 
 @media (prefers-reduced-motion: reduce) {

@@ -628,8 +628,9 @@
     var(--tds-brandbar-1) + var(--tds-brandbar-2) + var(--tds-brandbar-3) + 2 *
       var(--tds-brandbar-gap)
   );
-  height: 3px;
-  border-radius: var(--tds-radius-bar);
+  --tds-brandbar-height: 3px;
+  height: var(--tds-brandbar-height);
+  border-radius: var(--tds-radius-pill);
   background-image:
     linear-gradient(var(--tds-panel-accent), var(--tds-panel-accent)),
     linear-gradient(var(--color-accent-pink), var(--color-accent-pink)),

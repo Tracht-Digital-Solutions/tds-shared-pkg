@@ -1480,7 +1480,7 @@ button.tds-row:focus-visible {
       var(--tds-brandbar-gap)
   );
   height: var(--tds-brandbar-height);
-  border-radius: var(--tds-radius-bar);
+  border-radius: var(--tds-radius-pill);
   background-image:
     linear-gradient(var(--color-accent), var(--color-accent)),
     linear-gradient(var(--color-accent-pink), var(--color-accent-pink)),
@@ -1498,6 +1498,44 @@ button.tds-row:focus-visible {
       )
       0;
   background-repeat: no-repeat;
+}
+/* Every segment is a PILL, at every size (0.54). Three background layers on
+   one box share one border-radius, so only the two outer ends were round and
+   the inner ends square — visible as soon as a bar is taller than a hairline.
+   The mask cuts each segment on its own, with ONE shape per segment: an SVG
+   rect with `ry="50%"` (rx follows it) and no viewBox, so it is drawn at the
+   segment's own pixel size instead of being stretched — the ends stay half
+   circles whatever the height. Sizes and positions come from the same five
+   tokens as the colours. Caps glued to a body were tried first and left a
+   visible seam at every join. The panel's page head draws the same bar and
+   takes the same mask. */
+.tds-brandbar,
+[data-surface="panel"] .tds-page__head::before {
+  --tds-brandbar-pill: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' ry='50%25'/%3E%3C/svg%3E");
+  --tds-brandbar-mid: calc(var(--tds-brandbar-1) + var(--tds-brandbar-gap));
+  --tds-brandbar-end: calc(
+    var(--tds-brandbar-1) + var(--tds-brandbar-2) + 2 * var(--tds-brandbar-gap)
+  );
+  -webkit-mask-image: var(--tds-brandbar-pill), var(--tds-brandbar-pill), var(--tds-brandbar-pill);
+  mask-image: var(--tds-brandbar-pill), var(--tds-brandbar-pill), var(--tds-brandbar-pill);
+  -webkit-mask-size:
+    var(--tds-brandbar-1) 100%,
+    var(--tds-brandbar-2) 100%,
+    var(--tds-brandbar-3) 100%;
+  mask-size:
+    var(--tds-brandbar-1) 100%,
+    var(--tds-brandbar-2) 100%,
+    var(--tds-brandbar-3) 100%;
+  -webkit-mask-position:
+    0 0,
+    var(--tds-brandbar-mid) 0,
+    var(--tds-brandbar-end) 0;
+  mask-position:
+    0 0,
+    var(--tds-brandbar-mid) 0,
+    var(--tds-brandbar-end) 0;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
 }
 /* Smaller punctuation — under a card heading or in a footer column. */
 .tds-brandbar--sm {

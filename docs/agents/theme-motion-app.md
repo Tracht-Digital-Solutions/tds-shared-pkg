@@ -22,6 +22,16 @@ markup is ignored (until `DOMContentLoaded`, and across an Astro swap); `[inert]
 `[data-bounce="off"]` never shake; reduced motion turns it off. The same failure twice changes no markup: call
 `bounce(el)` from `./motion` there. Tests: `errorBounce.test.ts`.
 
+## `offscreenAnimationScript` (`src/astro`): endless animations rest off screen (0.54)
+
+Inline beside `errorBounceScript` in every layout: `<script is:inline set:html={offscreenAnimationScript} />`.
+It finds every animation with infinite iterations (`document.getAnimations()`, `animationstart`, rescans after
+load, DOM changes and `astro:page-load`) and watches its target with one IntersectionObserver (128 px margin).
+Off screen, CSS animations pause through `[data-tds-offscreen]` in `base.css` (one that starts there is paused
+from its first frame); Web Animations get `pause()`/`play()`, and only those the script paused are resumed.
+It cannot reach JavaScript loops (rAF, Motion's frame loop for springs/independent transforms): those gate
+themselves with an IntersectionObserver. Tests: `offscreenAnimation.test.ts`.
+
 ## `applyThemePreference` (`./theme`): the only write path
 
 It raises `tds:theme-change`, which the account sync listens to; a hand-rolled write stays per browser.
