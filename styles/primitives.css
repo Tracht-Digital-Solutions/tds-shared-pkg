@@ -2396,57 +2396,50 @@ button.tds-row:focus-visible {
 
 /* === Filter bar ==================================================== */
 
-/* A collapsible filter panel above a listing (journal index, shop catalogue,
-   tools catalogue). It is a `.tds-disclosure`: closed, only the toggle shows;
-   the panel holds a search field and groups of single-choice chips. Filtering
-   happens in the browser over what the page already rendered (the page cache
-   keys on the path, so a query string can never change the HTML); Astro pages
-   wire it with `mountFilterBar()` from `./filter`, a React island follows the
-   same markup.
+/* A collapsible filter panel for a listing (journal index, shop catalogue,
+   tools catalogue). Two parts, deliberately apart: the TOGGLE is a brand
+   button that sits at the right end of the listing's heading row, and the
+   PANEL opens below that row across the full width. A `<details>` cannot do
+   that — its summary and its content are one box — so the toggle is a
+   `<button aria-expanded aria-controls>` and the panel a region it controls.
+   Filtering happens in the browser over what the page already rendered (the
+   page cache keys on the path, so a query string can never change the HTML);
+   Astro pages wire it with `mountFilterBar(panel, …)` from `./filter`, a React
+   island follows the same markup with its own state.
 
-     <details class="tds-disclosure tds-filterbar">
-       <summary class="tds-filterbar__toggle">Filter <span class="tds-filterbar__count"></span></summary>
-       <div class="tds-filterbar__panel">
-         <input type="search" class="field-boxed tds-filterbar__search" data-filter-search>
-         <fieldset class="tds-filterbar__group">
-           <legend class="tds-filterbar__legend">Art</legend>
-           <div class="tds-toolbar">
-             <button type="button" class="chip" data-filter-group="kind" data-value="all" aria-pressed="true">Alle</button> …
-         <button type="button" class="tds-filterbar__reset" data-filter-reset>Filter zurücksetzen</button>
+     <div class="… heading row …">
+       <h2>…</h2>
+       <button type="button" class="btn btn-primary tds-filterbar__toggle"
+               data-filter-toggle aria-expanded="false" aria-controls="listing-filter">
+         <svg class="tds-filterbar__icon" …/> Filter <span class="tds-filterbar__count"></span>
+       </button>
+     </div>
+     <div class="tds-filterbar__panel" id="listing-filter" hidden>
+       <input type="search" class="field-boxed tds-filterbar__search" data-filter-search>
+       <fieldset class="tds-filterbar__group">
+         <legend class="tds-filterbar__legend">Art</legend>
+         <div class="tds-toolbar">
+           <button type="button" class="chip" data-filter-group="kind" data-value="all" aria-pressed="true">Alle</button> …
+       <button type="button" class="tds-filterbar__reset" data-filter-reset>Filter zurücksetzen</button>
 
-   The count is empty while no filter is set and then takes no room, so the
-   SSR markup never ships a hidden element. */
-.tds-filterbar {
-  min-width: 0;
-}
+   The panel is the one thing here that ships `hidden`: it is a closed
+   disclosure, exactly what a closed `<details>` ships, and it only ever opens
+   on a click. The count is empty while no filter is set and takes no room.
+
+   The toggle's look is the brand button's (`.btn.btn-primary`: navy, the
+   surface's radius, the coral hard offset, lift on hover, press on click);
+   this block adds only the icon, the count and the chevron, and keeps the
+   button pressed into its offset while the panel is open. */
 .tds-filterbar__toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 2.5rem;
-  padding: 0.375rem 0.875rem;
-  border: var(--tds-border-hairline) solid var(--color-line);
-  border-radius: var(--tds-radius-chip);
-  background: var(--tds-flat-tint, var(--color-card));
-  color: var(--color-ink);
+  flex: none;
   font-size: 0.875rem;
   font-weight: 600;
-  cursor: pointer;
-  list-style: none;
-  user-select: none;
-  transition: color var(--tds-dur-fast) var(--tds-ease-out),
-    border-color var(--tds-dur-fast) var(--tds-ease-out),
-    background-color var(--tds-dur-fast) var(--tds-ease-out);
+  white-space: nowrap;
 }
-.tds-filterbar__toggle::-webkit-details-marker {
-  display: none;
-}
-.tds-filterbar__toggle:hover {
-  border-color: var(--color-ink);
-  background: var(--tds-flat-hover, var(--tds-flat-tint, var(--color-card)));
-}
-.tds-filterbar__toggle:focus-visible {
-  outline-offset: 2px;
+.tds-filterbar__icon {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
 }
 /* The chevron is drawn, not shipped as an icon: it turns with the state. */
 .tds-filterbar__toggle::after {
@@ -2461,10 +2454,23 @@ button.tds-row:focus-visible {
   transition: rotate var(--tds-dur-fast) var(--tds-ease-out),
     translate var(--tds-dur-fast) var(--tds-ease-out);
 }
-.tds-filterbar[open] > .tds-filterbar__toggle::after {
+.tds-filterbar__toggle[aria-expanded="true"]::after {
   rotate: -135deg;
   translate: 0 0.1em;
 }
+/* Open = pressed into its own offset, like a held key. */
+:is([data-surface="marketing"], [data-surface="blog"], [data-surface="panel"])
+  .tds-filterbar__toggle[aria-expanded="true"]:not(:hover):not(:focus-visible) {
+  translate: 2px 2px;
+  box-shadow: var(--tds-shadow-hard-press);
+}
+@media (prefers-reduced-motion: reduce) {
+  :is([data-surface="marketing"], [data-surface="blog"], [data-surface="panel"])
+    .tds-filterbar__toggle[aria-expanded="true"] {
+    translate: none;
+  }
+}
+/* On the navy button the count is a coral tab with ink figures. */
 .tds-filterbar__count {
   display: inline-flex;
   align-items: center;
@@ -2472,10 +2478,11 @@ button.tds-row:focus-visible {
   min-width: 1.25rem;
   height: 1.25rem;
   padding: 0 0.3rem;
-  border-radius: var(--tds-radius-pill);
-  background: var(--color-primary);
-  color: var(--color-on-primary);
+  border-radius: var(--tds-radius-chip);
+  background: var(--color-accent-pink, var(--color-accent));
+  color: var(--color-surface-ink, #111);
   font-size: 0.6875rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 .tds-filterbar__count:empty {
@@ -2486,11 +2493,18 @@ button.tds-row:focus-visible {
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 1rem 1.75rem;
-  margin-top: 0.75rem;
-  padding: 1rem;
+  margin-block: 0.25rem 1.5rem;
+  padding: 1rem 1.125rem;
   border: var(--tds-border-hairline) solid var(--color-line);
   border-radius: var(--tds-radius-card);
   background: var(--tds-flat-tint, var(--color-card));
+}
+/* `display: flex` above would beat the UA's `[hidden]`. */
+.tds-filterbar__panel[hidden] {
+  display: none;
+}
+:is([data-surface="marketing"], [data-surface="blog"], [data-surface="panel"]) .tds-filterbar__panel {
+  box-shadow: var(--tds-shadow-hard);
 }
 .tds-filterbar__search {
   flex: 1 1 16rem;
@@ -2498,7 +2512,7 @@ button.tds-row:focus-visible {
 }
 /* The chosen option is filled, not only recoloured: on the blog surface a chip
    has no hairline, so `.chip-active`'s accent text was the only cue left. */
-.tds-filterbar button.chip[aria-pressed="true"] {
+.tds-filterbar__panel button.chip[aria-pressed="true"] {
   background: var(--color-primary);
   color: var(--color-on-primary);
   border-color: var(--color-primary);
@@ -2539,7 +2553,6 @@ button.tds-row:focus-visible {
   cursor: default;
 }
 @media (pointer: coarse) {
-  .tds-filterbar__toggle,
   .tds-filterbar__reset {
     min-height: 2.75rem;
   }

@@ -2232,11 +2232,13 @@ describe("page motion (CSS)", () => {
     // Flat surfaces wash resting chips; a pressed one must stay out of the wash.
     expect(primitives).toMatch(/\[data-flat\] \.chip:not\(\.chip-solid\):not\(\.chip-active\):not\(\[aria-pressed="true"\]\)/);
     expect(primitives).toMatch(/\[data-flat\] button\.chip\[aria-pressed="true"\]\s*\{[^}]*background:\s*var\(--color-primary\)/);
-    // Inside the bar the choice is filled: a hairline-free chip had only its text colour.
-    expect(primitives).toMatch(/\.tds-filterbar button\.chip\[aria-pressed="true"\]\s*\{[^}]*background:\s*var\(--color-primary\)/);
-    // The toggle hides the native marker in both engines' spellings.
-    expect(primitives).toMatch(/\.tds-filterbar__toggle\s*\{[^}]*list-style:\s*none/);
-    expect(primitives).toMatch(/\.tds-filterbar__toggle::-webkit-details-marker\s*\{\s*display:\s*none/);
+    // Inside the panel the choice is filled: a hairline-free chip had only its text colour.
+    expect(primitives).toMatch(/\.tds-filterbar__panel button\.chip\[aria-pressed="true"\]\s*\{[^}]*background:\s*var\(--color-primary\)/);
+    // The panel sets `display: flex`, which would beat the UA's [hidden]: a
+    // closed panel must stay closed.
+    expect(primitives).toMatch(/\.tds-filterbar__panel\[hidden\]\s*\{\s*display:\s*none/);
+    // Open = pressed into the offset; the toggle's look is otherwise .btn.btn-primary's.
+    expect(primitives).toMatch(/\.tds-filterbar__toggle\[aria-expanded="true"\]:not\(:hover\):not\(:focus-visible\)\s*\{[^}]*--tds-shadow-hard-press/);
   });
 
   it("fades the dropdown with allow-discrete, gated like the modal", () => {

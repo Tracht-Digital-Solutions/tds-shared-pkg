@@ -4,15 +4,17 @@ import { matchesAllWords, mountFilterBar, normalizeQuery } from "../filter";
 
 function setup() {
   document.body.innerHTML = `
-    <details class="tds-filterbar" id="bar">
-      <summary class="tds-filterbar__toggle">Filter <span class="tds-filterbar__count"></span></summary>
+    <button type="button" class="btn btn-primary tds-filterbar__toggle" data-filter-toggle aria-expanded="false" aria-controls="bar">
+      Filter <span class="tds-filterbar__count"></span>
+    </button>
+    <div class="tds-filterbar__panel" id="bar" hidden>
       <input type="search" data-filter-search>
       <button type="button" class="chip" data-filter-group="kind" data-value="all" aria-pressed="true">Alle</button>
       <button type="button" class="chip" data-filter-group="kind" data-value="own" aria-pressed="false">Eigene</button>
       <button type="button" class="chip" data-filter-group="sort" data-value="new" aria-pressed="true">Neu</button>
       <button type="button" class="chip" data-filter-group="sort" data-value="az" aria-pressed="false">A–Z</button>
       <button type="button" data-filter-reset>Zurücksetzen</button>
-    </details>
+    </div>
     <ul id="list">
       <li data-kind="own" data-title="Zebra">Zebra</li>
       <li data-kind="affiliate" data-title="Apfel">Apfel</li>
@@ -40,7 +42,7 @@ describe("mountFilterBar", () => {
   it("starts with everything visible, no count and a disabled reset", () => {
     const { root, titles, onChange } = setup();
     expect(titles()).toEqual(["Zebra", "Apfel", "Mango"]);
-    expect(root.querySelector(".tds-filterbar__count")!.textContent).toBe("");
+    expect(document.querySelector(".tds-filterbar__count")!.textContent).toBe("");
     expect(root.querySelector<HTMLButtonElement>("[data-filter-reset]")!.disabled).toBe(true);
     expect(onChange).toHaveBeenLastCalledWith(3, expect.anything());
   });
@@ -51,7 +53,7 @@ describe("mountFilterBar", () => {
     expect(titles()).toEqual(["Zebra", "Mango"]);
     expect(chip("kind", "own").getAttribute("aria-pressed")).toBe("true");
     expect(chip("kind", "all").getAttribute("aria-pressed")).toBe("false");
-    expect(root.querySelector(".tds-filterbar__count")!.textContent).toBe("1");
+    expect(document.querySelector(".tds-filterbar__count")!.textContent).toBe("1");
   });
 
   it("sorts only off the default, and returns to the server order", () => {
@@ -69,11 +71,26 @@ describe("mountFilterBar", () => {
     input.dispatchEvent(new Event("input"));
     chip("sort", "az").click();
     expect(titles()).toEqual(["Mango"]);
-    expect(root.querySelector(".tds-filterbar__count")!.textContent).toBe("2");
+    expect(document.querySelector(".tds-filterbar__count")!.textContent).toBe("2");
     root.querySelector<HTMLButtonElement>("[data-filter-reset]")!.click();
     expect(input.value).toBe("");
     expect(titles()).toEqual(["Zebra", "Apfel", "Mango"]);
     expect(bar.state()).toEqual({ query: "", groups: { kind: "all", sort: "new" } });
+  });
+});
+
+describe("the toggle", () => {
+  it("opens and closes the panel it controls and focuses the search", () => {
+    const { root } = setup();
+    const toggle = document.querySelector<HTMLButtonElement>("[data-filter-toggle]")!;
+    expect(root.hidden).toBe(true);
+    toggle.click();
+    expect(root.hidden).toBe(false);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(document.activeElement).toBe(root.querySelector("[data-filter-search]"));
+    toggle.click();
+    expect(root.hidden).toBe(true);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
   });
 });
 

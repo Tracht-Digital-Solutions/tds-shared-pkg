@@ -8,12 +8,15 @@
  * inside their own parent, and reports the result. No React, no side effects
  * until `mountFilterBar()` is called.
  *
- * Markup contract, inside `root` (usually the `<details class="tds-filterbar">`):
+ * Markup contract. `root` is the `.tds-filterbar__panel` (it carries an `id`):
+ * - `[data-filter-toggle][aria-controls="<root id>"]`, anywhere in the page
+ *   (usually the right end of the listing's heading row): opens and closes
+ *   the panel and carries the `.tds-filterbar__count`.
  * - `[data-filter-search]`: an `<input>`; its value is `state.query`.
  * - `button[data-filter-group][data-value]`: single-choice chips. The chip
  *   with `aria-pressed="true"` in the SSR markup is that group's default.
  * - `[data-filter-reset]`: a button that restores every default.
- * - `.tds-filterbar__count`: filled with the number of active filters.
+ * - `.tds-filterbar__count` (in the toggle): the number of active filters.
  */
 
 /** Search text plus one value per chip group. */
@@ -58,7 +61,10 @@ export function mountFilterBar(root: HTMLElement, options: FilterBarOptions): Fi
   const search = root.querySelector<HTMLInputElement>("[data-filter-search]");
   const chips = Array.from(root.querySelectorAll<HTMLButtonElement>("button[data-filter-group][data-value]"));
   const resetButton = root.querySelector<HTMLButtonElement>("[data-filter-reset]");
-  const count = root.querySelector<HTMLElement>(".tds-filterbar__count");
+  const toggle =
+    root.querySelector<HTMLButtonElement>("[data-filter-toggle]") ??
+    (root.id ? document.querySelector<HTMLButtonElement>(`[data-filter-toggle][aria-controls="${CSS.escape(root.id)}"]`) : null);
+  const count = (toggle ?? root).querySelector<HTMLElement>(".tds-filterbar__count");
 
   const defaults: Record<string, string> = {};
   for (const chip of chips) {
@@ -113,6 +119,14 @@ export function mountFilterBar(root: HTMLElement, options: FilterBarOptions): Fi
     apply();
   };
 
+  const onToggle = () => {
+    const open = toggle!.getAttribute("aria-expanded") !== "true";
+    toggle!.setAttribute("aria-expanded", String(open));
+    root.hidden = !open;
+    if (open) (search ?? chips[0])?.focus({ preventScroll: true });
+  };
+
+  toggle?.addEventListener("click", onToggle);
   for (const chip of chips) chip.addEventListener("click", onChip);
   search?.addEventListener("input", onSearch);
   resetButton?.addEventListener("click", reset);
@@ -125,6 +139,7 @@ export function mountFilterBar(root: HTMLElement, options: FilterBarOptions): Fi
     state: () => state,
     reset,
     destroy() {
+      toggle?.removeEventListener("click", onToggle);
       for (const chip of chips) chip.removeEventListener("click", onChip);
       search?.removeEventListener("input", onSearch);
       resetButton?.removeEventListener("click", reset);

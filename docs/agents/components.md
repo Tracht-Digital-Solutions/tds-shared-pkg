@@ -88,18 +88,18 @@ Fixed bottom chrome publishes its measured height; anything else pinned there ad
   between the islands; below 64rem the islands are `display: contents`. A site tints them through
   `--tds-sitebar-fill`, never by re-declaring `.brand-header`. Phones keep the bottom tab bar.
 
-## Filter bar (journal, shop, tools): `.tds-filterbar` + `mountFilterBar()` (0.52)
+## Filter bar (journal, shop, tools): `.tds-filterbar__*` + `mountFilterBar()` (0.53)
 
-- **A `.tds-disclosure`**, closed by default: `<summary class="tds-filterbar__toggle">` with an empty
-  `.tds-filterbar__count`, then `.tds-filterbar__panel` holding `[data-filter-search]`, `.tds-filterbar__group`
-  fieldsets of `button.chip[data-filter-group][data-value]` and a `[data-filter-reset]`. Markup contract in the
-  comment above the rule.
+- **Two parts, apart:** the toggle is a brand button (`btn btn-primary tds-filterbar__toggle`, `data-filter-toggle`,
+  `aria-expanded`, `aria-controls`) at the right end of the listing's heading row; the `.tds-filterbar__panel`
+  (`id`, ships `hidden`) opens below that row. Not a `<details>`: its summary and content are one box, so the toggle
+  could never sit in the heading row. Markup contract in the comment above the rule.
 - **Client-side only.** The page cache keys on the path; a filter is never a query string the server answers.
-- **Single choice per group; the chip pressed in the SSR markup is the default.** `button.chip[aria-pressed="true"]`
-  reads as `.chip-active`.
-- **`mountFilterBar()` (`./filter`, plain DOM)** wires Astro pages: `hidden` on non-matching items, `compare` reorders
-  inside each parent only off the defaults (the default view keeps the server's order), `onChange` feeds the live
-  region. React islands follow the markup and keep their own state.
+- **Single choice per group; the chip pressed in the SSR markup is the default.** A pressed chip in the panel is
+  filled; under `[data-flat]` it stays out of the resting wash.
+- **`mountFilterBar(panel, …)` (`./filter`, plain DOM)** wires Astro pages: the toggle (open/close, focus to the
+  search), `hidden` on non-matching items, `compare` reorders inside each parent only off the defaults, `onChange`
+  feeds the live region. React islands follow the markup and keep their own state.
 
 ## Language switch (`.tds-lang-toggle`)
 
