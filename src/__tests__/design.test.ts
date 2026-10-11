@@ -2222,6 +2222,15 @@ describe("page motion (CSS)", () => {
     expect(ruleBlock(primitives, ".tds-disclosure")).toMatch(/interpolate-size:\s*allow-keywords/);
   });
 
+  it("the filter bar's count takes no room while empty, and a pressed chip reads as active", () => {
+    // The SSR markup ships an empty count; it must not render as a blank badge.
+    expect(primitives).toMatch(/\.tds-filterbar__count:empty\s*\{\s*display:\s*none/);
+    expect(primitives).toMatch(/\.chip-active,\s*button\.chip\[aria-pressed="true"\]\s*\{/);
+    // The toggle hides the native marker in both engines' spellings.
+    expect(primitives).toMatch(/\.tds-filterbar__toggle\s*\{[^}]*list-style:\s*none/);
+    expect(primitives).toMatch(/\.tds-filterbar__toggle::-webkit-details-marker\s*\{\s*display:\s*none/);
+  });
+
   it("fades the dropdown with allow-discrete, gated like the modal", () => {
     expect(primitives).toMatch(
       /prefers-reduced-motion: no-preference\)\s*\{\s*@supports \(transition-behavior: allow-discrete\)\s*\{\s*\.tds-dropdown__panel\s*\{/,

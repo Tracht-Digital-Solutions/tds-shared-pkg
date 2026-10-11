@@ -46,6 +46,8 @@ export default defineConfig({
     "pwa/index": "src/pwa/index.ts",
     "toast/index": "src/toast/index.ts",
     "nav/index": "src/nav/index.ts",
+    // The `.tds-filterbar` behaviour for server-rendered listings. Plain DOM.
+    "filter/index": "src/filter/index.ts",
     "api/index": "src/api/index.ts",
     // The browser-side stale-while-revalidate data cache. Its own entry rather
     // than a re-export from `index`, so a non-React consumer never drags React

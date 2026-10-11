@@ -88,6 +88,19 @@ Fixed bottom chrome publishes its measured height; anything else pinned there ad
   between the islands; below 64rem the islands are `display: contents`. A site tints them through
   `--tds-sitebar-fill`, never by re-declaring `.brand-header`. Phones keep the bottom tab bar.
 
+## Filter bar (journal, shop, tools): `.tds-filterbar` + `mountFilterBar()` (0.52)
+
+- **A `.tds-disclosure`**, closed by default: `<summary class="tds-filterbar__toggle">` with an empty
+  `.tds-filterbar__count`, then `.tds-filterbar__panel` holding `[data-filter-search]`, `.tds-filterbar__group`
+  fieldsets of `button.chip[data-filter-group][data-value]` and a `[data-filter-reset]`. Markup contract in the
+  comment above the rule.
+- **Client-side only.** The page cache keys on the path; a filter is never a query string the server answers.
+- **Single choice per group; the chip pressed in the SSR markup is the default.** `button.chip[aria-pressed="true"]`
+  reads as `.chip-active`.
+- **`mountFilterBar()` (`./filter`, plain DOM)** wires Astro pages: `hidden` on non-matching items, `compare` reorders
+  inside each parent only off the defaults (the default view keeps the server's order), `onChange` feeds the live
+  region. React islands follow the markup and keep their own state.
+
 ## Language switch (`.tds-lang-toggle`)
 
 A group of **links** (works without JS, crawlable). `aria-current="true"` on the active half carries the state; `.on` is
