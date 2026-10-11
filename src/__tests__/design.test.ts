@@ -433,7 +433,7 @@ describe("surface character", () => {
     for (const selector of [
       ".status-pill",
       ".chip--neutral",
-      ".chip:not(.chip-solid):not(.chip-active):not([class*=\"--\"])",
+      ".chip:not(.chip-solid):not(.chip-active):not([aria-pressed=\"true\"]):not([class*=\"--\"])",
       ".field-boxed",
       ".btn-ghost",
     ]) {
@@ -481,14 +481,17 @@ describe("surface character", () => {
     // gone and only the label's hue is left — 1.93:1 between the selected and
     // resting label in light mode, 1.15:1 in dark — so the tools site's mode
     // tabs read as identical buttons. Nothing about that reaches a build.
-    const active = ruleBlock(primitives, "[data-flat] .chip.chip-active");
+    // Grouped with the pressed filter chip, so the block is found by the
+    // group's last selector.
+    expect(primitives).toMatch(/\[data-flat\] \.chip\.chip-active,\s*\[data-flat\] button\.chip\[aria-pressed="true"\]\s*\{/);
+    const active = ruleBlock(primitives, '[data-flat] button.chip[aria-pressed="true"]');
     expect(active, "the flat selected chip has no fill of its own").toBeDefined();
     expect(active).toMatch(/background:\s*var\(--color-primary\)/);
     expect(active).toMatch(/color:\s*var\(--color-on-primary\)/);
     // The resting wash is (0,4,0) and outranks the (0,3,0) fill, so it has to
     // keep excluding the selected chip or it paints straight over it.
     expect(primitives).toContain(
-      '[data-flat] .chip:not(.chip-solid):not(.chip-active):not([class*="--"])',
+      '[data-flat] .chip:not(.chip-solid):not(.chip-active):not([aria-pressed="true"]):not([class*="--"])',
     );
   });
 
@@ -2226,6 +2229,9 @@ describe("page motion (CSS)", () => {
     // The SSR markup ships an empty count; it must not render as a blank badge.
     expect(primitives).toMatch(/\.tds-filterbar__count:empty\s*\{\s*display:\s*none/);
     expect(primitives).toMatch(/\.chip-active,\s*button\.chip\[aria-pressed="true"\]\s*\{/);
+    // Flat surfaces wash resting chips; a pressed one must stay out of the wash.
+    expect(primitives).toMatch(/\[data-flat\] \.chip:not\(\.chip-solid\):not\(\.chip-active\):not\(\[aria-pressed="true"\]\)/);
+    expect(primitives).toMatch(/\[data-flat\] button\.chip\[aria-pressed="true"\]\s*\{[^}]*background:\s*var\(--color-primary\)/);
     // Inside the bar the choice is filled: a hairline-free chip had only its text colour.
     expect(primitives).toMatch(/\.tds-filterbar button\.chip\[aria-pressed="true"\]\s*\{[^}]*background:\s*var\(--color-primary\)/);
     // The toggle hides the native marker in both engines' spellings.

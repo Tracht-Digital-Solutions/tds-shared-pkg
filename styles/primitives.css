@@ -2692,7 +2692,7 @@ button.tds-row:focus-visible {
 
 [data-flat] .status-pill,
 [data-flat] .chip--neutral,
-[data-flat] .chip:not(.chip-solid):not(.chip-active):not([class*="--"]) {
+[data-flat] .chip:not(.chip-solid):not(.chip-active):not([aria-pressed="true"]):not([class*="--"]) {
   background: color-mix(in srgb, var(--color-ink) 6%, var(--color-card));
 }
 /* `.chip-solid` is excluded because it already carries a solid primary fill
@@ -2711,7 +2711,11 @@ button.tds-row:focus-visible {
 
    `.chip.chip-active`, not `.chip-active`: `button.chip:hover` is (0,2,1)
    and would repaint the label in ink over the solid fill. */
-[data-flat] .chip.chip-active {
+/* A pressed chip (`aria-pressed="true"`, the filter bar's choice) is the same
+   state and is excluded from the wash above for the same reason: at (0,6,0)
+   the wash painted over the filter bar's fill and left white on near-white. */
+[data-flat] .chip.chip-active,
+[data-flat] button.chip[aria-pressed="true"] {
   background: var(--color-primary);
   color: var(--color-on-primary);
 }
