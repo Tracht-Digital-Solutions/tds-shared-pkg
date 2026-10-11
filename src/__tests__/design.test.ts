@@ -2226,6 +2226,8 @@ describe("page motion (CSS)", () => {
     // The SSR markup ships an empty count; it must not render as a blank badge.
     expect(primitives).toMatch(/\.tds-filterbar__count:empty\s*\{\s*display:\s*none/);
     expect(primitives).toMatch(/\.chip-active,\s*button\.chip\[aria-pressed="true"\]\s*\{/);
+    // Inside the bar the choice is filled: a hairline-free chip had only its text colour.
+    expect(primitives).toMatch(/\.tds-filterbar button\.chip\[aria-pressed="true"\]\s*\{[^}]*background:\s*var\(--color-primary\)/);
     // The toggle hides the native marker in both engines' spellings.
     expect(primitives).toMatch(/\.tds-filterbar__toggle\s*\{[^}]*list-style:\s*none/);
     expect(primitives).toMatch(/\.tds-filterbar__toggle::-webkit-details-marker\s*\{\s*display:\s*none/);
