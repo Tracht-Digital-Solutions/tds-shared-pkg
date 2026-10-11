@@ -83,6 +83,10 @@ Fixed bottom chrome publishes its measured height; anything else pinned there ad
 - **Right-hand order is fixed:** `.tds-sitebar__desktop` (DE|EN, theme, contact CTA in `.tds-sitebar__wide`) →
   `.tds-sitebar__actions` (account, extras, menu), which never hides. The CTA (`propertyContact(lang)`) yields below
   80rem; hide it via its wrapper, never on the `.btn`.
+- **Two corner islands, not a bar (0.51):** wrap the children in exactly two `.tds-sitebar__island` — brand, divider,
+  nav in the first; `__desktop` and `__actions` in the second. From 64rem the header is transparent and clicks pass
+  between the islands; below 64rem the islands are `display: contents`. A site tints them through
+  `--tds-sitebar-fill`, never by re-declaring `.brand-header`. Phones keep the bottom tab bar.
 
 ## Language switch (`.tds-lang-toggle`)
 

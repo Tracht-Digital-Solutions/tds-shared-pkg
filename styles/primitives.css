@@ -1571,13 +1571,13 @@ button.tds-row:focus-visible {
 
    Put it on the element that also carries `.tds-shell`, so the bar's edges are
    the page's. Below 64rem the nav and the desktop cluster give way to the
-   hamburger: that is `.tds-menu-toggle`'s own breakpoint and
-   `MOBILE_NAV_DESKTOP_QUERY`, and two breakpoints that disagree leave a band of
-   widths with neither a nav nor a hamburger. */
-/* 3.75rem tall, and that number is load-bearing: every site docks its mobile
-   sheet at `top: 3.75rem`. The padding leaves exactly 2.75rem for content, so a
-   44px control (the hamburger, a coarse-pointer link, the CTA) fits without
-   growing the bar — at 0.625rem it grew to 64px and the sheet overlapped it. */
+   app tab bar at the bottom (`.tds-tabbar`, app-shell.css); the header is then
+   the page's first line, not a bar.
+
+   From 64rem it is not a bar either: two islands in the corners
+   (`.tds-sitebar__island`, see below) with the page running between them. */
+/* min-height 3.75rem with 0.5rem padding leaves 2.75rem, so a 44px control (a
+   coarse-pointer link, the CTA) fits without growing the row. */
 .tds-sitebar {
   display: flex;
   flex-wrap: nowrap;
@@ -1691,6 +1691,56 @@ button.tds-row:focus-visible {
 @media (min-width: 80rem) {
   .tds-sitebar__wide {
     display: flex;
+  }
+}
+/* Two islands instead of a bar ("nicht so standard"): the wordmark and the
+   property list in the start corner, everything the reader acts with — search,
+   language, theme, contact, account, basket — in the end corner, and the page
+   itself between them. Each site wraps its existing children in exactly two
+   of these; order and content stay as they were.
+
+   Below 64rem an island is `display: contents`, so the phone's first line
+   (logo left, account right) lays out exactly as without the wrappers. The
+   fill is `--tds-sitebar-fill` (the journal sets its soft tone there instead
+   of re-declaring the rule); the depth is the public surfaces' hard offset,
+   which is `none` everywhere else. No backdrop blur: the island is opaque,
+   so an offset shadow behind it can never show through as a dark plate. */
+.tds-sitebar__island {
+  display: contents;
+}
+@media (min-width: 64rem) {
+  .tds-sitebar {
+    gap: 1rem;
+  }
+  .tds-sitebar__island {
+    display: flex;
+    flex: 0 1 auto;
+    /* Both islands as tall as the taller one, whatever each carries. */
+    align-self: stretch;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    min-height: 2.75rem;
+    /* A 44px control (the CTA, a coarse-pointer link) keeps a frame of the
+       island's fill around it instead of touching the edge. */
+    padding: 0.25rem 0.25rem 0.25rem 0.75rem;
+    background: var(--tds-sitebar-fill, var(--color-card));
+    border: 1px solid color-mix(in srgb, var(--color-primary) 14%, var(--color-line));
+    border-radius: var(--tds-radius-bar);
+    /* The header around the islands lets clicks through to the page. */
+    pointer-events: auto;
+  }
+  .tds-sitebar__island + .tds-sitebar__island {
+    margin-inline-start: auto;
+    padding-inline-start: 0.25rem;
+  }
+  .tds-sitebar__island .tds-sitebar__actions {
+    margin-inline-start: 0;
+  }
+  /* The hard offset is read only under the public surfaces, like every other
+     use of it (`none` anywhere else anyway). */
+  :is([data-surface="marketing"], [data-surface="blog"], [data-surface="panel"]) .tds-sitebar__island {
+    box-shadow: var(--tds-shadow-hard-sm);
   }
 }
 /* A tablet in landscape gets the desktop nav with a finger: 44px targets, as
@@ -2555,6 +2605,22 @@ button.tds-row:focus-visible {
   background: var(--color-card);
   backdrop-filter: none;
   border-bottom: 0;
+}
+
+/* From 64rem the header is no bar at all, flat or not: the islands carry the
+   fill, the header only holds them in place while the page scrolls. After the
+   `[data-flat]` rule on purpose — same specificity, so the later one wins.
+   Space above instead of `top`, or the islands would jump down by the gap the
+   moment the page starts to scroll. */
+@media (min-width: 64rem) {
+  .brand-header,
+  [data-flat] .brand-header {
+    padding-block-start: 0.75rem;
+    background: transparent;
+    backdrop-filter: none;
+    border-bottom: 0;
+    pointer-events: none;
+  }
 }
 
 /* === Brand logomark =============================================== */

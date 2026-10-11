@@ -1821,13 +1821,49 @@ describe("public property bar", () => {
     );
   });
 
-  it("stays exactly as tall as the offset the mobile sheets dock at", () => {
-    // Every site docks `.tds-mobile-menu` at `top: 3.75rem`. min-height minus
-    // the padding has to leave 2.75rem, or a 44px control grows the bar past
-    // the sheet's top edge.
+  it("leaves room for a 44px control without growing the row", () => {
+    // min-height minus the padding has to leave 2.75rem for a coarse-pointer
+    // link or the CTA.
     const bar = ruleBlock(primitives, ".tds-sitebar");
     expect(bar).toMatch(/min-height:\s*3\.75rem/);
     expect(bar).toMatch(/padding-block:\s*0\.5rem/);
+  });
+
+  it("draws two corner islands on desktop instead of a full-width bar", () => {
+    // Below 64rem the wrappers must not exist for layout, or the phone's
+    // first line (logo left, account right) changes.
+    expect(ruleBlock(primitives, ".tds-sitebar__island")).toMatch(/display:\s*contents/);
+    const desktop = primitives.match(
+      /@media \(min-width: 64rem\) \{\s*\.tds-sitebar \{[^}]*\}\s*\.tds-sitebar__island \{([^}]*)\}/,
+    );
+    expect(desktop).not.toBeNull();
+    const island = desktop![1];
+    expect(island).toMatch(/display:\s*flex/);
+    expect(island).toMatch(/var\(--tds-sitebar-fill, var\(--color-card\)\)/);
+    expect(island).toMatch(/border-radius:\s*var\(--tds-radius-bar\)/);
+    expect(primitives).toMatch(
+      /\[data-surface="blog"\][^{]*\.tds-sitebar__island \{\s*box-shadow:\s*var\(--tds-shadow-hard-sm\)/,
+    );
+    expect(island).toMatch(/pointer-events:\s*auto/);
+    // Opaque island, so no glass: a hard shadow under glass reads as a plate.
+    expect(island).not.toMatch(/backdrop-filter/);
+    expect(primitives).toMatch(
+      /\.tds-sitebar__island \+ \.tds-sitebar__island \{\s*margin-inline-start:\s*auto;/,
+    );
+  });
+
+  it("takes the bar's own fill and hairline away on desktop, flat or not", () => {
+    const flat = primitives.indexOf("[data-flat] .brand-header {");
+    const desktop = primitives.search(
+      /@media \(min-width: 64rem\) \{\s*\.brand-header,\s*\[data-flat\] \.brand-header \{/,
+    );
+    expect(flat).toBeGreaterThan(-1);
+    // Same specificity as the flat rule, so it has to come after it.
+    expect(desktop).toBeGreaterThan(flat);
+    const block = primitives.slice(desktop, primitives.indexOf("}", desktop + 60));
+    expect(block).toMatch(/background:\s*transparent/);
+    expect(block).toMatch(/border-bottom:\s*0/);
+    expect(block).toMatch(/pointer-events:\s*none/);
   });
 
   it("keeps the account menu, basket and hamburger visible at every width", () => {
