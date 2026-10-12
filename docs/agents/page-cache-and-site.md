@@ -55,3 +55,17 @@ Server-side helpers the public sites used to copy; no `node:` imports; never re-
   fallback for a generation).
 - `escapeXml`, `renderSitemapIndex(sitemaps, lastmod?)`, `serializeJsonLd` (escapes `<` and U+2028/2029 so panel text can't
   close the script tag).
+
+## Build gate (0.55.2)
+
+Cache hits are served by the web server straight from disk; the app's boot-time flush never sees
+them. After a deploy, cached pages kept naming the previous build's deleted `/_astro` CSS and went out
+unstyled until an uncached URL booted Node. Now:
+
+- On boot `resolveCacheDirs()` writes `_tds-cache/.build-<fingerprint>` (`BUILD_GATE_PREFIX`) next to
+  the meta marker, after a flush and on an unchanged reboot. `PageCacheStore.clear()` keeps both.
+- `scripts/pack-release.mjs` replaces `@TDS_BUILD@` in `client/.htaccess` with the same fingerprint
+  (`dirs.test.ts` pins the formula in both places).
+- Every cache rule in a consumer's `.htaccess` adds
+  `RewriteCond %{DOCUMENT_ROOT}/_tds-cache/.build-@TDS_BUILD@ -f`. Unreplaced, it never matches: every
+  request goes to Node — slower, never stale.

@@ -41,6 +41,28 @@ export const CACHE_LINK_NAME = "_tds-cache";
  */
 export const BUILD_MARKER_NAME = ".build-id";
 
+/**
+ * The web server's half of the same record: an empty file named
+ * `.build-<fingerprint>` in the PAGES directory, i.e. reachable as
+ * `_tds-cache/.build-<fingerprint>` from the document root.
+ *
+ * The flush above runs when Node boots — but a cache hit never reaches Node.
+ * Apache serves it straight from disk, so after a deploy every cached page
+ * kept naming the previous build's hashed CSS and scripts, now deleted, and
+ * went out UNSTYLED until some uncached URL happened to boot the app. The
+ * page warm-up in CI only requests cached URLs, so it never did.
+ *
+ * `pack-release.mjs` writes the fingerprint of the build it packs into
+ * `client/.htaccess` (placeholder `@TDS_BUILD@`), and the cache rules there
+ * require this file. A fresh deploy therefore misses until Node has booted,
+ * emptied the old pages and laid down the new gate. The name starts with a
+ * dot, and rule (0) of every `.htaccess` refuses `/_tds-cache` requests.
+ */
+export const BUILD_GATE_PREFIX = ".build-";
+
+/** True for the build records that a cache purge must leave in place. */
+export const isBuildRecord = (name: string): boolean => name.startsWith(BUILD_GATE_PREFIX) || name === BUILD_MARKER_NAME;
+
 /** Default location of the build's content-hashed assets, inside the docroot. */
 const DEFAULT_ASSETS_DIR = "_astro";
 
@@ -184,7 +206,13 @@ function discardCacheOfOtherBuild(
   } catch {
     previous = null;
   }
-  if (previous === fingerprint) return;
+  if (previous === fingerprint) {
+    // Same build booting again — but a host that ran an older tds-shared has
+    // the marker and no gate yet. Lay it down, or nothing is ever served from
+    // the cache again.
+    writeBuildGate(dir, fingerprint, logger);
+    return;
+  }
 
   emptyContents(dir, logger);
   emptyContents(metaDir, logger);
@@ -198,6 +226,16 @@ function discardCacheOfOtherBuild(
     // Only costs another clear on the next boot.
     logger(`[tds-cache] could not record the build marker: ${String(err)}`);
   }
+  writeBuildGate(dir, fingerprint, logger);
+}
+
+function writeBuildGate(dir: string, fingerprint: string, logger: (message: string) => void): void {
+  try {
+    writeFileSync(join(dir, `${BUILD_GATE_PREFIX}${fingerprint}`), "");
+  } catch (err) {
+    // Fails safe: without the gate the web server misses and Node answers.
+    logger(`[tds-cache] could not write the build gate: ${String(err)}`);
+  }
 }
 
 /**
@@ -205,9 +243,10 @@ function discardCacheOfOtherBuild(
  *
  * Names only — never contents. The names are already content hashes, so
  * reading the files would re-hash what they are named after, once per boot,
- * for no additional information.
+ * for no additional information. `scripts/pack-release.mjs` computes the SAME
+ * value at build time for `.htaccess`; `dirs.test.ts` pins that they agree.
  */
-function buildFingerprint(assetsPath: string): string | null {
+export function buildFingerprint(assetsPath: string): string | null {
   let names: string[];
   try {
     names = readdirSync(assetsPath);

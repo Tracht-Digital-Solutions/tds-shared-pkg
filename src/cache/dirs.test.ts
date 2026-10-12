@@ -1,10 +1,11 @@
-import { existsSync, lstatSync, mkdirSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { BUILD_MARKER_NAME, CACHE_LINK_NAME, resolveCacheDirs } from "./dirs.js";
+import { BUILD_GATE_PREFIX, BUILD_MARKER_NAME, CACHE_LINK_NAME, buildFingerprint, resolveCacheDirs } from "./dirs.js";
 
 const LINK_KIND = process.platform === "win32" ? "junction" : "dir";
 
@@ -234,6 +235,56 @@ describe("resolveCacheDirs — cache of another build", () => {
     resolveCacheDirs({ root, logger: () => {} });
     expect(existsSync(join(dirs.dir, "index.html"))).toBe(true);
     expect(existsSync(join(dirs.metaDir, BUILD_MARKER_NAME))).toBe(false);
+  });
+
+  it("lays down the web server's build gate in the pages directory", () => {
+    // `.htaccess` serves a cache hit only while `_tds-cache/.build-<fp>` of
+    // ITS build exists — so a deploy misses until this process flushed.
+    const { astro } = deploy(["Hero.aaaaaaaa.js"]);
+    const dirs = resolveCacheDirs({ root, logger: () => {} });
+    const fp = buildFingerprint(astro)!;
+    expect(existsSync(join(dirs.dir, `${BUILD_GATE_PREFIX}${fp}`))).toBe(true);
+  });
+
+  it("swaps the gate when the build changes, and adds it on a host that had none", () => {
+    const { astro } = deploy(["Hero.aaaaaaaa.js"]);
+    const dirs = resolveCacheDirs({ root, logger: () => {} });
+    const old = `${BUILD_GATE_PREFIX}${buildFingerprint(astro)}`;
+
+    // An older tds-shared wrote the marker but no gate: same build reboots.
+    rmSync(join(dirs.dir, old));
+    resolveCacheDirs({ root, logger: () => {} });
+    expect(existsSync(join(dirs.dir, old))).toBe(true);
+
+    rmSync(join(astro, "Hero.aaaaaaaa.js"));
+    writeFileSync(join(astro, "Hero.cccccccc.js"), "x");
+    resolveCacheDirs({ root, logger: () => {} });
+    expect(existsSync(join(dirs.dir, old))).toBe(false);
+    expect(existsSync(join(dirs.dir, `${BUILD_GATE_PREFIX}${buildFingerprint(astro)}`))).toBe(true);
+  });
+
+  it("keeps the build records through a purge", async () => {
+    // A purge empties the store; without the gate the web server would never
+    // serve a hit again until the next restart.
+    const { astro } = deploy(["Hero.aaaaaaaa.js"]);
+    const dirs = resolveCacheDirs({ root, logger: () => {} });
+    fillCache(dirs);
+    const { PageCacheStore } = await import("./store.js");
+    await new PageCacheStore(dirs.dir, dirs.metaDir).clear();
+    expect(existsSync(join(dirs.dir, "index.html"))).toBe(false);
+    expect(existsSync(join(dirs.dir, `${BUILD_GATE_PREFIX}${buildFingerprint(astro)}`))).toBe(true);
+    expect(existsSync(join(dirs.metaDir, BUILD_MARKER_NAME))).toBe(true);
+  });
+
+  it("computes the fingerprint exactly as pack-release.mjs writes it into .htaccess", () => {
+    // Two copies of one formula (the script cannot import TS source). If they
+    // drift, every cache hit misses forever — correct pages, silently slow.
+    const script = readFileSync(new URL("../../scripts/pack-release.mjs", import.meta.url), "utf8");
+    expect(script).toContain('createHash("sha256").update(names.sort().join("\\n")).digest("hex").slice(0, 16)');
+    const { astro } = deploy(["b.js", "a.css"]);
+    expect(buildFingerprint(astro)).toBe(
+      createHash("sha256").update(["a.css", "b.js"].join("\n")).digest("hex").slice(0, 16),
+    );
   });
 
   it("does not report the marker as a cache entry", async () => {

@@ -50,6 +50,7 @@
  */
 
 import { execSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   cpSync,
   existsSync,
@@ -108,6 +109,37 @@ mkdirSync(out, { recursive: true });
 
 cpSync(join(dist, "server"), join(out, "server"), { recursive: true });
 cpSync(join(dist, "client"), join(out, "client"), { recursive: true });
+
+// The build gate (tds-shared src/cache/dirs.ts, BUILD_GATE_PREFIX). The web
+// server serves cached pages straight from disk, so after a deploy it kept
+// handing out pages that named the previous build's deleted CSS — unstyled
+// until Node happened to boot and flush. `.htaccess` now requires
+// `_tds-cache/.build-<fingerprint>`, which only the booted app lays down, and
+// this puts the fingerprint of THIS build into the rule. Same formula as
+// `buildFingerprint()` — sorted asset names, sha256, 16 hex — pinned by
+// dirs.test.ts. A site whose .htaccess has no placeholder is left as it is.
+{
+  const htaccess = join(out, "client", ".htaccess");
+  if (existsSync(htaccess)) {
+    const rules = readFileSync(htaccess, "utf8");
+    if (rules.includes("@TDS_BUILD@")) {
+      let names = [];
+      try {
+        names = readdirSync(join(out, "client", "_astro"));
+      } catch {
+        names = [];
+      }
+      // No assets, no fingerprint: the app writes no gate either, so leave
+      // the placeholder — the condition then never matches and every request
+      // goes to Node, which is slower but correct.
+      if (names.length > 0) {
+        const build = createHash("sha256").update(names.sort().join("\n")).digest("hex").slice(0, 16);
+        writeFileSync(htaccess, rules.replaceAll("@TDS_BUILD@", build));
+        console.log(`[pack-release] cache build gate: ${build}`);
+      }
+    }
+  }
+}
 // A consumer may keep its own startup file — the three public sites do, and
 // theirs is byte-identical to the canonical one shipped beside this script.
 // The panel products have none, for the same reason they have no `src/`: they

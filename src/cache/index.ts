@@ -47,5 +47,5 @@ export type { CacheEntry, CacheMeta, StoredPage } from "./store.js";
 export { cacheLocation, isCacheableMethod } from "./key.js";
 export type { CacheLocation } from "./key.js";
 
-export { CACHE_LINK_NAME, resolveCacheDirs } from "./dirs.js";
+export { BUILD_GATE_PREFIX, CACHE_LINK_NAME, buildFingerprint, resolveCacheDirs } from "./dirs.js";
 export type { CacheDirs, ResolveCacheDirsOptions } from "./dirs.js";

@@ -16,6 +16,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, sep } from "node:path";
 
+import { isBuildRecord } from "./dirs.js";
 import { cacheLocation } from "./key.js";
 
 /** What we remember about an entry beyond its bytes. */
@@ -168,7 +169,12 @@ export class PageCacheStore {
       } catch {
         return; // Nothing there is already empty.
       }
-      await Promise.all(items.map((name) => rm(join(dir, name), { recursive: true, force: true })));
+      // The build records stay: they say which build the (now empty) cache
+      // belongs to, and without the gate the web server would never serve a
+      // cache hit again until the next restart (see BUILD_GATE_PREFIX).
+      await Promise.all(
+        items.filter((name) => !isBuildRecord(name)).map((name) => rm(join(dir, name), { recursive: true, force: true })),
+      );
     };
 
     await Promise.all([empty(this.dir), empty(this.metaDir)]);
