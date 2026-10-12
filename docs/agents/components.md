@@ -134,6 +134,21 @@ The six brand-geometry covers for posts without a picture, used by the blog and 
   visible elsewhere (`PostCover.test.tsx`).
 - **`hasPhotoCover()`** is the one rule for "is there a real picture"; resolving `/uploads/…` is the caller's job.
 
+## File drop zone: `<FileDropZone>` from `./dropzone` + `.tds-dropzone` (0.56)
+
+Every tool that takes files renders this instead of a bare `<input type="file">`: click to pick, drag and drop,
+optional paste (`paste`), filtering by `accept` (dropped and pasted files too; `onReject` gets the rest).
+
+- **Its own entry**, so a tool island never pulls the component barrel. Tool packs declare `tds-shared` as a peer
+  (`>=0.56.0 <1`), the site supplies it.
+- **States are data attributes**, drawn by `.tds-dropzone` in `primitives.css`: `data-page-drag` (files over the page:
+  the fill breathes), `data-over` (lift, accent wash, hard offset on public surfaces, bobbing arrow), `data-dropped`
+  (one pop, cleared on the zone's own `animationend`). Under reduced motion only the fills change.
+- **No line around the zone** (flat tools site); it is told apart by its fill.
+- The document swallows a file drop that misses the zone, so the browser never navigates away to the file.
+- The input is visually hidden inside the zone's `<label>` and named by `aria-label={label}`; tests find it with
+  `getByLabelText(label)`. Focus shows on the zone (`:has(:focus-visible)`).
+
 ## Other shared islands
 
 `ThemeToggle`, `Avatar` (`.tds-avatar` in `primitives.css`), `FormAlert`, `ConfirmDialog`, `CookieNotice`, `LiveChatCta`,

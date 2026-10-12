@@ -54,6 +54,9 @@ export default defineConfig({
     "nav/index": "src/nav/index.ts",
     // The `.tds-filterbar` behaviour for server-rendered listings. Plain DOM.
     "filter/index": "src/filter/index.ts",
+    // The file drop zone the tool islands render. React; its own entry so a
+    // tool imports exactly this and not the component barrel.
+    "dropzone/index": "src/dropzone/index.tsx",
     "api/index": "src/api/index.ts",
     // The browser-side stale-while-revalidate data cache. Its own entry rather
     // than a re-export from `index`, so a non-React consumer never drags React

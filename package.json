@@ -138,6 +138,11 @@
       "import": "./dist/filter/index.js",
       "require": "./dist/filter/index.cjs"
     },
+    "./dropzone": {
+      "types": "./dist/dropzone/index.d.ts",
+      "import": "./dist/dropzone/index.js",
+      "require": "./dist/dropzone/index.cjs"
+    },
     "./api": {
       "types": "./dist/api/index.d.ts",
       "import": "./dist/api/index.js",
