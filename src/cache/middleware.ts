@@ -24,6 +24,7 @@
  * the replacement render would succeed and quietly bake the fallbacks in.
  */
 
+import { ensureDailyGate } from "./daily.js";
 import { PageCacheStore, tokenMatches, type CacheEntry } from "./store.js";
 import { isCacheableMethod } from "./key.js";
 import { resolveEvents, type CacheEvent, type EventMap } from "./events.js";
@@ -90,6 +91,12 @@ export interface PageCacheOptions {
   onInvalidate?: () => void;
   /** Paths a "rebuild everything" always includes, even when not yet cached. */
   alwaysPaths?: string[];
+  /**
+   * Empty the cache on the first request of each new day and keep the web
+   * server's day gate current (see `daily.ts`). Default true: an entry lives
+   * at most until midnight.
+   */
+  dailyRefresh?: boolean;
   /**
    * What to file a render under. Defaults to `url.pathname`; `null` means "do
    * not cache this request".
@@ -190,6 +197,7 @@ export function pageCache(options: PageCacheOptions): PageCache {
     enabled = true,
     onInvalidate,
     alwaysPaths = [],
+    dailyRefresh = true,
     cacheKey,
     rebuildUrl,
     concurrency = 4,
@@ -331,6 +339,9 @@ export function pageCache(options: PageCacheOptions): PageCache {
     if (context.isPrerendered) return next();
 
     if (!enabled || !isCacheableMethod(request.method)) return next();
+
+    // A new day empties the store before anything is read from it.
+    if (dailyRefresh && metaDir && ensureDailyGate(dir, metaDir, new Date(), logger)) onInvalidate?.();
 
     // Where this render is filed. `null` from a site's own resolver means the
     // request is not cacheable at all — a host it does not recognise, say.

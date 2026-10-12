@@ -48,4 +48,5 @@ export { cacheLocation, isCacheableMethod } from "./key.js";
 export type { CacheLocation } from "./key.js";
 
 export { BUILD_GATE_PREFIX, CACHE_LINK_NAME, buildFingerprint, resolveCacheDirs } from "./dirs.js";
+export { dailyGateName, ensureDailyGate, localDay, utcDay } from "./daily.js";
 export type { CacheDirs, ResolveCacheDirsOptions } from "./dirs.js";

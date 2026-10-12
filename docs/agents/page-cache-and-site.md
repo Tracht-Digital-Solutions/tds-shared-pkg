@@ -69,3 +69,13 @@ unstyled until an uncached URL booted Node. Now:
 - Every cache rule in a consumer's `.htaccess` adds
   `RewriteCond %{DOCUMENT_ROOT}/_tds-cache/.build-@TDS_BUILD@ -f`. Unreplaced, it never matches: every
   request goes to Node — slower, never stale.
+
+## The cache's day (0.55.3)
+
+Entries live until the end of the day they were rendered on (≤ 24 h). `pageCache({ dailyRefresh })`
+(default true) calls `ensureDailyGate()` (`src/cache/daily.ts`) on every request Node sees: it writes
+`_tds-cache/.build-<fp>-<YYYYMMDD>` for today's local and UTC date, and on a new LOCAL day first
+empties pages and meta (build records kept, old dated gates removed). Consumers' `.htaccess` gate on
+`.build-@TDS_BUILD@-%{TIME_YEAR}%{TIME_MON}%{TIME_DAY}`, so after midnight the first request reaches
+Node. Per-render samples (landing page examples) are redrawn daily; the shop never serves a partner
+price rendered more than a day ago.
