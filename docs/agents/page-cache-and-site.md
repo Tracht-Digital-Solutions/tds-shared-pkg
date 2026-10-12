@@ -64,7 +64,9 @@ unstyled until an uncached URL booted Node. Now:
 
 - On boot `resolveCacheDirs()` writes `_tds-cache/.build-<fingerprint>` (`BUILD_GATE_PREFIX`) next to
   the meta marker, after a flush and on an unchanged reboot. `PageCacheStore.clear()` keeps both.
-- `scripts/pack-release.mjs` replaces `@TDS_BUILD@` in `client/.htaccess` with the same fingerprint
+- `scripts/pack-release.mjs` drops a unique `_astro/.release-<id>` first (0.55.4: a markup-only build
+  kept every asset name, so the journal served stale pages after a deploy), then replaces
+  `@TDS_BUILD@` in `client/.htaccess` with the same fingerprint
   (`dirs.test.ts` pins the formula in both places).
 - Every cache rule in a consumer's `.htaccess` adds
   `RewriteCond %{DOCUMENT_ROOT}/_tds-cache/.build-@TDS_BUILD@ -f`. Unreplaced, it never matches: every

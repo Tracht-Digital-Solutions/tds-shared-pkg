@@ -118,6 +118,19 @@ cpSync(join(dist, "client"), join(out, "client"), { recursive: true });
 // this puts the fingerprint of THIS build into the rule. Same formula as
 // `buildFingerprint()` — sorted asset names, sha256, 16 hex — pinned by
 // dirs.test.ts. A site whose .htaccess has no placeholder is left as it is.
+// A release stamp among the asset names. The fingerprint hashes the NAMES
+// under `_astro`, and a build that changed only markup — the journal inlines
+// all of its CSS — kept every name, so the booted app judged the old cache
+// current and served yesterday's pages after a deploy. One unique, empty file
+// per release makes every deploy a new build for the cache. Dot-named, so the
+// directory listing is all it ever appears in.
+if (existsSync(join(out, "client", "_astro"))) {
+  writeFileSync(
+    join(out, "client", "_astro", `.release-${createHash("sha256").update(`${Date.now()}-${Math.random()}`).digest("hex").slice(0, 12)}`),
+    "",
+  );
+}
+
 {
   const htaccess = join(out, "client", ".htaccess");
   if (existsSync(htaccess)) {
