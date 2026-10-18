@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { ImageAttributes } from './imageAttributes';
 
 import type { ShopOffer, ShopProductRef } from "../schemas/shopBlocks";
 // Never a value import from `../schemas/shopBlocks`: it loads zod, and this
@@ -40,6 +41,7 @@ import { displayPrice } from "../schemas/shopPrice";
  */
 
 export interface ProductCardProps {
+  image?: ImageAttributes;
   product: ShopProductRef;
   /** `card` = image + teaser + primary offer, `inline` = one row, `list` = card + every offer. */
   variant?: "card" | "inline" | "list";
@@ -168,6 +170,7 @@ function OfferRow({
 }
 
 export default function ProductCard({
+  image,
   product,
   variant = "card",
   lang = "de",
@@ -219,7 +222,7 @@ export default function ProductCard({
           {/* Amazon requires their own image URLs be served, not copies —
               hence a plain <img> against the remote host rather than any
               local optimisation pipeline. */}
-          <img src={product.imageUrl} alt={product.title} loading="lazy" />
+          <img src={product.imageUrl} alt={image?.alt ?? product.title} loading="lazy" decoding="async" {...image} />
         </a>
       ) : null}
 

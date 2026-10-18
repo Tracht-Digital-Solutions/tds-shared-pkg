@@ -132,7 +132,10 @@ export function hasPhotoCover(coverHint?: string | null): boolean {
   return /^https?:\/\//i.test(coverHint) || /^\/.+\.(webp|avif|png|jpe?g|svg)$/i.test(coverHint);
 }
 
+import type { ImageAttributes } from './imageAttributes';
+
 export interface PostCoverProps {
+  image?: ImageAttributes;
   slug: string;
   coverHint?: string | null;
   title?: string;
@@ -141,13 +144,15 @@ export interface PostCoverProps {
 }
 
 /** Photo cover when the post carries an explicit URL, abstract geometry otherwise. */
-export function PostCover({ slug, coverHint, title, style, className }: PostCoverProps) {
+export function PostCover({ slug, coverHint, title, style, className, image }: PostCoverProps) {
   if (hasPhotoCover(coverHint)) {
     return (
       <img
         src={coverHint as string}
-        alt={title ?? ""}
+          alt={image?.alt ?? title ?? ""}
         loading="lazy"
+          decoding="async"
+          {...image}
         className={className}
         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", ...style }}
       />
