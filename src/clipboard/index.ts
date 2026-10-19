@@ -19,19 +19,21 @@ export async function copyText(text: string): Promise<boolean> {
     await navigator.clipboard.writeText(text);
     return true;
   } catch {
+    const ta = document.createElement("textarea");
     try {
-      const ta = document.createElement("textarea");
       ta.value = text;
       ta.setAttribute("readonly", "");
       ta.style.position = "fixed";
       ta.style.opacity = "0";
       document.body.appendChild(ta);
       ta.select();
-      const ok = document.execCommand("copy");
-      ta.remove();
-      return ok;
+      return document.execCommand("copy");
     } catch {
       return false;
+    } finally {
+      // Always detached: a throwing execCommand (missing in some engines and
+      // in jsdom) used to leave the hidden textarea in the page.
+      ta.remove();
     }
   }
 }

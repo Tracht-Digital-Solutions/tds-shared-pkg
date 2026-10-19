@@ -54,6 +54,15 @@ describe("clipboard", () => {
     expect(await copyText("x")).toBe(true);
   });
 
+  it("never leaves its fallback textarea behind", async () => {
+    vi.stubGlobal("navigator", { clipboard: { writeText: vi.fn().mockRejectedValue(new Error("denied")) } });
+    document.execCommand = (() => {
+      throw new Error("not supported");
+    }) as typeof document.execCommand;
+    expect(await copyText("x")).toBe(false);
+    expect(document.querySelector("textarea")).toBeNull();
+  });
+
   it("raises the flag on success, drops it later and clears its timer on unmount", async () => {
     vi.stubGlobal("navigator", { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
     vi.useFakeTimers();
