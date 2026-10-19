@@ -2239,8 +2239,10 @@ describe("page motion (CSS)", () => {
     expect(primitives).toMatch(/\.tds-filterbar__panel\[hidden\]\s*\{\s*display:\s*none/);
     // Phones keep the toggle on the heading line: the label is visually hidden, never removed.
     expect(primitives).toMatch(/max-width: 30rem\)\s*\{\s*\.tds-filterbar__label\s*\{[^}]*clip-path:\s*inset\(50%\)/);
-    // Open = pressed into the offset; the toggle's look is otherwise .btn.btn-primary's.
-    expect(primitives).toMatch(/\.tds-filterbar__toggle\[aria-expanded="true"\]:not\(:hover\):not\(:focus-visible\)\s*\{[^}]*--tds-shadow-hard-press/);
+    // Open = the toggle steps aside. `.btn` sets display, so [hidden] needs its own rule.
+    expect(primitives).toMatch(/\.tds-filterbar__toggle\[hidden\]\s*\{\s*display:\s*none/);
+    // The panel's entrance is motion, so it only exists under no-preference.
+    expect(primitives).toMatch(/prefers-reduced-motion: no-preference\)\s*\{\s*\.tds-filterbar__panel:not\(\[hidden\]\)\s*\{\s*animation:\s*tds-filterbar-in/);
   });
 
   it("fades the dropdown with allow-discrete, gated like the modal", () => {

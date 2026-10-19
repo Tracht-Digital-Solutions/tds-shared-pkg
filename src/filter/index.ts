@@ -10,8 +10,11 @@
  *
  * Markup contract. `root` is the `.tds-filterbar__panel` (it carries an `id`):
  * - `[data-filter-toggle][aria-controls="<root id>"]`, anywhere in the page
- *   (usually the right end of the listing's heading row): opens and closes
- *   the panel and carries the `.tds-filterbar__count`.
+ *   (usually the right end of the listing's heading row): opens the panel and
+ *   carries the `.tds-filterbar__count`. While the panel is open the toggle is
+ *   `hidden` — the panel takes its place and the whole row.
+ * - `[data-filter-close]`: a button in the panel that closes it again and
+ *   brings the toggle back (focus returns to it). Escape does the same.
  * - `[data-filter-search]`: an `<input>`; its value is `state.query`.
  * - `button[data-filter-group][data-value]`: single-choice chips. The chip
  *   with `aria-pressed="true"` in the SSR markup is that group's default.
@@ -119,14 +122,31 @@ export function mountFilterBar(root: HTMLElement, options: FilterBarOptions): Fi
     apply();
   };
 
-  const onToggle = () => {
-    const open = toggle!.getAttribute("aria-expanded") !== "true";
-    toggle!.setAttribute("aria-expanded", String(open));
+  const closeButton = root.querySelector<HTMLButtonElement>("[data-filter-close]");
+
+  // Open: the toggle steps aside and the panel stands in its place. Every
+  // listing does it the same way, so a reader learns it once.
+  const setOpen = (open: boolean) => {
     root.hidden = !open;
+    if (toggle) {
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.hidden = open;
+    }
     if (open) (search ?? chips[0])?.focus({ preventScroll: true });
+    else toggle?.focus({ preventScroll: true });
+  };
+  const onToggle = () => setOpen(Boolean(root.hidden));
+  const onClose = () => setOpen(false);
+  const onKey = (event: KeyboardEvent) => {
+    if (event.key === "Escape" && !root.hidden) {
+      event.preventDefault();
+      setOpen(false);
+    }
   };
 
   toggle?.addEventListener("click", onToggle);
+  closeButton?.addEventListener("click", onClose);
+  root.addEventListener("keydown", onKey);
   for (const chip of chips) chip.addEventListener("click", onChip);
   search?.addEventListener("input", onSearch);
   resetButton?.addEventListener("click", reset);
@@ -140,6 +160,8 @@ export function mountFilterBar(root: HTMLElement, options: FilterBarOptions): Fi
     reset,
     destroy() {
       toggle?.removeEventListener("click", onToggle);
+      closeButton?.removeEventListener("click", onClose);
+      root.removeEventListener("keydown", onKey);
       for (const chip of chips) chip.removeEventListener("click", onChip);
       search?.removeEventListener("input", onSearch);
       resetButton?.removeEventListener("click", reset);

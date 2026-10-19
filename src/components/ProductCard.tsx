@@ -55,6 +55,13 @@ export interface ProductCardProps {
   now?: number;
   /** Fired before the browser follows an offer link. For the click beacon. */
   onOfferClick?: (offer: ShopOffer, product: ShopProductRef) => void;
+  /**
+   * The shop's own catalogue only: an own offer gets an add-to-basket button
+   * (`data-add-to-cart`, wired by the page) as its filled button, and the
+   * one-product checkout becomes the quiet "Direkt zur Kasse" link beside it.
+   * Off everywhere else, because the basket lives on the shop's origin.
+   */
+  addToCart?: boolean;
   className?: string;
   style?: CSSProperties;
 }
@@ -68,6 +75,9 @@ const TX = {
     toOffer: "Zum Angebot",
     toProduct: "Ansehen",
     buy: "Kaufen",
+    addToCart: "In den Warenkorb",
+    buyNow: "Direkt zur Kasse",
+    from: "ab",
     outOfStock: "Derzeit nicht verfügbar",
     amazonNote:
       "Preis und Verfügbarkeit können sich geändert haben. Maßgeblich ist der Preis, der zum Kaufzeitpunkt auf der Anbieterseite steht.",
@@ -80,6 +90,9 @@ const TX = {
     toOffer: "View offer",
     toProduct: "View",
     buy: "Buy",
+    addToCart: "Add to basket",
+    buyNow: "Buy now",
+    from: "from",
     outOfStock: "Currently unavailable",
     amazonNote:
       "Price and availability may have changed. The price shown on the merchant's page at the time of purchase applies.",
@@ -126,45 +139,76 @@ function OfferRow({
   lang,
   now,
   onOfferClick,
+  addToCart = false,
 }: {
   offer: ShopOffer;
   product: ShopProductRef;
   lang: "de" | "en";
   now: number;
   onOfferClick?: ProductCardProps["onOfferClick"];
+  addToCart?: boolean;
 }) {
   const tx = TX[lang];
   const price = displayPrice(offer, now);
   const affiliate = offer.kind === "affiliate";
+  const toBasket = addToCart && !affiliate;
 
+  // Info first, actions last: the button is the offer's final element and the
+  // offer sits at the foot of the card, so every button in a grid row lines up
+  // however long the teaser or the price notes above it run.
   return (
     <div className="tds-product-offer">
-      <span className="tds-product-offer__merchant">
-        {tx.at} {offer.merchant}
-      </span>
-      <span className="tds-product-price">
-        {price ? formatPrice(price.cents, price.currency, lang) : tx.checkPrice}
-      </span>
-      {price && offer.priceCheckedAt ? (
-        <span className="tds-product-offer__asof">
-          {tx.asOf} {formatChecked(offer.priceCheckedAt, lang)}
+      <div className="tds-product-offer__info">
+        <span className="tds-product-offer__merchant">
+          {tx.at} {offer.merchant}
         </span>
-      ) : null}
-      {offer.availability === "out_of_stock" ? (
-        <span className="tds-product-offer__stock">{tx.outOfStock}</span>
-      ) : null}
-      <a
-        className="btn btn-primary tds-product-offer__cta"
-        href={offer.url}
-        // `sponsored` is the correct value for paid/affiliate links and
-        // `nofollow` keeps older crawlers honest; `noopener` closes the
-        // window.opener hole on target=_blank.
-        rel={affiliate ? "sponsored nofollow noopener" : "noopener"}
-        target={affiliate ? "_blank" : undefined}
-        onClick={() => onOfferClick?.(offer, product)}
-      >
-        {affiliate ? tx.toOffer : tx.buy}
-      </a>
+        <span className="tds-product-price">
+          {/* Our own offers are service packages: the price covers the hours the
+              package names, and more work is billed on top (shop terms). So it
+              is a starting price and says so. A partner's price is the
+              merchant's and carries no prefix. */}
+          {price && !affiliate ? <span className="tds-product-price__from">{tx.from} </span> : null}
+          {price ? formatPrice(price.cents, price.currency, lang) : tx.checkPrice}
+        </span>
+        {price && offer.priceCheckedAt ? (
+          <span className="tds-product-offer__asof">
+            {tx.asOf} {formatChecked(offer.priceCheckedAt, lang)}
+          </span>
+        ) : null}
+        {offer.availability === "out_of_stock" ? (
+          <span className="tds-product-offer__stock">{tx.outOfStock}</span>
+        ) : null}
+      </div>
+      <div className="tds-product-offer__actions">
+        {toBasket ? (
+          <>
+            <button
+              type="button"
+              className="btn btn-primary tds-product-offer__cta"
+              data-add-to-cart={product.slug}
+              data-product-title={product.title}
+            >
+              {tx.addToCart}
+            </button>
+            <a className="tds-product-offer__direct" href={offer.url} onClick={() => onOfferClick?.(offer, product)}>
+              {tx.buyNow}
+            </a>
+          </>
+        ) : (
+          <a
+            className="btn btn-primary tds-product-offer__cta"
+            href={offer.url}
+            // `sponsored` is the correct value for paid/affiliate links and
+            // `nofollow` keeps older crawlers honest; `noopener` closes the
+            // window.opener hole on target=_blank.
+            rel={affiliate ? "sponsored nofollow noopener" : "noopener"}
+            target={affiliate ? "_blank" : undefined}
+            onClick={() => onOfferClick?.(offer, product)}
+          >
+            {affiliate ? tx.toOffer : tx.buy}
+          </a>
+        )}
+      </div>
     </div>
   );
 }
@@ -177,6 +221,7 @@ export default function ProductCard({
   affiliateLabel,
   now = Date.now(),
   onOfferClick,
+  addToCart = false,
   className,
   style,
 }: ProductCardProps) {
@@ -207,6 +252,7 @@ export default function ProductCard({
             lang={lang}
             now={now}
             onOfferClick={onOfferClick}
+            addToCart={addToCart}
           />
         ) : null}
       </div>
@@ -231,7 +277,14 @@ export default function ProductCard({
           {product.title}
         </a>
         <p className="tds-product-card__teaser">{product.teaser}</p>
+      </div>
 
+      {/* The buying block is pushed to the card's foot (`margin-top: auto`),
+          so cards of one grid row put their buttons on one line. The Amazon
+          note sits above the offer for the same reason: under it, it would
+          lift that card's button above its neighbours'. */}
+      <div className="tds-product-card__buy">
+        {hasAmazon ? <p className="tds-affiliate-note">{tx.amazonNote}</p> : null}
         {variant === "list" ? (
           offers.map((offer) => (
             <OfferRow
@@ -241,6 +294,7 @@ export default function ProductCard({
               lang={lang}
               now={now}
               onOfferClick={onOfferClick}
+              addToCart={addToCart}
             />
           ))
         ) : primary ? (
@@ -250,14 +304,13 @@ export default function ProductCard({
             lang={lang}
             now={now}
             onOfferClick={onOfferClick}
+            addToCart={addToCart}
           />
         ) : (
           <a className="btn btn-ghost" href={product.url}>
             {tx.toProduct}
           </a>
         )}
-
-        {hasAmazon ? <p className="tds-affiliate-note">{tx.amazonNote}</p> : null}
       </div>
     </article>
   );

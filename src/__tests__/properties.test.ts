@@ -12,14 +12,15 @@ import { PROPERTY_ORIGINS, propertyContact, propertyHome, propertyNav } from "..
 describe("propertyNav", () => {
   it("lists the four properties in one order, under one set of names per language", () => {
     // The main site is named "Startseite" / "Home" since 2026-10-06 — what it
-    // is to a reader on a sibling property. The product names stay as they are.
+    // is to a reader on a sibling property. The three properties carry
+    // descriptive proper names since 2026-10-19, the same in both languages.
     const names = { de: "Startseite", en: "Home" } as const;
     for (const lang of ["de", "en"] as const) {
       for (const current of ["journal", "tools", "shop"] as const) {
         expect(propertyNav(current, lang, "/").map((l) => l.label)).toEqual([
-          "Journal",
-          "Tools",
-          "Shop",
+          "Ratgeber",
+          "Online-Tools",
+          "Digitalmarkt",
           names[lang],
         ]);
       }

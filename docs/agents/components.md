@@ -88,7 +88,7 @@ Fixed bottom chrome publishes its measured height; anything else pinned there ad
   between the islands; below 64rem the islands are `display: contents`. A site tints them through
   `--tds-sitebar-fill`, never by re-declaring `.brand-header`. Phones keep the bottom tab bar.
 
-## Filter bar (journal, shop, tools): `.tds-filterbar__*` + `mountFilterBar()` (0.53)
+## Filter bar (journal, shop, tools): `.tds-filterbar__*` + `mountFilterBar()` (0.53, toggle steps aside 0.57)
 
 - **Two parts, apart:** the toggle is a brand button (`btn btn-primary tds-filterbar__toggle`, `data-filter-toggle`,
   `aria-expanded`, `aria-controls`) at the right end of the listing's heading row; the `.tds-filterbar__panel`
@@ -97,9 +97,22 @@ Fixed bottom chrome publishes its measured height; anything else pinned there ad
 - **Client-side only.** The page cache keys on the path; a filter is never a query string the server answers.
 - **Single choice per group; the chip pressed in the SSR markup is the default.** A pressed chip in the panel is
   filled; under `[data-flat]` it stays out of the resting wash.
-- **`mountFilterBar(panel, …)` (`./filter`, plain DOM)** wires Astro pages: the toggle (open/close, focus to the
-  search), `hidden` on non-matching items, `compare` reorders inside each parent only off the defaults, `onChange`
-  feeds the live region. React islands follow the markup and keep their own state.
+- **The toggle steps aside (0.57).** Pressing it sets `hidden` on the toggle and shows the panel across the full row;
+  `[data-filter-close]` (`.tds-filterbar__close`, needs an `aria-label`) or Escape closes it and returns focus to the
+  toggle, whose count still shows active filters. Same on every site. A listing without a heading row wraps toggle and
+  panel in a `.tds-filterbar` row (the shop under its hero). `.btn` sets `display`, so `[hidden]` has its own rule.
+- **`mountFilterBar(panel, …)` (`./filter`, plain DOM)** wires Astro pages: toggle and close (focus to the search on
+  open, back to the toggle on close), `hidden` on non-matching items, `compare` reorders inside each parent only off
+  the defaults, `onChange` feeds the live region. React islands follow the markup and keep their own state.
+
+## `ProductCard` buying block (0.57)
+
+- The note, price and button sit in `.tds-product-card__buy` at the card's foot (`margin-top: auto`), and the button
+  is the offer's last element: cards in one grid row put their buttons on one line. Price column is left-aligned.
+- Own offers are service packages: their price reads "ab …" / "from …" (more work than the package's hours is billed
+  on top, per the shop terms). Partner prices carry no prefix.
+- `addToCart` (shop only): an own offer's filled button becomes `button[data-add-to-cart=<slug>]`, wired by the page,
+  and the checkout link becomes the quiet `.tds-product-offer__direct` beside it (`wrap-reverse`, so it wraps above).
 
 ## Language switch (`.tds-lang-toggle`)
 

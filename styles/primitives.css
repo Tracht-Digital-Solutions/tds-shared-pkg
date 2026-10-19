@@ -2436,8 +2436,11 @@ button.tds-row:focus-visible {
 
 /* A collapsible filter panel for a listing (journal index, shop catalogue,
    tools catalogue). Two parts, deliberately apart: the TOGGLE is a brand
-   button that sits at the right end of the listing's heading row, and the
-   PANEL opens below that row across the full width. A `<details>` cannot do
+   button at the right end of a row (the listing's heading row, or a
+   `.tds-filterbar` row of its own), and the PANEL opens across the full width.
+   One behaviour on every site since 0.57: pressing the toggle hides it
+   (`hidden`) and the panel takes its place; the panel's close button
+   (`[data-filter-close]`, `.tds-filterbar__close`) or Escape brings it back. A `<details>` cannot do
    that — its summary and its content are one box — so the toggle is a
    `<button aria-expanded aria-controls>` and the panel a region it controls.
    Filtering happens in the browser over what the page already rendered (the
@@ -2459,6 +2462,7 @@ button.tds-row:focus-visible {
          <div class="tds-toolbar">
            <button type="button" class="chip" data-filter-group="kind" data-value="all" aria-pressed="true">Alle</button> …
        <button type="button" class="tds-filterbar__reset" data-filter-reset>Filter zurücksetzen</button>
+       <button type="button" class="tds-filterbar__close" data-filter-close aria-label="Filter schließen">…</button>
 
    The panel is the one thing here that ships `hidden`: it is a closed
    disclosure, exactly what a closed `<details>` ships, and it only ever opens
@@ -2466,8 +2470,25 @@ button.tds-row:focus-visible {
 
    The toggle's look is the brand button's (`.btn.btn-primary`: navy, the
    surface's radius, the coral hard offset, lift on hover, press on click);
-   this block adds only the icon, the count and the chevron, and keeps the
-   button pressed into its offset while the panel is open. */
+   this block adds only the icon, the count and the chevron. */
+/* A row of its own for a listing without a heading row (the shop, under its
+   hero): the toggle at the end, the open panel across all of it. */
+.tds-filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem 1rem;
+}
+.tds-filterbar > .tds-filterbar__panel {
+  flex: 1 1 100%;
+  margin-block: 0;
+}
+/* `.btn` sets `display`, which would beat the UA's `[hidden]`: an open
+   panel's toggle must really be gone. */
+.tds-filterbar__toggle[hidden] {
+  display: none;
+}
 .tds-filterbar__toggle {
   flex: none;
   font-size: 0.875rem;
@@ -2511,22 +2532,6 @@ button.tds-row:focus-visible {
   transition: rotate var(--tds-dur-fast) var(--tds-ease-out),
     translate var(--tds-dur-fast) var(--tds-ease-out);
 }
-.tds-filterbar__toggle[aria-expanded="true"]::after {
-  rotate: -135deg;
-  translate: 0 0.1em;
-}
-/* Open = pressed into its own offset, like a held key. */
-:is([data-surface="marketing"], [data-surface="blog"], [data-surface="panel"])
-  .tds-filterbar__toggle[aria-expanded="true"]:not(:hover):not(:focus-visible) {
-  translate: 2px 2px;
-  box-shadow: var(--tds-shadow-hard-press);
-}
-@media (prefers-reduced-motion: reduce) {
-  :is([data-surface="marketing"], [data-surface="blog"], [data-surface="panel"])
-    .tds-filterbar__toggle[aria-expanded="true"] {
-    translate: none;
-  }
-}
 /* On the navy button the count is a coral tab with ink figures. */
 .tds-filterbar__count {
   display: inline-flex;
@@ -2559,6 +2564,20 @@ button.tds-row:focus-visible {
 /* `display: flex` above would beat the UA's `[hidden]`. */
 .tds-filterbar__panel[hidden] {
   display: none;
+}
+/* It unfolds where the toggle stood: a short drop and fade, so the swap of
+   button for panel reads as one thing opening rather than two things
+   trading places. Opacity and transform only. */
+@media (prefers-reduced-motion: no-preference) {
+  .tds-filterbar__panel:not([hidden]) {
+    animation: tds-filterbar-in var(--tds-dur-base) var(--tds-ease-out);
+  }
+}
+@keyframes tds-filterbar-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.375rem);
+  }
 }
 :is([data-surface="marketing"], [data-surface="blog"], [data-surface="panel"]) .tds-filterbar__panel {
   box-shadow: var(--tds-shadow-hard);
@@ -2609,9 +2628,50 @@ button.tds-row:focus-visible {
   text-decoration: none;
   cursor: default;
 }
+/* Closes the panel and brings the toggle back. A drawn cross, square, in the
+   surface's chip radius; it sits after the reset at the row's end. */
+.tds-filterbar__close {
+  position: relative;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: var(--tds-border-hairline) solid var(--color-line);
+  border-radius: var(--tds-radius-chip);
+  background: var(--color-card);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.tds-filterbar__close::before,
+.tds-filterbar__close::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 0.875rem;
+  height: 2px;
+  background: currentColor;
+  translate: -50% -50%;
+  rotate: 45deg;
+}
+.tds-filterbar__close::after {
+  rotate: -45deg;
+}
+.tds-filterbar__close:hover {
+  color: var(--color-accent);
+}
+.tds-filterbar__reset + .tds-filterbar__close {
+  margin-inline-start: 0;
+}
+.tds-filterbar__panel > .tds-filterbar__close:only-of-type:not(.tds-filterbar__reset + *) {
+  margin-inline-start: auto;
+}
 @media (pointer: coarse) {
   .tds-filterbar__reset {
     min-height: 2.75rem;
+  }
+  .tds-filterbar__close {
+    width: 2.75rem;
+    height: 2.75rem;
   }
 }
 
@@ -2706,8 +2766,14 @@ button.tds-row:focus-visible {
   /* The merchant CTA already carries `.btn`, which is lifted above. The
      offer row itself gains breathing space so two stacked offers are not
      two 44px targets sharing an edge. */
-  .tds-product-offer {
+  .tds-product-offer,
+  .tds-product-offer__actions {
     row-gap: 0.75rem;
+  }
+  .tds-product-offer__direct {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 }
 
@@ -3198,6 +3264,20 @@ button.tds-row:focus-visible {
   gap: 0.625rem;
 }
 
+/* The buying block (note, price, button) stands at the card's foot. Grid items
+   stretch to the row's height, so `margin-top: auto` puts every card's button
+   on one line however long its teaser runs: in a row of four, a button that
+   sits a line higher than its neighbour reads as a different kind of offer. */
+.tds-product-card__buy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-top: auto;
+}
+.tds-product-card--inline .tds-product-card__buy {
+  margin-top: 0;
+}
+
 .tds-product-card__teaser {
   margin: 0;
   font-size: 0.875rem;
@@ -3207,15 +3287,49 @@ button.tds-row:focus-visible {
 
 /* --- offers ------------------------------------------------------- */
 
-/* Wraps by default. A merchant name, a price, a timestamp and a button is four
-   items — the workspace rule is that any row of more than two needs a wrapping
-   container, because a hand-rolled flex row does not wrap and clips off-screen
-   on a phone where `overflow-x: hidden` then hides the evidence. */
+/* Two parts: the facts (merchant, price, timestamp) as a left-aligned column,
+   and the actions below them. Both wrap — the workspace rule is that any row
+   of more than two items needs a wrapping container, because a hand-rolled
+   flex row does not wrap and clips off-screen on a phone where
+   `overflow-x: hidden` then hides the evidence. The inline variant sets the
+   two side by side. */
 .tds-product-offer {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.625rem;
+}
+.tds-product-card--inline .tds-product-offer {
+  flex-direction: row;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.375rem 0.625rem;
+  align-items: center;
+}
+.tds-product-offer__info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  text-align: start;
+}
+/* `wrap-reverse`: when the quiet "Direkt zur Kasse" link no longer fits beside
+   the button it wraps ABOVE it, so the button stays on the card's last line
+   and level with the buttons of the neighbouring cards. */
+.tds-product-offer__actions {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.875rem;
+}
+.tds-product-offer__direct {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.tds-product-offer__direct:hover {
+  color: var(--color-accent);
 }
 
 .tds-product-offer__merchant {
@@ -3229,6 +3343,12 @@ button.tds-row:focus-visible {
   font-size: 1.125rem;
   color: var(--color-ink);
 }
+/* "ab" before an own package's price: part of the statement, set smaller. */
+.tds-product-price__from {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
 
 /* The retrieval timestamp. Small, but not optional: showing a price without
    saying when it was read is the part the partner programme objects to. */
@@ -3240,10 +3360,6 @@ button.tds-row:focus-visible {
 .tds-product-offer__stock {
   font-size: 0.6875rem;
   color: var(--color-muted);
-}
-
-.tds-product-offer__cta {
-  margin-inline-start: auto;
 }
 
 /* --- labelling ---------------------------------------------------- */
@@ -3298,8 +3414,10 @@ button.tds-row:focus-visible {
 
 @container (max-width: 22rem) {
   .tds-product-offer__cta {
-    margin-inline-start: 0;
     width: 100%;
+  }
+  .tds-product-offer__direct {
+    margin-inline-start: auto;
   }
 }
 

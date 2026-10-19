@@ -12,8 +12,8 @@
  * what is its own (the journal's "Entdecken", the shop's basket) and marks
  * itself as current.
  *
- * The names are proper names and stay the same in both languages — "Shop"
- * translated to "Store" would name a site that does not exist. Sibling links
+ * The names are proper names and stay the same in both languages — a
+ * translated name would name a site that does not exist. Sibling links
  * are absolute (they cross origins) and keep the reader's language. The current
  * property links to its own home, which the header passes in (`/` or `/en/`,
  * relative, so a preview deployment stays on itself).
@@ -38,16 +38,20 @@ export const PROPERTY_ORIGINS: Readonly<Record<PublicProperty, string>> = {
 };
 
 /**
- * The link names. Journal, Tools and Shop are proper names and stay the same
- * in both languages. The main site is named by what it is to a reader who is
- * on a sibling property — its home page — since 2026-10-06: "Tracht Digital"
- * beside "Journal · Tools · Shop" read as a fourth product, and every one of
- * the four is Tracht Digital.
+ * The link names. Since 2026-10-19 the three properties carry descriptive
+ * names instead of "TD" + a generic word (TDShop, TD Tools): Ratgeber,
+ * Online-Tools, Digitalmarkt. A name that says what the site is helps search
+ * engines and assistants place it; the TD mark in front of each wordmark and
+ * "… von Tracht Digital Solutions" in titles and structured data keep the
+ * brand. They are proper names and stay the same in both languages. The main
+ * site is named by what it is to a reader who is on a sibling property — its
+ * home page — since 2026-10-06: "Tracht Digital" beside the others read as a
+ * fourth product, and every one of the four is Tracht Digital.
  */
 const LABELS: Readonly<Record<PublicProperty, Record<"de" | "en", string>>> = {
-  journal: { de: "Journal", en: "Journal" },
-  tools: { de: "Tools", en: "Tools" },
-  shop: { de: "Shop", en: "Shop" },
+  journal: { de: "Ratgeber", en: "Ratgeber" },
+  tools: { de: "Online-Tools", en: "Online-Tools" },
+  shop: { de: "Digitalmarkt", en: "Digitalmarkt" },
   main: { de: "Startseite", en: "Home" },
 };
 

@@ -14,6 +14,7 @@ function setup() {
       <button type="button" class="chip" data-filter-group="sort" data-value="new" aria-pressed="true">Neu</button>
       <button type="button" class="chip" data-filter-group="sort" data-value="az" aria-pressed="false">A–Z</button>
       <button type="button" data-filter-reset>Zurücksetzen</button>
+      <button type="button" data-filter-close aria-label="Filter schließen">×</button>
     </div>
     <ul id="list">
       <li data-kind="own" data-title="Zebra">Zebra</li>
@@ -80,17 +81,39 @@ describe("mountFilterBar", () => {
 });
 
 describe("the toggle", () => {
-  it("opens and closes the panel it controls and focuses the search", () => {
+  it("steps aside for the panel, which takes the search focus", () => {
     const { root } = setup();
     const toggle = document.querySelector<HTMLButtonElement>("[data-filter-toggle]")!;
     expect(root.hidden).toBe(true);
+    expect(toggle.hidden).toBe(false);
     toggle.click();
     expect(root.hidden).toBe(false);
+    expect(toggle.hidden).toBe(true);
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
     expect(document.activeElement).toBe(root.querySelector("[data-filter-search]"));
+  });
+
+  it("the close button brings the toggle back and focuses it", () => {
+    const { root } = setup();
+    const toggle = document.querySelector<HTMLButtonElement>("[data-filter-toggle]")!;
     toggle.click();
+    root.querySelector<HTMLButtonElement>("[data-filter-close]")!.click();
     expect(root.hidden).toBe(true);
+    expect(toggle.hidden).toBe(false);
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(toggle);
+  });
+
+  it("Escape inside the panel closes it, filters stay set", () => {
+    const { root, chip } = setup();
+    const toggle = document.querySelector<HTMLButtonElement>("[data-filter-toggle]")!;
+    toggle.click();
+    chip("kind", "own").click();
+    root.querySelector("[data-filter-search]")!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    expect(root.hidden).toBe(true);
+    expect(toggle.hidden).toBe(false);
+    // The closed toggle still says that a filter is on.
+    expect(toggle.querySelector(".tds-filterbar__count")!.textContent).toBe("1");
   });
 });
 
