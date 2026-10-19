@@ -1,5 +1,6 @@
 /**
- * The four public TDS properties, in the order every public header lists them.
+ * The four public TDS properties, in the order every public header lists them
+ * (the main site first).
  *
  * ### Why this is shared
  *
@@ -60,7 +61,11 @@ export function propertyLabel(key: PublicProperty, lang: "de" | "en"): string {
   return LABELS[key][lang];
 }
 
-const ORDER: readonly PublicProperty[] = ["journal", "tools", "shop", "main"];
+/**
+ * The home page leads (2026-10-19, asked for): it is where every property
+ * comes from, so it is the first way back on all three bars.
+ */
+const ORDER: readonly PublicProperty[] = ["main", "journal", "tools", "shop"];
 
 /** A property's home page in the given language. */
 export function propertyHome(key: PublicProperty, lang: "de" | "en"): string {

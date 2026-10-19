@@ -77,8 +77,11 @@ Fixed bottom chrome publishes its measured height; anything else pinned there ad
 
 ## Shared site bar (journal, tools, shop): `.tds-sitebar*` + `propertyNav()`
 
-- **The list is `propertyNav()`** (Journal · Tools · Shop · Tracht Digital); a header adds only its extras and marks
-  itself current. The main site's label is `propertyLabel` ("Startseite" / "Home").
+- **The list is `propertyNav()`** (Startseite · Ratgeber · Online-Tools · Digitalmarkt — the home page first since
+  0.58); a header adds only its extras and marks itself current. The main site's label is `propertyLabel`
+  ("Startseite" / "Home").
+- **Logomark | name (0.58):** `.tds-sitebar__brand > .brand-logo + span` draws a hairline between the TD mark and
+  the property's name at every width; no markup of its own.
 - **The width is the blog surface's `--tds-shell-max`**; put `.tds-sitebar` on the `.tds-shell` element.
 - **Right-hand order is fixed:** `.tds-sitebar__desktop` (DE|EN, theme, contact CTA in `.tds-sitebar__wide`) →
   `.tds-sitebar__actions` (account, extras, menu), which never hides. The CTA (`propertyContact(lang)`) yields below

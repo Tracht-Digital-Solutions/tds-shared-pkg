@@ -18,10 +18,10 @@ describe("propertyNav", () => {
     for (const lang of ["de", "en"] as const) {
       for (const current of ["journal", "tools", "shop"] as const) {
         expect(propertyNav(current, lang, "/").map((l) => l.label)).toEqual([
+          names[lang],
           "Ratgeber",
           "Online-Tools",
           "Digitalmarkt",
-          names[lang],
         ]);
       }
     }

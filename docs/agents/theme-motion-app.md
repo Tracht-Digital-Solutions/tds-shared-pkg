@@ -32,6 +32,18 @@ from its first frame); Web Animations get `pause()`/`play()`, and only those the
 It cannot reach JavaScript loops (rAF, Motion's frame loop for springs/independent transforms): those gate
 themselves with an IntersectionObserver. Tests: `offscreenAnimation.test.ts`.
 
+## `hoverTipScript` (`src/astro`): a tip on a control the mouse rests on (0.58)
+
+Inline beside the other bootstrap scripts in every public layout: `<script is:inline set:html={hoverTipScript} />`.
+After 700 ms on a button, `summary`, `.btn`-like link or `[data-tip]` (mouse only, `(hover: hover) and (pointer:
+fine)`), one navy `.tds-hover-tip` (base.css; a manual popover, so above dialogs) shows above it, flipped below
+at the top edge and clamped to the viewport; the next control within 400 ms shows at once. Text: `data-tip` →
+`title` (moved into `data-tip` so the native tooltip stays away; an icon-only control keeps it as `aria-label`) →
+an `aria-label` that says more than the visible text → for links, where they lead when it isn't obvious (other
+host, new tab, mailto, tel, download) → open/close for `summary`. A control whose text says everything gets
+none. `data-tip=""` or an ancestor's `data-no-tip` opt out. `aria-hidden`: it only repeats the accessible name.
+Hidden on press, key, wheel, scroll and `astro:before-swap`. Tests: `hoverTip.test.ts`.
+
 ## `applyThemePreference` (`./theme`): the only write path
 
 It raises `tds:theme-change`, which the account sync listens to; a hand-rolled write stays per browser.

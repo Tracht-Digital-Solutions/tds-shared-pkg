@@ -428,3 +428,143 @@ export const offscreenAnimationScript: string = `(function () {
   if (document.readyState === "complete") later(0); else window.addEventListener("load", function () { later(0); setTimeout(scan, 3000); });
   document.addEventListener("astro:page-load", function () { later(200); });
 })();`;
+
+/**
+ * A tip on a control the mouse rests on (0.58).
+ *
+ * Resting on a button for a moment (700 ms) shows one small navy label above
+ * it, the way a desktop app does; moving on to the next control within 400 ms
+ * shows its tip at once. Mouse only: touch has no hover, and a tip that
+ * appears on a tap covers what the tap was for.
+ *
+ * What the tip says, first match wins:
+ * 1. `data-tip` — the author's words. `data-tip=""` switches it off for one
+ *    element, `data-no-tip` on an ancestor for a whole region.
+ * 2. `title` — moved into `data-tip` on first hover so the browser's own
+ *    tooltip does not appear on top (an icon-only control keeps the text as
+ *    its `aria-label`, so its accessible name survives).
+ * 3. `aria-label`, when it says more than the visible text (icon buttons).
+ * 4. For links: where they lead when that is not obvious — another site, a
+ *    new tab, a mail address, a phone number, a download.
+ * 5. `<summary>`: open or close.
+ * A control whose visible text already says everything gets no tip; reading
+ * a label back is noise.
+ *
+ * The tip is `aria-hidden`: everything it says is already the control's name
+ * or visible text, so a screen reader would hear it twice. One element, shown
+ * as a manual popover so it sits above an open `<dialog>`.
+ *
+ * Inline next to the other bootstrap scripts in every public layout:
+ * `<script is:inline set:html={hoverTipScript} />`. Styles: `.tds-hover-tip`
+ * in `styles/base.css`.
+ */
+export const hoverTipScript: string = `(function () {
+  if (window.__tdsHoverTip || !window.matchMedia) return;
+  window.__tdsHoverTip = true;
+  var fine = window.matchMedia("(hover: hover) and (pointer: fine)");
+  var DELAY = 700, WARM = 400, GAP = 8;
+  var SEL = "button, [role=button], [role=tab], summary, input[type=submit], input[type=button], input[type=reset], [data-tip], .btn, a[class*=btn], a[class*=button], a[class*=cta], a[class*=action], a[aria-label]";
+  var tip = null, current = null, timer = 0, warmUntil = 0;
+  function de() { return (document.documentElement.lang || "de").toLowerCase().indexOf("en") !== 0; }
+  function norm(s) { return (s || "").toLowerCase().split(/[^a-z0-9äöüß]+/).join(" ").trim(); }
+  function linkHint(a) {
+    var href = a.getAttribute("href") || "";
+    if (!href || href.charAt(0) === "#") return "";
+    if (href.indexOf("mailto:") === 0) return (de() ? "E-Mail an " : "Email ") + decodeURIComponent(href.slice(7).split("?")[0]);
+    if (href.indexOf("tel:") === 0) return (de() ? "Anrufen: " : "Call ") + decodeURIComponent(href.slice(4));
+    if (a.hasAttribute("download")) return de() ? "Datei herunterladen" : "Download the file";
+    var url;
+    try { url = new URL(href, location.href); } catch (e) { return ""; }
+    var tab = a.getAttribute("target") === "_blank";
+    if (url.host && url.host !== location.host) {
+      return (de() ? "Öffnet " : "Opens ") + url.host.replace(/^www[.]/, "") + (tab ? (de() ? " in einem neuen Tab" : " in a new tab") : "");
+    }
+    return tab ? (de() ? "Öffnet in einem neuen Tab" : "Opens in a new tab") : "";
+  }
+  function textFor(el) {
+    var own = el.getAttribute("data-tip");
+    if (own !== null) return own.trim();
+    var visible = norm(el.textContent);
+    var title = el.getAttribute("title");
+    if (title) {
+      if (!el.getAttribute("aria-label") && !visible) el.setAttribute("aria-label", title);
+      el.setAttribute("data-tip", norm(title) === visible ? "" : title);
+      el.removeAttribute("title");
+      return norm(title) === visible ? "" : title.trim();
+    }
+    var label = el.getAttribute("aria-label");
+    if (label && norm(label) !== visible) return label.trim();
+    if (el.tagName === "A") return linkHint(el);
+    if (el.tagName === "SUMMARY" && el.parentElement && el.parentElement.tagName === "DETAILS") {
+      if (el.parentElement.open) return de() ? "Zuklappen" : "Collapse";
+      return de() ? "Aufklappen" : "Expand";
+    }
+    return "";
+  }
+  function ensure() {
+    if (tip && tip.isConnected) return tip;
+    tip = document.createElement("div");
+    tip.className = "tds-hover-tip";
+    tip.setAttribute("aria-hidden", "true");
+    if (tip.showPopover) tip.setAttribute("popover", "manual");
+    document.body.appendChild(tip);
+    return tip;
+  }
+  function place(el) {
+    var r = el.getBoundingClientRect();
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    var vw = document.documentElement.clientWidth || window.innerWidth, vh = window.innerHeight;
+    var top = r.top - h - GAP, side = "top";
+    if (top < GAP) { top = r.bottom + GAP; side = "bottom"; }
+    var left = Math.max(GAP, Math.min(r.left + r.width / 2 - w / 2, vw - w - GAP));
+    tip.style.left = Math.round(left) + "px";
+    tip.style.top = Math.round(Math.max(GAP, Math.min(top, vh - h - GAP))) + "px";
+    tip.setAttribute("data-side", side);
+  }
+  function show(el, text) {
+    ensure();
+    tip.textContent = text;
+    if (tip.showPopover) {
+      try { if (tip.matches(":popover-open")) tip.hidePopover(); tip.showPopover(); } catch (e) {}
+    }
+    tip.setAttribute("data-open", "");
+    place(el);
+  }
+  function hide() {
+    clearTimeout(timer);
+    if (tip && tip.hasAttribute("data-open")) {
+      warmUntil = Date.now() + WARM;
+      tip.removeAttribute("data-open");
+      if (tip.hidePopover) { try { tip.hidePopover(); } catch (e) {} }
+    }
+    current = null;
+  }
+  function dismiss() {
+    if (!current && !(tip && tip.hasAttribute("data-open"))) return;
+    hide();
+    warmUntil = 0;
+  }
+  document.addEventListener("pointerover", function (e) {
+    if (e.pointerType !== "mouse" || !fine.matches) return;
+    var t = e.target;
+    var el = t && t.closest ? t.closest(SEL) : null;
+    if (el && el === current) return;
+    hide();
+    if (!el || el.closest("[data-no-tip]") || el.hasAttribute("disabled")) return;
+    var text = textFor(el);
+    if (!text) return;
+    current = el;
+    timer = setTimeout(function () {
+      if (current === el && el.isConnected) show(el, text);
+    }, Date.now() < warmUntil ? 0 : DELAY);
+  }, true);
+  document.addEventListener("pointerout", function (e) {
+    if (!current) return;
+    var to = e.relatedTarget;
+    if (!to || !current.contains(to)) hide();
+  }, true);
+  ["pointerdown", "keydown", "wheel", "scroll"].forEach(function (type) {
+    window.addEventListener(type, dismiss, { capture: true, passive: true });
+  });
+  document.addEventListener("astro:before-swap", dismiss);
+})();`;

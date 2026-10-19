@@ -1636,6 +1636,15 @@ button.tds-row:focus-visible {
   white-space: nowrap;
   text-decoration: none;
 }
+/* The logomark and the property's name are two things (2026-10-19, asked
+   for): the TD mark is the company, "Ratgeber" / "Online-Tools" /
+   "Digitalmarkt" the area. A hairline between them says so at every width,
+   without markup of its own in the three headers. */
+.tds-sitebar__brand > .brand-logo + span {
+  padding-inline-start: 0.625rem;
+  border-inline-start: 1.5px solid color-mix(in srgb, currentColor 32%, transparent);
+  line-height: 1.15;
+}
 /* Shown only beside the nav it divides; below 64rem it would be a lone dot
    after the wordmark. */
 .tds-sitebar__divider {
