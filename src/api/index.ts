@@ -446,3 +446,60 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
   }
   return res;
 }
+
+/**
+ * `apiFetch` with a JSON body: sets `Content-Type` and stringifies `body`.
+ * Same contract as `apiFetch` — every status resolves, a network failure
+ * rejects. Replaces ~80 hand-written `"Content-Type": "application/json"`
+ * headers across the panel islands (0.58).
+ */
+export function sendJson(path: string, method: string, body?: unknown, init: RequestInit = {}): Promise<Response> {
+  return apiFetch(path, {
+    ...init,
+    method,
+    headers: { "Content-Type": "application/json", ...(init.headers as Record<string, string> | undefined) },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+}
+
+/** The API's `{ error }` (or `{ message }`) text from a failed response, or `null`. */
+export async function errorMessageOf(res: Response): Promise<string | null> {
+  try {
+    const body = (await res.clone().json()) as { error?: unknown; message?: unknown };
+    const text = typeof body.error === "string" ? body.error : typeof body.message === "string" ? body.message : null;
+    return text && text.trim() !== "" ? text : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Panel copy for the failures every island reports the same way. */
+export const FAILURE_TEXT = {
+  unreachable: "die API ist nicht erreichbar",
+  adminOnly: "Nur für Administratoren.",
+} as const;
+
+/**
+ * One German sentence for a failed request, in the panel's established wording:
+ *
+ * - `null` (the request never reached the API) → `"<action> — die API ist nicht erreichbar."`
+ * - 401/403 with `adminOnly` → `"Nur für Administratoren."`
+ * - otherwise → `"<action> (HTTP 500)."`
+ *
+ * `action` is the failed step, e.g. `"Speichern fehlgeschlagen"`; it defaults
+ * to `"Fehler"`. For the API's own `{error}` text use `describeFailureFrom`.
+ */
+export function describeFailure(res: Response | null, action = "Fehler", opts: { adminOnly?: boolean } = {}): string {
+  if (res === null) return `${action} — ${FAILURE_TEXT.unreachable}.`;
+  if (opts.adminOnly && (res.status === 401 || res.status === 403)) return FAILURE_TEXT.adminOnly;
+  return `${action} (HTTP ${res.status}).`;
+}
+
+/** `describeFailure`, but prefers the API's own `{error}` text: `"<error> (HTTP 422)"`. */
+export async function describeFailureFrom(res: Response | null, action = "Fehler", opts: { adminOnly?: boolean } = {}): Promise<string> {
+  if (res !== null && !(opts.adminOnly && (res.status === 401 || res.status === 403))) {
+    const text = await errorMessageOf(res);
+    if (text) return `${text} (HTTP ${res.status})`;
+  }
+  return describeFailure(res, action, opts);
+}

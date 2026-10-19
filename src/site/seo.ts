@@ -91,3 +91,68 @@ export function serializeJsonLd(data: unknown): string {
     .replace(/\u2028/g, "\\u2028")
     .replace(/\u2029/g, "\\u2029");
 }
+
+/** One `<url>` of a sitemap, every URL already absolute. */
+export interface SitemapUrlXml {
+  loc: string;
+  /** German and English URLs of the same page; x-default points at the German one. */
+  alternates?: { de: string; en: string };
+  image?: { loc: string; title: string };
+  /** `YYYY-MM-DD`; omitted rather than invented. */
+  lastmod?: string;
+  changefreq?: string;
+  priority?: number;
+}
+
+/** One `<url>` element in the compact form every site emits. */
+export function renderSitemapUrl(url: SitemapUrlXml): string {
+  const alternates = url.alternates
+    ? `<xhtml:link rel="alternate" hreflang="de-DE" href="${escapeXml(url.alternates.de)}"/>` +
+      `<xhtml:link rel="alternate" hreflang="en-GB" href="${escapeXml(url.alternates.en)}"/>` +
+      `<xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(url.alternates.de)}"/>`
+    : "";
+  const image = url.image
+    ? `<image:image><image:loc>${escapeXml(url.image.loc)}</image:loc>` +
+      `<image:title>${escapeXml(url.image.title)}</image:title></image:image>`
+    : "";
+  return (
+    "<url>" +
+    `<loc>${escapeXml(url.loc)}</loc>` +
+    alternates +
+    image +
+    (url.lastmod ? `<lastmod>${escapeXml(url.lastmod)}</lastmod>` : "") +
+    (url.changefreq ? `<changefreq>${escapeXml(url.changefreq)}</changefreq>` : "") +
+    (url.priority !== undefined ? `<priority>${url.priority.toFixed(1)}</priority>` : "") +
+    "</url>"
+  );
+}
+
+/**
+ * A `<urlset>` with the xhtml (hreflang) and image namespaces.
+ * Promoted in 0.58 from the landing page, journal and tools sitemaps.
+ */
+export function renderUrlset(urls: readonly SitemapUrlXml[]): string {
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" ' +
+    'xmlns:xhtml="http://www.w3.org/1999/xhtml" ' +
+    'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">' +
+    urls.map(renderSitemapUrl).join("") +
+    "</urlset>"
+  );
+}
+
+/**
+ * The sections of a sectioned sitemap: one child per kind of page,
+ * `/sitemap-<section>.xml`, plus the index and the legacy `/sitemap-0.xml`
+ * the page cache must rebuild. Each site names its own sections.
+ */
+export function defineSitemapSections<const S extends string>(sections: readonly S[]) {
+  const sectionPath = (section: S): string => `/sitemap-${section}.xml`;
+  return {
+    sections,
+    isSection: (value: string | undefined): value is S => (sections as readonly string[]).includes(value ?? ""),
+    sectionPath,
+    paths: ["/sitemap-index.xml", "/sitemap-0.xml", ...sections.map(sectionPath)] as readonly string[],
+  };
+}

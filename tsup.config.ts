@@ -57,6 +57,16 @@ export default defineConfig({
     // The file drop zone the tool islands render. React; its own entry so a
     // tool imports exactly this and not the component barrel.
     "dropzone/index": "src/dropzone/index.tsx",
+    // Small helpers every tool pack and panel extension had copied (0.58).
+    // Each its own entry so an island pays only for what it imports; none of
+    // them touches `motion`.
+    "alert/index": "src/alert/index.ts",
+    "format/index": "src/format/index.ts",
+    "download/index": "src/download/index.ts",
+    "clipboard/index": "src/clipboard/index.ts",
+    "zip/index": "src/zip/index.ts",
+    // Panel-only: runtime-settings section + public-site pairing hooks.
+    "admin/index": "src/admin/index.tsx",
     "api/index": "src/api/index.ts",
     // The browser-side stale-while-revalidate data cache. Its own entry rather
     // than a re-export from `index`, so a non-React consumer never drags React

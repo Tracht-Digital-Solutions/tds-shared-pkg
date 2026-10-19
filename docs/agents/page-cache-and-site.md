@@ -56,6 +56,20 @@ Server-side helpers the public sites used to copy; no `node:` imports; never re-
 - `escapeXml`, `renderSitemapIndex(sitemaps, lastmod?)`, `serializeJsonLd` (escapes `<` and U+2028/2029 so panel text can't
   close the script tag).
 
+### Sitemap, exclusions, images, scripts (0.58)
+
+- `createSitemapExclusions({ siteId, contentBase, read, memo, hreflangGroup?, disabled? })` → `exclusionPatterns`,
+  `isExcluded`. The site injects its keyed reader, its generation memo and its language-twin mapping (prefix on
+  the tools site, translated taxonomy segments on the journal). Fail-soft: nothing excluded.
+- `renderUrlset(urls)` / `renderSitemapUrl` take absolute URLs; the site maps its own entry shape.
+  `defineSitemapSections([...])` gives `sections`, `isSection`, `sectionPath`, `paths` (what the cache rebuilds).
+- `createImageCatalog(json, { origin, about })` for the generated `imageCatalog.json`.
+- `./i18n`: `OG_LOCALE`, `neutralPath`, `localizedPath` (same-slug `/en/` trees). `./nav`: `LEGAL_LINKS`.
+- `./pwa`: `mountOfflineList(list, { match, english, empty })` for the offline fallback page.
+- **Bins:** `tds-geo-audit` (each site keeps only `scripts/geo-audit.profile.mjs`, default export) and
+  `tds-lint-primitives` (the union of the two allow-lists that had formed). A new allowed primitive class goes
+  into `scripts/lint-primitives.mjs` here, in the same release as its CSS.
+
 ## Build gate (0.55.2)
 
 Cache hits are served by the web server straight from disk; the app's boot-time flush never sees

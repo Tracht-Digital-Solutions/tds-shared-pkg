@@ -5,6 +5,7 @@ import type { ShopOffer, ShopProductRef } from "../schemas/shopBlocks";
 // Never a value import from `../schemas/shopBlocks`: it loads zod, and this
 // card is in the barrel every site hydrates (see `../schemas/shopPrice`).
 import { displayPrice } from "../schemas/shopPrice";
+import { formatPrice } from "../format";
 
 /**
  * The one TDShop product card, rendered by all three surfaces: the shop itself,
@@ -98,18 +99,6 @@ const TX = {
       "Price and availability may have changed. The price shown on the merchant's page at the time of purchase applies.",
   },
 } as const;
-
-function formatPrice(cents: number, currency: string, lang: "de" | "en"): string {
-  try {
-    return new Intl.NumberFormat(lang === "de" ? "de-DE" : "en-GB", {
-      style: "currency",
-      currency,
-    }).format(cents / 100);
-  } catch {
-    // An unknown currency code must not take the card down with it.
-    return `${(cents / 100).toFixed(2)} ${currency}`;
-  }
-}
 
 function formatChecked(iso: string, lang: "de" | "en"): string {
   const t = Date.parse(iso);

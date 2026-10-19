@@ -335,6 +335,9 @@ button.chip[aria-pressed="true"] {
 .tds-alert--danger {
   --tds-alert-hue: var(--color-danger);
 }
+.tds-alert--info {
+  --tds-alert-hue: var(--color-info);
+}
 
 /* === Buttons ====================================================== */
 

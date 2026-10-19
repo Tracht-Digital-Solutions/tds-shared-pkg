@@ -16,5 +16,28 @@ export {
   type SiteKeySource,
 } from "./siteKey";
 export { ContentHttpError, createContentReader, isConnectionFailure, memoisedOr } from "./contentFetch";
-export { escapeXml, newestDay, renderSectionedSitemapIndex, renderSitemapIndex, serializeJsonLd } from "./seo";
-export type { SitemapIndexEntry } from "./seo";
+export {
+  defineSitemapSections,
+  escapeXml,
+  newestDay,
+  renderSectionedSitemapIndex,
+  renderSitemapIndex,
+  renderSitemapUrl,
+  renderUrlset,
+  serializeJsonLd,
+} from "./seo";
+export type { SitemapIndexEntry, SitemapUrlXml } from "./seo";
+export {
+  canonicalPath,
+  createSitemapExclusions,
+  groupExcluded,
+  matchesPattern,
+  type SitemapExclusions,
+  type SitemapExclusionsOptions,
+} from "./sitemapExclusions";
+export {
+  createImageCatalog,
+  type CatalogAsset,
+  type CatalogVariant,
+  type ImageCatalogOptions,
+} from "./imageCatalog";

@@ -35,6 +35,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DEFAULT_API_BASE, apiBase, type RuntimeConfig } from "../api/index.js";
+import { useCopyFlag } from "../clipboard/index.js";
+import { downloadText } from "../download/index.js";
 import {
   buildRuntimeConfig,
   diffPublished,
@@ -291,7 +293,7 @@ function LegacyInstallWizard({ profile }: InstallWizardProps) {
   const [checking, setChecking] = useState(false);
   const [published, setPublished] = useState<RuntimeConfig | null>(null);
   const [verified, setVerified] = useState<"idle" | "match" | "mismatch" | "missing">("idle");
-  const [copied, setCopied] = useState(false);
+  const { copied, copy: copyFlag } = useCopyFlag(2000);
   // Held here, not inside the step, so the tools site's registry sync can reuse
   // the same key the operator just typed. It is never persisted anywhere.
   const [siteKey, setSiteKey] = useState("");
@@ -352,23 +354,9 @@ function LegacyInstallWizard({ profile }: InstallWizardProps) {
     setVerified(diffPublished(profile, config, actual).length === 0 ? "match" : "mismatch");
   }, [profile, config]);
 
-  const download = useCallback(() => {
-    const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "tds-runtime.json";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }, [json]);
+  const download = useCallback(() => downloadText(json, "tds-runtime.json", "application/json"), [json]);
 
-  const copy = useCallback(() => {
-    void navigator.clipboard.writeText(json).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    });
-  }, [json]);
+  const copy = useCallback(() => void copyFlag(json), [copyFlag, json]);
 
   const set = (key: keyof Endpoints) => (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;

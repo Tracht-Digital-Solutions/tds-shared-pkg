@@ -143,6 +143,36 @@
       "import": "./dist/dropzone/index.js",
       "require": "./dist/dropzone/index.cjs"
     },
+    "./alert": {
+      "types": "./dist/alert/index.d.ts",
+      "import": "./dist/alert/index.js",
+      "require": "./dist/alert/index.cjs"
+    },
+    "./format": {
+      "types": "./dist/format/index.d.ts",
+      "import": "./dist/format/index.js",
+      "require": "./dist/format/index.cjs"
+    },
+    "./download": {
+      "types": "./dist/download/index.d.ts",
+      "import": "./dist/download/index.js",
+      "require": "./dist/download/index.cjs"
+    },
+    "./clipboard": {
+      "types": "./dist/clipboard/index.d.ts",
+      "import": "./dist/clipboard/index.js",
+      "require": "./dist/clipboard/index.cjs"
+    },
+    "./zip": {
+      "types": "./dist/zip/index.d.ts",
+      "import": "./dist/zip/index.js",
+      "require": "./dist/zip/index.cjs"
+    },
+    "./admin": {
+      "types": "./dist/admin/index.d.ts",
+      "import": "./dist/admin/index.js",
+      "require": "./dist/admin/index.cjs"
+    },
     "./api": {
       "types": "./dist/api/index.d.ts",
       "import": "./dist/api/index.js",
@@ -184,6 +214,10 @@
     "./styles/surfaces/marketing.css": "./styles/surfaces/marketing.css",
     "./styles/surfaces/blog.css": "./styles/surfaces/blog.css",
     "./styles/surfaces/panel.css": "./styles/surfaces/panel.css"
+  },
+  "bin": {
+    "tds-lint-primitives": "scripts/lint-primitives.mjs",
+    "tds-geo-audit": "scripts/geo-audit.mjs"
   },
   "scripts": {
     "build": "tsup",

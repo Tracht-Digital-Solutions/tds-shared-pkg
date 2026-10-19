@@ -12,6 +12,26 @@ export type { AvatarProps } from "./Avatar";
 export { default as FormAlert } from "./FormAlert";
 export type { FormAlertProps } from "./FormAlert";
 
+/* Promoted in 0.58 from copies across the panel extensions and tool packs.
+   None of them imports `motion`. */
+export { default as Alert } from "./Alert";
+export type { AlertProps, AlertTone } from "./Alert";
+
+export { default as Tabs, TabPanel, tabId, tabPanelId } from "./Tabs";
+export type { TabsProps, TabPanelProps } from "./Tabs";
+
+export { default as Segmented } from "./Segmented";
+export type { SegmentedProps } from "./Segmented";
+
+export { default as RangeField } from "./RangeField";
+export type { RangeFieldProps } from "./RangeField";
+
+export { default as StatusChip, statusLabel } from "./StatusChip";
+export type { StatusChipProps, StatusStyle } from "./StatusChip";
+
+export { default as SummaryMetric, useSummary, NOTIFICATION_EVENT } from "./SummaryMetric";
+export type { SummaryMetricProps, SummaryState } from "./SummaryMetric";
+
 export { default as ConfirmDialog } from "./ConfirmDialog";
 export type { ConfirmDialogProps } from "./ConfirmDialog";
 
@@ -75,6 +95,9 @@ export {
 export {
   apiBase,
   apiFetch,
+  sendJson,
+  describeFailure,
+  describeFailureFrom,
   apiUrl,
   resetApiBase,
   setUnauthorizedHandler,

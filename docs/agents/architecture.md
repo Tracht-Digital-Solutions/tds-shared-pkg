@@ -26,6 +26,8 @@ src/
 ├── api/                   apiBase / apiUrl / apiFetch transport; React-free
 ├── data/                  client-only in-memory SWR cache (React)
 ├── markdown/              escape-first renderMarkdown (the panel's XSS boundary)
+├── format/, download/, clipboard/, zip/, alert/   small promoted helpers, own entries (0.58)
+├── admin/                 panel runtime-settings + pairing hooks (0.58)
 ├── components/            shared React islands
 ├── consent/               consent store for cookie/ads notices
 ├── permissions/           permission catalog (PORTAL_PERMISSIONS)
@@ -34,7 +36,7 @@ src/
 ├── cache/                 SERVER-ONLY page cache (node:fs); own entry point
 ├── site/                  server helpers the public sites shared by copy
 └── install/               host-side setup wizard (React island)
-scripts/                   pack-release.mjs, app.cjs (release spine for SSR consumers)
+scripts/                   pack-release.mjs, app.cjs (release spine); geo-audit.mjs, lint-primitives.mjs (bins)
 ```
 
 Each directory with consumers is its own `exports` entry (`./api`, `./data`, `./cache`, `./site`, `./install`,

@@ -43,10 +43,16 @@
 - **Mount `ToastHost` once per app**; a second renders nothing and warns.
 - A toast may carry `href` for something elsewhere (`.tds-toast__link`), **same-document leading-slash paths only**.
 - `.status-pill` is never a banner; use `.tds-alert` (with `--tds-alert-hue`) or `.form-alert`.
+- **In-flow messages are `<Alert tone>`** (`./alert` or `./components`, 0.58): danger/warning announce as
+  `role="alert"`, success/info as `role="status"`, `.tds-appear` on insertion, nothing for empty children. Never
+  hand-write `<p className="tds-alert …">`. `<FormAlert>` stays the animated login/form variant.
 
 ## API calls
 
-**Never call the panel API with a relative path; use `apiFetch` from `./api`.** A relative `fetch` resolves against
+**Never call the panel API with a relative path; use `apiFetch` from `./api`.** A JSON body goes through
+`sendJson(path, method, body)`; failure text through `describeFailure(res | null, action, { adminOnly })` /
+`describeFailureFrom` (prefers the API's `{error}`), so "die API ist nicht erreichbar", "(HTTP n)" and "Nur für
+Administratoren." read the same everywhere. Never alias `const api = apiFetch`. A relative `fetch` resolves against
 the product host, whose SPA fallback answers 200 + HTML; `res.json()` throws and `.catch(() => setRows([]))` renders a
 calm empty state. See [architecture.md](architecture.md#srcapi-transport-and-runtime-config).
 
@@ -164,6 +170,20 @@ optional paste (`paste`), filtering by `accept` (dropped and pasted files too; `
 - The document swallows a file drop that misses the zone, so the browser never navigates away to the file.
 - The input is visually hidden inside the zone's `<label>` and named by `aria-label={label}`; tests find it with
   `getByLabelText(label)`. Focus shows on the zone (`:has(:focus-visible)`).
+
+## Helpers promoted in 0.58 (one copy each, own entry points)
+
+| Entry | What | Replaced |
+|---|---|---|
+| `./format` | `parseDate`, `formatDate`/`formatDateTime` (`numeric`/`medium`/`long`, `utc`, `timeZone`), `formatIsoDay`, `formatCents`, `formatPrice`, `parseEuros`, `centsToEuroInput`, `formatBytes`, `clampToWord` | per-island `euros`/`day`/`fmtDate`/`fmtSize`; "9,90" → NaN |
+| `./download` | `downloadBlob`/`downloadBytes`/`downloadText`/`downloadUrl` (attached link, revoke after 1 s) | 9 copies in tool packs + install wizard |
+| `./clipboard` | `copyText` (execCommand fallback, `true` only on success), `useCopyFlag` (timer cleared on unmount) | 9 copies; one claimed a failed copy |
+| `./zip` | `createZip` (deterministic by default, `names: "unicode"` for visitor files), `readZip`, `crc32`, `safeZipPath`/`safeZipName` | devkit + media writers |
+| `./components` | `Tabs`/`TabPanel` (roving tabindex, arrows), `Segmented`, `RangeField`, `StatusChip` (via `resolveChipVariant`), `SummaryMetric`/`useSummary` (`—` on failure, `refreshOnModule`) | 5 tab rows, 14 sliders, 16 widget bodies |
+| `./admin` | `useRuntimeSettings(ns)` + `SecretField`/`secretHint`, `usePairing({ base, profile, subject })` | 11 settings sections, 4 pairing flows |
+
+Rules: a tool island imports the small entries, never the barrel. A disconnect still needs `<ConfirmDialog>` in
+the island; `usePairing` owns only the requests and their wording.
 
 ## Other shared islands
 

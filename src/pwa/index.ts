@@ -217,3 +217,52 @@ export const MANIFEST_HEADERS: Readonly<Record<string, string>> = {
   "Content-Type": "application/manifest+json; charset=utf-8",
   "Cache-Control": "public, max-age=3600",
 };
+
+export interface OfflineListOptions {
+  /** Keep a cached path? Default: every page except the homes and the offline page itself. */
+  match?: (path: string) => boolean;
+  /** List English pages (`/en/…`) instead of German ones. */
+  english?: boolean;
+  /** Class for each link. */
+  linkClass?: string;
+  /** Class for each list item. */
+  itemClass?: string;
+  /** Shown (un-hidden) when nothing was found. */
+  empty?: HTMLElement | null;
+}
+
+/**
+ * Fills `list` with the pages this device kept in the worker's page cache,
+ * newest first, titled from each page's `<title>` minus the " — site" suffix.
+ * For the offline fallback page; plain DOM, browser only. Promoted in 0.58
+ * from the journal, tools and shop offline pages.
+ */
+export async function mountOfflineList(list: HTMLElement, opts: OfflineListOptions = {}): Promise<number> {
+  const empty = opts.empty ?? null;
+  if (!("caches" in window)) {
+    if (empty) empty.hidden = false;
+    return 0;
+  }
+  const cache = await caches.open(list.dataset.cache ?? SW_PAGE_CACHE);
+  const english = opts.english ?? false;
+  const keep =
+    opts.match ?? ((path: string) => path !== "/" && path !== "/en/" && !path.includes("/offline"));
+  let n = 0;
+  for (const req of [...(await cache.keys())].reverse()) {
+    const path = new URL(req.url).pathname;
+    if (english !== path.startsWith("/en/") || !keep(path)) continue;
+    const html = await (await cache.match(req))?.text();
+    const title = (html?.match(/<title>([^<]*)<\/title>/)?.[1] ?? path).split(" — ")[0]!.trim();
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = path;
+    a.textContent = title;
+    if (opts.linkClass) a.className = opts.linkClass;
+    if (opts.itemClass) li.className = opts.itemClass;
+    li.append(a);
+    list.append(li);
+    n++;
+  }
+  if (empty) empty.hidden = n > 0;
+  return n;
+}
