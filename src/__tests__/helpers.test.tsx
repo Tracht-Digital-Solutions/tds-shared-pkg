@@ -232,3 +232,34 @@ describe("SummaryMetric", () => {
     await waitFor(() => expect(screen.getByText("2")).toBeTruthy());
   });
 });
+
+describe("mountOfflineList", () => {
+  it("lists the kept pages of one language, newest first, without the site suffix", async () => {
+    const pages: Record<string, string> = {
+      "https://s/tools/a": "<title>Tool A — Online-Tools</title>",
+      "https://s/en/tools/b": "<title>Tool B — Online-Tools</title>",
+      "https://s/produkt/c": "<title>Produkt C | Digitalmarkt</title>",
+      "https://s/": "<title>Start</title>",
+    };
+    vi.stubGlobal("caches", {
+      open: async () => ({
+        keys: async () => Object.keys(pages).map((url) => ({ url })),
+        match: async (req: { url: string }) => new Response(pages[req.url]),
+      }),
+    });
+    const { mountOfflineList } = await import("../pwa");
+    const list = document.createElement("ul");
+    const empty = document.createElement("p");
+    empty.hidden = true;
+    expect(await mountOfflineList(list, { empty, linkClass: "link-underline" })).toBe(2);
+    expect([...list.querySelectorAll("a")].map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
+      ["Produkt C", "/produkt/c"],
+      ["Tool A", "/tools/a"],
+    ]);
+    expect(empty.hidden).toBe(true);
+
+    const en = document.createElement("ul");
+    expect(await mountOfflineList(en, { english: true, match: (p) => p.includes("/tools/"), empty })).toBe(1);
+    expect(en.textContent).toBe("Tool B");
+  });
+});

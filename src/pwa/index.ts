@@ -233,7 +233,8 @@ export interface OfflineListOptions {
 
 /**
  * Fills `list` with the pages this device kept in the worker's page cache,
- * newest first, titled from each page's `<title>` minus the " — site" suffix.
+ * newest first, titled from each page's `<title>` minus the " — site" / " | site"
+ * suffix.
  * For the offline fallback page; plain DOM, browser only. Promoted in 0.59
  * from the journal, tools and shop offline pages.
  */
@@ -252,7 +253,8 @@ export async function mountOfflineList(list: HTMLElement, opts: OfflineListOptio
     const path = new URL(req.url).pathname;
     if (english !== path.startsWith("/en/") || !keep(path)) continue;
     const html = await (await cache.match(req))?.text();
-    const title = (html?.match(/<title>([^<]*)<\/title>/)?.[1] ?? path).split(" — ")[0]!.trim();
+    // The page's own name: the site suffix goes, whichever separator the site uses.
+    const title = (html?.match(/<title>([^<]*)<\/title>/)?.[1] ?? path).split(" — ")[0]!.split(" | ")[0]!.trim();
     const li = document.createElement("li");
     const a = document.createElement("a");
     a.href = path;
