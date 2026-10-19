@@ -3415,6 +3415,7 @@ button.tds-row:focus-visible {
 @container (max-width: 22rem) {
   .tds-product-offer__cta {
     width: 100%;
+    justify-content: center;
   }
   .tds-product-offer__direct {
     margin-inline-start: auto;
