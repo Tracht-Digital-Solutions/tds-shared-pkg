@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 /**
  * Copy to the clipboard, plus the "Kopiert ✓" flag every copy button shows.
  *
- * Before 0.58 nine islands across the tool packs and panel extensions wrote
+ * Before 0.59 nine islands across the tool packs and panel extensions wrote
  * this by hand. Two left their reset timer running after unmount (a vanished
  * island then set state), one reported success when the copy had failed.
  */

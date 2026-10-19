@@ -132,6 +132,11 @@ describe("Alert", () => {
     expect(screen.getByRole("status").className).toContain("tds-alert--success");
   });
 
+  it("renders the plain block for the neutral tone", () => {
+    render(<Alert tone="neutral" className="mt-2">Hinweis.</Alert>);
+    expect(screen.getByRole("status").className).toBe("tds-alert tds-appear mt-2");
+  });
+
   it("has a CSS rule for every tone", () => {
     const css = readFileSync(join(__dirname, "../../styles/primitives.css"), "utf8");
     for (const tone of ["danger", "warning", "success", "info"]) expect(css).toContain(`.tds-alert--${tone} {`);
@@ -161,6 +166,14 @@ describe("Tabs", () => {
     expect(onChange).toHaveBeenLastCalledWith("c");
     fireEvent.keyDown(screen.getByRole("tablist"), { key: "Home" });
     expect(onChange).toHaveBeenLastCalledWith("a");
+  });
+
+  it("decorates tabs through the slot", () => {
+    render(
+      <Tabs label="x" idPrefix="d" value="b" onChange={() => {}} tabs={[["a", "A"], ["b", "B"]]} decorate={(id, active) => (active ? <i data-mark={id} /> : null)} />,
+    );
+    expect(document.querySelectorAll("[data-mark]")).toHaveLength(1);
+    expect(screen.getByRole("tab", { name: "B" }).querySelector('[data-mark="b"]')).not.toBeNull();
   });
 });
 

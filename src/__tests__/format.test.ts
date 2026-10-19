@@ -85,6 +85,13 @@ describe("money", () => {
     for (const bad of ["", "abc", "9,999", "-5", "9,9,9", "1e3", null]) expect(parseEuros(bad)).toBeNull();
   });
 
+  it("rounds sub-cent input half up only when asked", () => {
+    expect(parseEuros("1.999", { round: true })).toBe(200);
+    expect(parseEuros("1,004", { round: true })).toBe(100);
+    expect(parseEuros("1,005", { round: true })).toBe(101);
+    expect(parseEuros("abc", { round: true })).toBeNull();
+  });
+
   it("prefills an editable price", () => {
     expect(centsToEuroInput(990)).toBe("9,90");
     expect(centsToEuroInput(990, "en")).toBe("9.90");
@@ -98,6 +105,8 @@ describe("formatBytes", () => {
     expect(formatBytes(1536)).toBe("1,5 KB");
     expect(formatBytes(1536, "en")).toBe("1.5 KB");
     expect(formatBytes(5 * 1024 * 1024, "de", 2)).toBe("5,00 MB");
+    expect(formatBytes(1048575)).toBe("1,0 MB");
+    expect(formatBytes(1023)).toBe("1.023 B");
   });
 });
 

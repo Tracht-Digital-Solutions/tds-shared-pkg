@@ -26,8 +26,8 @@ src/
 ├── api/                   apiBase / apiUrl / apiFetch transport; React-free
 ├── data/                  client-only in-memory SWR cache (React)
 ├── markdown/              escape-first renderMarkdown (the panel's XSS boundary)
-├── format/, download/, clipboard/, zip/, alert/   small promoted helpers, own entries (0.58)
-├── admin/                 panel runtime-settings + pairing hooks (0.58)
+├── format/, download/, clipboard/, zip/, alert/   small promoted helpers, own entries (0.59)
+├── admin/                 panel runtime-settings + pairing hooks (0.59)
 ├── components/            shared React islands
 ├── consent/               consent store for cookie/ads notices
 ├── permissions/           permission catalog (PORTAL_PERMISSIONS)

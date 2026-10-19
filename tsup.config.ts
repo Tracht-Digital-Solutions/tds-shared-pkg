@@ -57,7 +57,7 @@ export default defineConfig({
     // The file drop zone the tool islands render. React; its own entry so a
     // tool imports exactly this and not the component barrel.
     "dropzone/index": "src/dropzone/index.tsx",
-    // Small helpers every tool pack and panel extension had copied (0.58).
+    // Small helpers every tool pack and panel extension had copied (0.59).
     // Each its own entry so an island pays only for what it imports; none of
     // them touches `motion`.
     "alert/index": "src/alert/index.ts",

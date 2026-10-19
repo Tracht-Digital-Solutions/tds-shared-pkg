@@ -1,7 +1,7 @@
 /**
  * Hand a file to the visitor as a download, entirely inside the tab.
  *
- * Before 0.58 every tool pack (pdf, office, legal, media, devkit, qr,
+ * Before 0.59 every tool pack (pdf, office, legal, media, devkit, qr,
  * businesscard) and the install wizard carried its own copy. One of them never
  * attached the link to the document; one revoked after 2 s, the rest after 1 s.
  * Browser-only (needs `document`); no React.

@@ -1,7 +1,7 @@
 /**
  * The editorial image catalogue the public sites generate (`imageCatalog.json`):
  * look up a picture by URL, emit its `srcset` hints and its JSON-LD
- * `ImageObject`. Promoted in 0.58 from four identical copies that differed only
+ * `ImageObject`. Promoted in 0.59 from four identical copies that differed only
  * in the origin and in what `about` points at.
  */
 

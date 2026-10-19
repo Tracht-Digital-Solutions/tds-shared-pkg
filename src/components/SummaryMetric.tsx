@@ -80,7 +80,7 @@ const countOf = (data: unknown): ReactNode => {
  * The body of a dashboard widget: one big number (`.tds-widget__metric`), a
  * skeleton while it loads (`aria-busy`), `—` when the request failed.
  *
- * Promoted in 0.58 from sixteen extension `WidgetBody` islands. Half of them
+ * Promoted in 0.59 from sixteen extension `WidgetBody` islands. Half of them
  * rendered a failure as `0`, which reads as "nothing to do".
  */
 export default function SummaryMetric<T = Record<string, unknown>>({ endpoint, value, caption, children, refreshOnModule }: SummaryMetricProps<T>) {

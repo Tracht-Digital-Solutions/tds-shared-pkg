@@ -234,7 +234,7 @@ export interface OfflineListOptions {
 /**
  * Fills `list` with the pages this device kept in the worker's page cache,
  * newest first, titled from each page's `<title>` minus the " — site" suffix.
- * For the offline fallback page; plain DOM, browser only. Promoted in 0.58
+ * For the offline fallback page; plain DOM, browser only. Promoted in 0.59
  * from the journal, tools and shop offline pages.
  */
 export async function mountOfflineList(list: HTMLElement, opts: OfflineListOptions = {}): Promise<number> {

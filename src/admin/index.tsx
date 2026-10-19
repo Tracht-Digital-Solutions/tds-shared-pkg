@@ -5,7 +5,7 @@ import { toast } from "../toast";
 /**
  * Panel admin building blocks that extensions had copied from each other:
  * the runtime-settings section (11 copies) and the public-site pairing flow
- * (4 copies). Promoted in 0.58. React, no motion; panel islands only.
+ * (4 copies). Promoted in 0.59. React, no motion; panel islands only.
  */
 
 /* === Runtime settings: `/admin/settings/<namespace>` ==================== */
@@ -40,8 +40,12 @@ export interface RuntimeSettings {
   /** A plain setting's stored value, or `fallback` when unset or empty. */
   value: (key: string, fallback?: string) => string;
   busy: boolean;
-  /** PUTs the inputs, toasts the outcome, reloads on success. Resolves `true` on success. */
-  save: (inputs: SettingInput[], successText?: string) => Promise<boolean>;
+  /**
+   * PUTs the inputs, toasts the outcome, reloads on success. Resolves `true` on
+   * success. `successText: null` skips the success toast, for a caller that
+   * reports a follow-up step (a cache refresh) in its own one.
+   */
+  save: (inputs: SettingInput[], successText?: string | null) => Promise<boolean>;
   reload: () => Promise<void>;
 }
 
@@ -83,7 +87,7 @@ export function useRuntimeSettings(namespace: string): RuntimeSettings {
   }, [reload]);
 
   const save = useCallback(
-    async (inputs: SettingInput[], successText = "Gespeichert.") => {
+    async (inputs: SettingInput[], successText: string | null = "Gespeichert.") => {
       setBusy(true);
       const res = await sendJson(path, "PUT", {
         settings: inputs.map((s) => ({ key: s.key, secret: s.secret ?? false, value: s.value })),
@@ -93,7 +97,7 @@ export function useRuntimeSettings(namespace: string): RuntimeSettings {
         toast.danger(describeFailure(res, "Speichern fehlgeschlagen", { adminOnly: true }));
         return false;
       }
-      toast.success(successText);
+      if (successText !== null) toast.success(successText);
       await reload();
       return true;
     },
@@ -162,6 +166,12 @@ export interface PairingOptions {
   profile: string;
   /** How the site is named in messages: "Der Blog", "Die Website". */
   subject: string;
+  /** Body of the cache-rebuild request. Default `{}`. */
+  rebuildBody?: unknown;
+  /** The success toast of a rebuild. Default "Cache-Neubau wurde angefragt." */
+  rebuildSuccess?: string;
+  /** The 422 hint when the API names no cause, e.g. which binding to pick. */
+  ambiguousHint?: string;
 }
 
 export interface Pairing {
@@ -174,6 +184,7 @@ export interface Pairing {
   installUrl: string | null;
   /** Site keys the API offered when the binding was ambiguous (422). */
   candidates: string[] | null;
+  /** Pairs the site. `bindings` is sent only when given (even `{}`). */
   connect: (origin: string, bindings?: Record<string, string>) => Promise<boolean>;
   disconnect: () => Promise<boolean>;
   rebuildCache: () => Promise<boolean>;
@@ -188,7 +199,14 @@ const reasonOf = (body: Record<string, unknown>): string | null =>
  * it to rebuild its page cache. The UI (fields, buttons, the confirm before a
  * disconnect) stays in the island; this owns the requests and their wording.
  */
-export function usePairing({ base, profile, subject }: PairingOptions): Pairing {
+export function usePairing({
+  base,
+  profile,
+  subject,
+  rebuildBody = {},
+  rebuildSuccess = "Cache-Neubau wurde angefragt.",
+  ambiguousHint = "Bitte eine reine HTTPS-Adresse und bei mehreren Websites den passenden Website-Schlüssel angeben.",
+}: PairingOptions): Pairing {
   const [connection, setConnection] = useState<SiteConnection | null>(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -216,12 +234,18 @@ export function usePairing({ base, profile, subject }: PairingOptions): Pairing 
   }, [reload]);
 
   const connect = useCallback(
-    async (origin: string, bindings: Record<string, string> = {}) => {
+    async (origin: string, bindings?: Record<string, string>) => {
       setConnecting(true);
       setStatus(null);
       setInstallUrl(null);
       try {
-        const res = await sendJson(`${base}/connection/pairing`, "POST", { origin: origin.trim(), profile, bindings });
+        // `bindings` only when the caller has any to name (blog ↔ website); a
+        // profile without them (tools, cards) sends none, as it always did.
+        const res = await sendJson(`${base}/connection/pairing`, "POST", {
+          origin: origin.trim(),
+          profile,
+          ...(bindings === undefined ? {} : { bindings }),
+        });
         const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
         if (!res.ok) {
           if (Array.isArray(body.candidates)) setCandidates(body.candidates.map(String));
@@ -230,7 +254,7 @@ export function usePairing({ base, profile, subject }: PairingOptions): Pairing 
           const reason = reasonOf(body);
           setStatus(
             res.status === 422
-              ? (reason ?? "Bitte eine reine HTTPS-Adresse und bei mehreren Websites den passenden Website-Schlüssel angeben.")
+              ? (reason ?? ambiguousHint)
               : `Verbinden fehlgeschlagen (HTTP ${res.status})${reason ? `: ${reason}` : "."}`,
           );
           return false;
@@ -256,7 +280,7 @@ export function usePairing({ base, profile, subject }: PairingOptions): Pairing 
         setConnecting(false);
       }
     },
-    [base, profile, subject, reload],
+    [base, profile, subject, ambiguousHint, reload],
   );
 
   const disconnect = useCallback(async () => {
@@ -273,9 +297,9 @@ export function usePairing({ base, profile, subject }: PairingOptions): Pairing 
 
   const rebuildCache = useCallback(async () => {
     setStatus(null);
-    const res = await sendJson(`${base}/cache/rebuild`, "POST", {}).catch(() => null);
+    const res = await sendJson(`${base}/cache/rebuild`, "POST", rebuildBody).catch(() => null);
     if (res !== null && res.ok) {
-      toast.success("Cache-Neubau wurde angefragt.");
+      toast.success(rebuildSuccess);
       return true;
     }
     if (res?.status === 422) setStatus("Die gespeicherte Website-Adresse ist ungültig.");
@@ -283,7 +307,8 @@ export function usePairing({ base, profile, subject }: PairingOptions): Pairing 
     else if (res?.status === 502) setStatus(`${subject} ist erreichbar, aber der Cache-Neubau ist fehlgeschlagen. Bitte erneut versuchen.`);
     else toast.danger(describeFailure(res, "Cache-Neubau fehlgeschlagen"));
     return false;
-  }, [base, subject]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a literal body is a new object each render
+  }, [base, subject, rebuildSuccess]);
 
   return { connection, loading, connecting, status, installUrl, candidates, connect, disconnect, rebuildCache, reload };
 }

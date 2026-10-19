@@ -20,7 +20,7 @@
  * without an install-ordering problem — but NOT a naive regex any more; see
  * `readTag` for why that mattered.
  *
- * Shipped by tds-shared since 0.58 as the `tds-lint-primitives` bin, so the
+ * Shipped by tds-shared since 0.59 as the `tds-lint-primitives` bin, so the
  * ~30 consumer packages stop carrying byte-identical copies that drift (two
  * variants had formed; this is their union). It lives beside the classes it
  * guards: a new primitive and its allow-list entry ship in one release.

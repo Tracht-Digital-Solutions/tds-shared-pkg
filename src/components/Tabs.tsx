@@ -10,6 +10,12 @@ export interface TabsProps<T extends string> {
   /** Prefix for the tab and panel ids (`<prefix>-tab-<id>`, `<prefix>-panel-<id>`). Unique per page. */
   idPrefix: string;
   className?: string;
+  /**
+   * Extra content inside each tab after its label, e.g. the gliding
+   * `<TabIndicator>` from `./motion/react` on the active one. A slot rather than
+   * an import, so this barrel component never pulls in `motion`.
+   */
+  decorate?: (id: T, active: boolean) => ReactNode;
 }
 
 /** The ids `Tabs` and `TabPanel` agree on. */
@@ -20,11 +26,11 @@ export const tabPanelId = (prefix: string, id: string) => `${prefix}-panel-${id}
  * A WAI-ARIA tab list of chips: `role="tablist"`, roving `tabindex`,
  * ←/→/Home/End move and activate. Pair each view with a `<TabPanel>`.
  *
- * Promoted in 0.58 from five panel copies (access, profile, analytics, Lexware,
+ * Promoted in 0.59 from five panel copies (access, profile, analytics, Lexware,
  * wiki), which disagreed on the active class and on whether a tab named its
  * panel at all.
  */
-export default function Tabs<T extends string>({ tabs, value, onChange, label, idPrefix, className }: TabsProps<T>) {
+export default function Tabs<T extends string>({ tabs, value, onChange, label, idPrefix, className, decorate }: TabsProps<T>) {
   const list = useRef<HTMLDivElement>(null);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -58,6 +64,7 @@ export default function Tabs<T extends string>({ tabs, value, onChange, label, i
             onClick={() => onChange(id)}
           >
             {text}
+            {decorate ? decorate(id, active) : null}
           </button>
         );
       })}

@@ -2,7 +2,7 @@
  * Paths the panel has taken out of a site's index — the subtraction on top of
  * the sitemap the site builds from its corpus.
  *
- * Promoted in 0.58 from the landing page, the journal and the tools site,
+ * Promoted in 0.59 from the landing page, the journal and the tools site,
  * which kept the same matcher and loader with a different `SITE_ID`. What
  * differs per site is injected: how a URL maps to its language twin (a pure
  * prefix on the tools site, translated taxonomy segments on the journal), the

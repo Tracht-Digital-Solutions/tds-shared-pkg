@@ -56,7 +56,7 @@ Server-side helpers the public sites used to copy; no `node:` imports; never re-
 - `escapeXml`, `renderSitemapIndex(sitemaps, lastmod?)`, `serializeJsonLd` (escapes `<` and U+2028/2029 so panel text can't
   close the script tag).
 
-### Sitemap, exclusions, images, scripts (0.58)
+### Sitemap, exclusions, images, scripts (0.59)
 
 - `createSitemapExclusions({ siteId, contentBase, read, memo, hreflangGroup?, disabled? })` → `exclusionPatterns`,
   `isExcluded`. The site injects its keyed reader, its generation memo and its language-twin mapping (prefix on

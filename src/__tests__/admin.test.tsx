@@ -61,6 +61,21 @@ describe("useRuntimeSettings", () => {
     t.stop();
   });
 
+  it("saves without a success toast when the caller reports its own", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(json({ settings: [] })).mockResolvedValueOnce(json({})).mockResolvedValueOnce(json({ settings: [] })),
+    );
+    const t = toasts();
+    const { result } = renderHook(() => useRuntimeSettings("tools"));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    await act(async () => {
+      expect(await result.current.save([{ key: "a", value: "1" }], null)).toBe(true);
+    });
+    expect(t.seen).toHaveLength(0);
+    t.stop();
+  });
+
   it("shows admin-only and unreachable in-flow, never an endless spinner", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("", { status: 403 })));
     const a = renderHook(() => useRuntimeSettings("x"));
@@ -102,6 +117,27 @@ describe("usePairing", () => {
     await waitFor(() => expect(result.current.connection).toEqual({ origin: "https://a" }));
     await act(async () => void (await result.current.connect("https://a")));
     expect(result.current.candidates).toEqual(["a", "b"]);
+  });
+
+  it("sends bindings only when given, and the configured rebuild body", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("", { status: 404 }))
+      .mockResolvedValueOnce(json({ delivered: true }))
+      .mockResolvedValueOnce(json({ connection: { origin: "https://t" } }))
+      .mockResolvedValueOnce(json({}));
+    vi.stubGlobal("fetch", fetch);
+    const t = toasts();
+    const { result } = renderHook(() =>
+      usePairing({ base: "/admin/tools", profile: "tools", subject: "Die Tools-Site", rebuildBody: { all: true }, rebuildSuccess: "Angestoßen." }),
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => void (await result.current.connect("https://t")));
+    expect(JSON.parse(fetch.mock.calls[1]![1].body)).toEqual({ origin: "https://t", profile: "tools" });
+    await act(async () => void (await result.current.rebuildCache()));
+    expect(JSON.parse(fetch.mock.calls[3]![1].body)).toEqual({ all: true });
+    expect(t.seen.at(-1)).toMatchObject({ variant: "success", message: "Angestoßen." });
+    t.stop();
   });
 
   it("disconnects and rebuilds with toasts", async () => {

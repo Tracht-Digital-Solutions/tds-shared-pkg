@@ -6,7 +6,7 @@
  * a tool. Names are UTF-8 (general-purpose flag bit 11); sizes are 32-bit — a
  * browser tab never gets near 4 GB. Output opens in every unzip tool.
  *
- * Promoted in 0.58 from the devkit pack (writer + reader + path guard) and the
+ * Promoted in 0.59 from the devkit pack (writer + reader + path guard) and the
  * media pack (UTF-8 names, real timestamps), which had grown two copies.
  */
 

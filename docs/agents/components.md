@@ -43,9 +43,10 @@
 - **Mount `ToastHost` once per app**; a second renders nothing and warns.
 - A toast may carry `href` for something elsewhere (`.tds-toast__link`), **same-document leading-slash paths only**.
 - `.status-pill` is never a banner; use `.tds-alert` (with `--tds-alert-hue`) or `.form-alert`.
-- **In-flow messages are `<Alert tone>`** (`./alert` or `./components`, 0.58): danger/warning announce as
-  `role="alert"`, success/info as `role="status"`, `.tds-appear` on insertion, nothing for empty children. Never
-  hand-write `<p className="tds-alert …">`. `<FormAlert>` stays the animated login/form variant.
+- **In-flow messages are `<Alert tone>`** (`./alert` or `./components`, 0.59): only `danger` announces as
+  `role="alert"`; `warning`, `success`, `info` and `neutral` (plain `.tds-alert`) are `role="status"`. `.tds-appear`
+  on insertion, nothing for empty children, a paragraph (no block children). Never hand-write
+  `<p className="tds-alert …">`. `<FormAlert>` stays the animated login/form variant.
 
 ## API calls
 
@@ -171,7 +172,7 @@ optional paste (`paste`), filtering by `accept` (dropped and pasted files too; `
 - The input is visually hidden inside the zone's `<label>` and named by `aria-label={label}`; tests find it with
   `getByLabelText(label)`. Focus shows on the zone (`:has(:focus-visible)`).
 
-## Helpers promoted in 0.58 (one copy each, own entry points)
+## Helpers promoted in 0.59 (one copy each, own entry points)
 
 | Entry | What | Replaced |
 |---|---|---|

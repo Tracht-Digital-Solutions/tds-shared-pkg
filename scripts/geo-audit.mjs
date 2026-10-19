@@ -18,7 +18,7 @@
  * It only loads the site it is pointed at — never point it at an API, and
  * never at production from a development machine.
  *
- * ── One script, four profiles (tds-shared 0.58) ───────────────────────────
+ * ── One script, four profiles (tds-shared 0.59) ───────────────────────────
  * The landing page, journal, tools site and shop each kept a byte-identical
  * copy of this file with only `PROFILE` differing, plus a test per repo to
  * keep the copies' check lists in step. The body now ships here; each site

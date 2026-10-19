@@ -2,7 +2,7 @@
  * Display formatting shared by every frontend: dates, money and byte sizes.
  *
  * Plain functions, no React, no DOM — server-safe for Astro frontmatter and
- * small enough for a tool island. Before 0.58 each panel extension, tool pack
+ * small enough for a tool island. Before 0.59 each panel extension, tool pack
  * and site carried its own copy, and the copies disagreed: three English
  * locales (en-US, en-GB, en-IE), two time-zone rules for the same SQL column
  * shape, and a euro parser that turned "9,90" into NaN.
@@ -136,17 +136,22 @@ export function formatPrice(cents: number, currency: string, lang: FormatLang = 
  *
  * Accepts `9,90`, `9.90`, `1.250,50`, `1 250,5`, `12 €`. With a comma present,
  * dots are thousands separators; without one, a single dot is the decimal mark.
- * More than two decimals, a negative amount or anything else is `null` —
- * money is never rounded silently. `0` is valid; a caller that needs a positive
- * amount checks for it.
+ * A negative amount or anything else is `null`. More than two decimals is
+ * `null` too unless `round` is set — then `1,999` is rounded to `200` cents
+ * (half up), for forms that would rather bill the nearest cent than refuse.
+ * `0` is valid; a caller that needs a positive amount checks for it.
  */
-export function parseEuros(raw: string | null | undefined): number | null {
+export function parseEuros(raw: string | null | undefined, opts: { round?: boolean } = {}): number | null {
   const s = (raw ?? "").trim().replace(/[\s €]/g, "");
   if (s === "") return null;
   const normalised = s.includes(",") ? s.replace(/\./g, "").replace(",", ".") : s;
-  const m = /^(\d+)(?:\.(\d{1,2}))?$/.exec(normalised);
+  const m = /^(\d+)(?:\.(\d+))?$/.exec(normalised);
   if (!m) return null;
-  return Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0"));
+  const decimals = m[2] ?? "";
+  if (decimals.length > 2 && !opts.round) return null;
+  // Integer arithmetic on the digits: `Number("1.005") * 100` is 100.49999….
+  const cents = Number(m[1]) * 100 + Number(decimals.slice(0, 2).padEnd(2, "0"));
+  return decimals.length > 2 && Number(decimals[2]) >= 5 ? cents + 1 : cents;
 }
 
 /** Cents → the editable euro text (`990` → `9,90`), for prefilling a price field. */
@@ -164,7 +169,10 @@ export function formatBytes(bytes: number, lang: FormatLang = "de", digits = 1):
   const units = ["B", "KB", "MB", "GB"];
   let v = Math.max(0, bytes);
   let u = 0;
-  while (v >= 1024 && u < units.length - 1) {
+  // Step up while the ROUNDED value would read 1024 or more: 1 048 575 B is
+  // "1,0 MB", never "1.024,0 KB".
+  const shown = (n: number, unit: number) => Number(n.toFixed(unit === 0 ? 0 : digits));
+  while (shown(v, u) >= 1024 && u < units.length - 1) {
     v /= 1024;
     u++;
   }

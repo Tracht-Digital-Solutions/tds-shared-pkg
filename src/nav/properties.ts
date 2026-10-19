@@ -104,7 +104,7 @@ export function propertyNav(
 /**
  * The legal pages every property links to. They live on the main site only
  * (one operator, one imprint), in German for both languages — the legal text
- * is binding in German. Five sites had these URLs hard-coded (0.58).
+ * is binding in German. Five sites had these URLs hard-coded (0.59).
  */
 export const LEGAL_LINKS = {
   imprint: `${PROPERTY_ORIGINS.main}/legal/impressum`,

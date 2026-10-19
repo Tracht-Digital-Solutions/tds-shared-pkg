@@ -129,7 +129,7 @@ export function renderSitemapUrl(url: SitemapUrlXml): string {
 
 /**
  * A `<urlset>` with the xhtml (hreflang) and image namespaces.
- * Promoted in 0.58 from the landing page, journal and tools sitemaps.
+ * Promoted in 0.59 from the landing page, journal and tools sitemaps.
  */
 export function renderUrlset(urls: readonly SitemapUrlXml[]): string {
   return (

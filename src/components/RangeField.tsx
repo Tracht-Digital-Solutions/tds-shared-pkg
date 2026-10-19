@@ -19,7 +19,7 @@ export interface RangeFieldProps {
  * A labelled range slider that shows its current value: `label: value unit`.
  * The label wraps the input, so the slider has its accessible name.
  *
- * Promoted in 0.58 from fourteen copies across the pdf, media, office, qr and
+ * Promoted in 0.59 from fourteen copies across the pdf, media, office, qr and
  * textkit tool packs.
  */
 export default function RangeField({ label, value, onChange, min, max, step = 1, unit, display, disabled, className }: RangeFieldProps) {

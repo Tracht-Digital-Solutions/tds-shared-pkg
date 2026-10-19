@@ -23,7 +23,7 @@ export function statusLabel(map: Readonly<Record<string, StatusStyle>>, status: 
  * an unknown or aliased colour (`muted`, `error`) falls back to a real variant
  * instead of an unstyled class.
  *
- * Promoted in 0.58: projects, billing, referrals and the shop each kept a
+ * Promoted in 0.59: projects, billing, referrals and the shop each kept a
  * label + `chip--*` map, one of them with a tone that was not a chip variant.
  */
 export default function StatusChip({ status, map, className }: StatusChipProps) {
