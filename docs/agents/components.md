@@ -159,11 +159,12 @@ The six brand-geometry covers for posts without a picture, used by the blog and 
 
 ## File drop zone: `<FileDropZone>` from `./dropzone` + `.tds-dropzone` (0.56)
 
-Every tool that takes files renders this instead of a bare `<input type="file">`: click to pick, drag and drop,
+Every tool and every panel upload (documents, legal PDFs, profile avatar, card images, ticket attachments)
+renders this instead of a bare `<input type="file">`: click to pick, drag and drop,
 optional paste (`paste`), filtering by `accept` (dropped and pasted files too; `onReject` gets the rest).
 
 - **Its own entry**, so a tool island never pulls the component barrel. Tool packs declare `tds-shared` as a peer
-  (`>=0.56.0 <1`), the site supplies it.
+  (`>=0.59.1 <1` since the 0.59 helpers), the site supplies it.
 - **States are data attributes**, drawn by `.tds-dropzone` in `primitives.css`: `data-page-drag` (files over the page:
   the fill breathes), `data-over` (lift, accent wash, hard offset on public surfaces, bobbing arrow), `data-dropped`
   (one pop, cleared on the zone's own `animationend`). Under reduced motion only the fills change.
