@@ -55,7 +55,12 @@ export function createImageCatalog(raw: Record<string, unknown>, { origin, about
       alt: image.alt[lang],
       width: image.width,
       height: image.height,
-      srcSet: image.variants.map((v) => `${origin}${v.src}?v=${v.hash} ${v.width}w`).join(", "),
+      // Site-relative on purpose. In production it is the same host, so
+      // nothing changes there; but a dev or CI server rendering the page
+      // fetched every variant from the LIVE origin — and when that host was
+      // slow, the shop's accessibility audit never reached `networkidle`
+      // (2026-10-21). Only the JSON-LD below needs the absolute URL.
+      srcSet: image.variants.map((v) => `${v.src}?v=${v.hash} ${v.width}w`).join(", "),
       sizes,
       decoding: "async" as const,
     };

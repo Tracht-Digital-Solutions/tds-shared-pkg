@@ -90,7 +90,9 @@ describe("image catalogue", () => {
     const c = createImageCatalog(raw, { origin: "https://s" });
     expect(c.imageInfo("/img/a-800.webp")?.src).toBe("/img/a.webp");
     expect(c.imageInfo("https://other/img/a.webp")).toBeUndefined();
-    expect(c.imageHints("/img/a.webp", "en")?.srcSet).toBe("https://s/img/a-800.webp?v=h1 800w");
+    // srcset is site-relative: a dev server must never fetch from the live origin.
+    expect(c.imageHints("/img/a.webp", "en")?.srcSet).toBe("/img/a-800.webp?v=h1 800w");
+    expect(c.imageObject("/img/a.webp", "de", "https://s/p")?.contentUrl).toBe("https://s/img/a.webp");
     expect(c.imageObject("/img/a.webp", "de", "https://s/p")?.about).toEqual({ "@id": "https://s/p#webpage" });
     expect(createImageCatalog(raw, { origin: "https://s", about: "page" }).imageObject("/img/a.webp", "de", "https://s/p")?.about).toEqual({
       "@id": "https://s/p",
