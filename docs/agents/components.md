@@ -191,3 +191,16 @@ the island; `usePairing` owns only the requests and their wording.
 
 `ThemeToggle`, `Avatar` (`.tds-avatar` in `primitives.css`), `FormAlert`, `ConfirmDialog`, `CookieNotice`, `LiveChatCta`,
 `ToastHost`, `Spinner`, `Skeleton`, `SkeletonText`. Their CSS lives in `base.css` so base-only consumers get it.
+
+## Public pages without React: `./dom` + `client:when` (0.60)
+
+A React island costs a page the whole runtime (~200 KB), even when it renders nothing. On public pages:
+
+- **Theme toggle and consent link are plain DOM**: `themeToggleMarkup()` / `consentLinkMarkup()` via
+  `<Fragment set:html>`, wired once per layout with `mountThemeToggles()` / `mountConsentLinks()`. The toggle's
+  behaviour is `attachThemeToggle` (`src/theme/toggle.ts`), shared with the React `ThemeToggle` — change it there.
+- **`client:when`** (register `tdsClientDirectives()` in `astro.config`, declare the attribute in a site `.d.ts`)
+  hydrates only on need: `"session"` for `AccountMenu`, `"consent"` for `ConsentBanner` (also on
+  `openConsentSettings()`; the banner takes the pending request on mount), `"chat:<frontend>:<lang>"` for
+  `LiveChatCta`. Unknown values hydrate like `client:idle`.
+- `consentStoreEntry.test.ts` fails if either entry reaches React.

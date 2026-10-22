@@ -921,6 +921,26 @@ input[type="radio"] {
     animation: tds-theme-icon-turn var(--tds-dur-bounce) var(--tds-ease-bounce-in) both;
   }
 }
+/* The plain-DOM toggle (`tds-shared/dom`) shows its icon by the document's
+   theme rather than by script state, so a dark-mode visitor sees the sun
+   before any script runs. The React toggle swaps with utilities instead. */
+.tds-theme-toggle__sun {
+  display: none;
+}
+[data-theme="dark"] .tds-theme-toggle__sun {
+  display: block;
+}
+[data-theme="dark"] .tds-theme-toggle__moon {
+  display: none;
+}
+/* A light preview copy inside a dark page still has the dark root above it;
+   the copy's own attribute has to win. */
+.tds-theme-preview__page[data-theme="light"] .tds-theme-toggle__sun {
+  display: none;
+}
+.tds-theme-preview__page[data-theme="light"] .tds-theme-toggle__moon {
+  display: block;
+}
 @keyframes tds-theme-icon-turn {
   from {
     transform: rotate(-120deg) scale(0.4);

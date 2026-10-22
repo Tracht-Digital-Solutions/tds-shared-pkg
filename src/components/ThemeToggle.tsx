@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import { THEME_ATTRIBUTE, type Theme } from "../design/index.js";
-import { applyThemePreference, onThemeChange } from "../theme/index.js";
-import { cssEase } from "../motion/index.js";
+import { onThemeChange } from "../theme/index.js";
+import { attachThemeToggle, MOON_PATH, SUN_RAYS } from "../theme/toggle.js";
 
 export interface ThemeToggleProps {
   /** aria-label / title shown in light mode (tap to go dark). */
@@ -19,60 +19,15 @@ export interface ThemeToggleProps {
  * each app's Layout <head>) so the button doesn't flash to a default and
  * then correct itself.
  *
- * When the View Transitions API is available (and the user hasn't asked
- * for reduced motion) the incoming theme wipes in as a circle growing
- * from the centre of the button; the supporting CSS ships in
- * `@tracht-digital-solutions/tds-shared/styles/base.css`. On a coarse
- * pointer the new snapshot drops in from the top as a curtain, because the circle
- * is driven by `clip-path` and that is not composited — see the note at
- * the branch. Otherwise it flips instantly and the token transition gives
- * a soft colour crossfade.
+ * The behaviour — the flip, its View Transition and the hover preview — is
+ * `attachThemeToggle` in `../theme/toggle`, shared with the plain-DOM toggle
+ * the public sites render without React (`./dom`). This component only owns
+ * the icon and label state.
  *
  * Icons show the *target* state — moon in light mode (tap to go dark),
  * sun in dark mode (tap to go light), matching the Material/iOS
  * convention.
- *
- * On a fine pointer, hovering the button also PREVIEWS the flip: a circular
- * region follows the cursor and shows where the page is going, darker in light
- * mode and lighter in dark. It lasts exactly as long as the hover. See
- * `.tds-theme-preview` in base.css for the shape, and the note there on why it
- * is a gradient rather than a `clip-path`.
  */
-/** A scrolled box in the copy and the offsets its original had. */
-type ScrollState = [copy: Element, left: number, top: number];
-
-/**
- * Carries over the state `cloneNode` leaves behind. Walks the original and the
- * copy in parallel — they have the same shape, because nothing has been
- * stripped yet.
- *
- *  - Running animations: the CURRENT animated transform and opacity, inline.
- *  - Scroll offsets of inner scroll boxes (a carousel, a code block). They can
- *    only be applied once the copy is in the document, so they are collected.
- */
-function syncCloneState(
-  original: Element,
-  copy: Element,
-  animated: Set<Element>,
-  scrolled: ScrollState[],
-): void {
-  if (original.scrollLeft || original.scrollTop) {
-    scrolled.push([copy, original.scrollLeft, original.scrollTop]);
-  }
-  if (animated.has(original) && (copy instanceof HTMLElement || copy instanceof SVGElement)) {
-    const cs = getComputedStyle(original);
-    const style = copy.style;
-    style.setProperty("transform", cs.transform);
-    style.setProperty("translate", cs.translate);
-    style.setProperty("rotate", cs.rotate);
-    style.setProperty("scale", cs.scale);
-    style.setProperty("opacity", cs.opacity);
-  }
-  const a = original.children;
-  const b = copy.children;
-  for (let i = 0; i < a.length && i < b.length; i++) syncCloneState(a[i]!, b[i]!, animated, scrolled);
-}
-
 export default function ThemeToggle({
   labelToDark = "Auf Dunkel umschalten",
   labelToLight = "Auf Hell umschalten",
@@ -88,426 +43,38 @@ export default function ThemeToggle({
     const current = document.documentElement.getAttribute(THEME_ATTRIBUTE);
     setTheme(current === "dark" ? "dark" : "light");
     setMounted(true);
-    /**
-     * Follow the theme when somebody ELSE changes it.
-     *
-     * The state used to be seeded here and then only ever updated by this
-     * button's own flip, so every other writer left the icon showing the wrong
-     * target: the profile page, `startSystemThemeSync` following the OS, the
-     * panel host restoring a per-user choice. `applyThemePreference` is the
-     * single write path and announces itself, so this is one subscription.
-     *
-     * The hover preview does NOT depend on this — it reads the attribute at the
-     * moment it opens (see `openPreview`), because a preview built in the theme
-     * the page is already in shows nothing at all.
-     */
+    // Follow the theme when somebody ELSE changes it too — the profile page,
+    // `startSystemThemeSync` following the OS, the panel host restoring a
+    // per-user choice. `applyThemePreference` is the single write path and
+    // announces itself, so this is one subscription.
     return onThemeChange((detail) => setTheme(detail.theme));
   }, []);
 
-  // --- Preview under the pointer --------------------------------------
-  // While the button is hovered, a circular region around the cursor shows
-  // where the page is going. The shape, the ink and the falloff are
-  // `.tds-theme-preview` in base.css (and the note there on why it is a
-  // gradient rather than a clip); this only owns the element's life and its
-  // two coordinates.
-  //
-  // Refs throughout, no state: a `pointermove` fires many times per frame and
-  // re-rendering the button on each one would be the most expensive way
-  // imaginable to move a background.
-  // `previewRef` holds the element for as long as it is IN THE DOM, fading
-  // included — not only while it is wanted. The distinction is load-bearing
-  // twice over: a pointer that re-enters during the fade reuses the element
-  // instead of stacking a second one over it, and an unmount during the fade
-  // still has something to remove.
-  const previewRef = useRef<HTMLDivElement | null>(null);
-  const frameRef = useRef(0);
-  const removeTimerRef = useRef(0);
-  const pointRef = useRef({ x: 0, y: 0 });
-
-  /**
-   * A copy of the page, in the TARGET theme.
-   *
-   * This is what makes the region read as the real dark mode rather than as a
-   * dark sheet over the light one (asked for 2026-09-30, after a flat fill was
-   * tried first). The dark tokens reach it because `base.css` matches a bare
-   * `[data-theme="dark"]` as well as `:root[…]` — see the long note there,
-   * including what it cannot reach (Tailwind's non-arbitrary utilities compile
-   * their colours as literals).
-   *
-   * `<body>`'s CHILDREN, not `<body>` itself: cloning the body element would put
-   * a second `<body>` inside a `<div>`, which the parser is entitled to move.
-   * The wrapper paints `--color-paper` for the same reason — the page background
-   * lives on `<body>` and does not come with the children.
-   *
-   * What is stripped, and why each one matters:
-   *  - `name` on form controls, so a cloned radio group cannot steal the
-   *    selection of the real one.
-   *  - `<script>`, `<style id>` and `<link>`: a clone must not re-run or
-   *    re-register anything. (`cloneNode` does not execute scripts, but a
-   *    `<script>` moved into the document by `appendChild` would.)
-   *  - `inert` + `aria-hidden` on the overlay, so nothing inside is focusable or
-   *    announced.
-   *
-   * ### `id`s are KEPT (2026-10-07)
-   *
-   * They used to be stripped, to keep ids unique. That cost every stylesheet
-   * rule written against an id — the landingpage's whole contact section is
-   * `#contact .contact-…` — so inside the circle those elements fell back to
-   * browser defaults, wrapped differently, and everything below them slid out
-   * of line with the real page ("die Darkmode-Preview wird verschoben
-   * angezeigt"; measured: 1090 misplaced elements on the landingpage, 11 with
-   * the ids kept). The duplicates are harmless because of ORDER: the overlay
-   * is appended as the last child of `<body>`, and `getElementById`,
-   * `querySelector`, `<label for>` and every `aria-*` reference resolve to the
-   * FIRST match in tree order — the real element. The copy lives for one hover.
-   *
-   * ### Running animations are frozen, not reset
-   *
-   * `animation: none` inside the copy (base.css) would snap an animated element
-   * back to its resting transform — the landingpage's floating hero shapes sat
-   * 60px away from the real ones. Each animated element's copy takes the
-   * current computed transform and opacity as inline style instead.
-   *
-   * ### `data-theme-preview="skip"`
-   *
-   * A consumer can keep an element out of the copy. There is one kind that has
-   * to be: chrome a script POSITIONS, rather than chrome the layout places. The
-   * landingpage's custom cursor is two `position: fixed` dots moved by a
-   * transform on every `mousemove` — cloned, they freeze at wherever they were
-   * when the copy was taken and render a second, stuck cursor inside the circle.
-   * Reported as "der Pointer geht stuck, wenn man über die modes hovert".
-   *
-   * Fixed chrome the layout places (a bar, a floating pill, the bookmarks) is
-   * NOT skipped: it sits at the same viewport position in the copy, so inside
-   * the circle it correctly appears in the other theme.
-   *
-   * It is deliberately built once per hover and thrown away on leave. Caching it
-   * across hovers would mean tracking every DOM change on the page for the sake
-   * of a preview.
-   */
-  const buildClone = (target: Theme): { page: HTMLElement; restoreScroll: () => void } => {
-    const page = document.createElement("div");
-    page.className = "tds-theme-preview__page";
-    page.setAttribute("data-theme", target);
-    const animated = new Set<Element>();
-    const scrolled: ScrollState[] = [];
-    for (const animation of document.getAnimations?.() ?? []) {
-      const target = (animation.effect as KeyframeEffect | null)?.target;
-      if (target) animated.add(target);
-    }
-    for (const node of Array.from(document.body.children)) {
-      // The overlay itself is a child of body by the time a second one opens.
-      if (node instanceof HTMLElement && node.classList.contains("tds-theme-preview")) continue;
-      if (node.tagName === "SCRIPT" || node.tagName === "LINK") continue;
-      if (node instanceof HTMLElement && node.dataset.themePreview === "skip") continue;
-      const copy = node.cloneNode(true) as Element;
-      syncCloneState(node, copy, animated, scrolled);
-      page.appendChild(copy);
-    }
-    for (const stray of page.querySelectorAll(
-      'script, link, [name], [data-theme-preview="skip"]',
-    )) {
-      if (
-        stray.tagName === "SCRIPT" ||
-        stray.tagName === "LINK" ||
-        (stray as HTMLElement).dataset?.themePreview === "skip"
-      ) {
-        stray.remove();
-        continue;
-      }
-      stray.removeAttribute("name");
-    }
-    page.inert = true;
-    // Scroll offsets take effect only in the document: the caller runs this
-    // after appending the overlay. `instant`, or a `scroll-behavior: smooth`
-    // box would glide into place inside the circle.
-    const restoreScroll = () => {
-      for (const [copy, left, top] of scrolled) copy.scrollTo?.({ left, top, behavior: "instant" });
-    };
-    return { page, restoreScroll };
-  };
-
-  /** Lines the clone up with the real page at the current scroll position. */
-  const alignClone = () => {
-    const page = previewRef.current?.firstElementChild as HTMLElement | null;
-    if (page) page.style.top = `${-window.scrollY}px`;
-  };
-
-  const paintPreview = () => {
-    frameRef.current = 0;
-    const el = previewRef.current;
-    if (!el) return;
-    el.style.setProperty("--tds-theme-preview-x", `${pointRef.current.x}px`);
-    el.style.setProperty("--tds-theme-preview-y", `${pointRef.current.y}px`);
-  };
-
-  const trackPointer = (event: { clientX: number; clientY: number }) => {
-    pointRef.current = { x: event.clientX, y: event.clientY };
-    if (!previewRef.current || frameRef.current) return;
-    frameRef.current = requestAnimationFrame(paintPreview);
-  };
-
-  const discardPreview = () => {
-    if (removeTimerRef.current) {
-      clearTimeout(removeTimerRef.current);
-      removeTimerRef.current = 0;
-    }
-    if (frameRef.current) {
-      cancelAnimationFrame(frameRef.current);
-      frameRef.current = 0;
-    }
-    previewRef.current?.remove();
-    previewRef.current = null;
-  };
-
-  const closePreview = () => {
-    if (frameRef.current) {
-      cancelAnimationFrame(frameRef.current);
-      frameRef.current = 0;
-    }
-    const el = previewRef.current;
-    if (!el || removeTimerRef.current) return;
-    el.removeAttribute("data-visible");
-    // A timer rather than `transitionend`: a pointer that entered and left
-    // inside one frame never reached opacity 1, so no transition runs and no
-    // event arrives — and an overlay left behind is invisible, permanent and
-    // sits over the whole page.
-    //
-    // The duration comes from the element's own computed style, so the CSS
-    // stays the single source of truth and a change to `--tds-dur-base` cannot
-    // leave this timer firing mid-fade. `40` is the margin for the frame the
-    // attribute removal lands on; the fallback covers a detached document.
-    const fade = parseFloat(getComputedStyle(el).transitionDuration) || 0.2;
-    removeTimerRef.current = window.setTimeout(discardPreview, fade * 1000 + 40);
-  };
-
-  const openPreview = (event: { clientX: number; clientY: number }) => {
-    // Nothing on a touch screen: there is no hover state to preview under, a
-    // finger covers the circle it would draw, and the tap flips the theme for
-    // real a moment later.
-    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    // Already on screen — either still shown (a second `pointerenter` without
-    // a leave) or mid-fade. Either way, take it back rather than build another.
-    let el = previewRef.current;
-    if (el) {
-      if (removeTimerRef.current) {
-        clearTimeout(removeTimerRef.current);
-        removeTimerRef.current = 0;
-      }
-    } else {
-      el = document.createElement("div");
-      el.className = "tds-theme-preview";
-      el.setAttribute("aria-hidden", "true");
-      /**
-       * The target theme is read from the DOCUMENT, not from `theme` state.
-       *
-       * State is seeded once on mount and updated by this button's own flip, so
-       * any other writer leaves it stale — the profile page, `startSystemThemeSync`
-       * following the OS, another tab, or the panel host restoring a per-user
-       * choice. A stale value here does not produce a subtle bug: it builds the
-       * clone in the theme the page is ALREADY in, and the circle shows no
-       * difference at all.
-       */
-      const current = document.documentElement.getAttribute(THEME_ATTRIBUTE);
-      const clone = buildClone(current === "dark" ? "light" : "dark");
-      el.appendChild(clone.page);
-      document.body.appendChild(el);
-      clone.restoreScroll();
-      previewRef.current = el;
-    }
-    // Place it BEFORE it becomes visible, or the first frame fades in at the
-    // centre of the viewport and slides to the cursor.
-    pointRef.current = { x: event.clientX, y: event.clientY };
-    paintPreview();
-    alignClone();
-    const target = el;
-    requestAnimationFrame(() => {
-      if (previewRef.current === target) target.setAttribute("data-visible", "true");
-    });
-  };
-
-  // NATIVE listeners, not `onPointerEnter`/`onPointerLeave` props, and the
-  // reason is React's event system rather than preference: React synthesises
-  // enter and leave from delegated `pointerover`/`pointerout` at the root. The
-  // two SVGs inside the button are event targets of their own, so the
-  // synthesised pair is sensitive to which child the pointer crossed into —
-  // and `fireEvent.pointerEnter` in a test never reaches the synthesis at all.
-  // The native events do not bubble and never fire for a move between
-  // children, which is exactly the semantics wanted here.
-  //
-  // Unmounting mid-hover also has to take the overlay with it: it is a child
-  // of `document.body`, so React will not collect it.
   useEffect(() => {
     const button = buttonRef.current;
     if (!button) return;
-    const onEnter = (event: PointerEvent) => openPreview(event);
-    const onMove = (event: PointerEvent) => trackPointer(event);
-    button.addEventListener("pointerenter", onEnter);
-    button.addEventListener("pointermove", onMove);
-    button.addEventListener("pointerleave", closePreview);
-    button.addEventListener("pointercancel", closePreview);
-    // Keyboard focus leaving the button ends the preview too. A pointer parked
-    // on the toggle while the visitor tabs away is the one case
-    // `pointerleave` never fires for.
-    button.addEventListener("blur", closePreview);
-    // A page that scrolls while the preview is open would slide out from under
-    // the copy. Passive and a no-op whenever nothing is open.
-    const onScroll = () => {
-      if (previewRef.current) alignClone();
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      button.removeEventListener("pointerenter", onEnter);
-      button.removeEventListener("pointermove", onMove);
-      button.removeEventListener("pointerleave", closePreview);
-      button.removeEventListener("pointercancel", closePreview);
-      button.removeEventListener("blur", closePreview);
-      // Immediately, fade or no fade — nothing is left to watch it finish.
-      discardPreview();
-    };
-    // The handlers read refs only, so the first closure stays correct for the
-    // component's whole life.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // flushSync so React commits the icon swap before the View Transition
+    // takes its snapshot.
+    return attachThemeToggle(button, {
+      commit: (apply) =>
+        flushSync(() => {
+          setFlipped(true);
+          apply();
+        }),
+    });
   }, []);
-
-  const flip = () => {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    setFlipped(true);
-    // The real transition is about to run over the whole viewport; a preview
-    // of it still lying on top would darken its destination.
-    closePreview();
-
-    // Commit the theme change. Kept as one closure so it can run either
-    // immediately or inside a View Transition snapshot callback.
-    //
-    // Storage + attribute + the `tds:theme-change` announcement all happen in
-    // `applyThemePreference` (tds-shared/theme), the single write path — that
-    // is what lets the frontend host persist the choice per USER without this
-    // component knowing a server exists. The toggle only ever writes an
-    // explicit theme; "System" is chosen on the profile page.
-    const apply = () => {
-      setTheme(next);
-      applyThemePreference(next);
-    };
-
-    const startViewTransition = (
-      document as Document & {
-        startViewTransition?: (cb: () => void) => { ready: Promise<void> };
-      }
-    ).startViewTransition;
-    const prefersReduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-
-    // No View Transitions support (Firefox/Safari) or reduced-motion:
-    // flip instantly. The token transition in base.css still gives a
-    // soft colour crossfade.
-    if (!startViewTransition || prefersReduced) {
-      apply();
-      return;
-    }
-
-    // Touch devices get a DIFFERENT reveal, and the reason is the
-    // compositor, not taste: `clip-path` is not a compositor-animatable
-    // property in Chromium, so every frame of the circular wipe repaints a
-    // full-viewport layer. On a desktop GPU that disappears; on a phone the
-    // wipe visibly stutters — and it is worst on exactly the pages that
-    // earn it, the ones with a frosted fixed header and large soft fields
-    // underneath. `opacity` and `transform` ARE composited, so the same
-    // "new theme arrives over the old" reading costs no repaint at all.
-    //
-    // Chosen on pointer, not on width: a small window on a desktop has the
-    // GPU to spare, and a large tablet does not.
-    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
-
-    if (coarsePointer) {
-      const transition = startViewTransition.call(document, () => {
-        flushSync(apply);
-      });
-
-      // A CURTAIN, from the top edge the toggle sits on. The fade-and-settle
-      // this replaced read as a flicker on a phone: the whole viewport
-      // blinked once and nothing told the eye where the new theme came from.
-      // The new snapshot drops in from above with a small overshoot and the
-      // old one gives way downwards underneath it. Both are `transform` only,
-      // so the compositor moves two finished bitmaps and nothing repaints —
-      // the reason this branch exists at all (see above).
-      //
-      // The old snapshot travels 10 % while the new one travels 100 %, and
-      // the new one leads (ease-out against ease-in-out), so no gap opens
-      // between the falling edge and the page it covers.
-      transition.ready.then(() => {
-        document.documentElement.animate(
-          [
-            { transform: "translateY(-100%)" },
-            { transform: "translateY(1.5%)", offset: 0.78 },
-            { transform: "translateY(0)" },
-          ],
-          {
-            duration: 560,
-            easing: cssEase.out,
-            pseudoElement: "::view-transition-new(root)",
-          },
-        );
-        document.documentElement.animate(
-          { transform: ["translateY(0)", "translateY(10%)"] },
-          {
-            duration: 560,
-            easing: cssEase.inOut,
-            pseudoElement: "::view-transition-old(root)",
-          },
-        );
-      });
-      return;
-    }
-
-    // Circular reveal: the incoming theme wipes in as a circle growing
-    // from the centre of the toggle button out to the farthest corner.
-    const rect = buttonRef.current?.getBoundingClientRect();
-    const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
-    const y = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
-    const endRadius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y),
-    );
-
-    const transition = startViewTransition.call(document, () => {
-      // flushSync so React commits the icon swap before the snapshot.
-      flushSync(apply);
-    });
-
-    transition.ready.then(() => {
-      document.documentElement.animate(
-        {
-          clipPath: [
-            `circle(0px at ${x}px ${y}px)`,
-            `circle(${endRadius}px at ${x}px ${y}px)`,
-          ],
-        },
-        {
-          // Deliberately longer than `--tds-dur-slow`: this is a full-viewport
-          // wipe, not a control's response, and it reads as abrupt below ~450ms.
-          duration: 480,
-          easing: cssEase.inOut,
-          pseudoElement: "::view-transition-new(root)",
-        },
-      );
-    });
-  };
 
   // Render a stable label/icon during SSR + initial paint so the
   // server-rendered button matches the first client paint. Once
   // mounted, the real state takes over.
-  const label = mounted && theme === "dark" ? labelToLight : labelToDark;
+  const dark = mounted && theme === "dark";
+  const label = dark ? labelToLight : labelToDark;
+  const turn = flipped ? " tds-theme-toggle__icon--turn" : "";
 
   return (
     <button
       ref={buttonRef}
       type="button"
-      onClick={flip}
       aria-label={label}
       title={label}
       // `tds-theme-toggle` carries nothing but the coarse-pointer hit area
@@ -527,9 +94,9 @@ export default function ThemeToggle({
         strokeWidth="1.75"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className={`${mounted && theme === "dark" ? "hidden" : "block"}${flipped ? " tds-theme-toggle__icon--turn" : ""}`}
+        className={`${dark ? "hidden" : "block"}${turn}`}
       >
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        <path d={MOON_PATH} />
       </svg>
       {/* Sun — visible in dark mode (tap to leave dark). */}
       <svg
@@ -542,18 +109,14 @@ export default function ThemeToggle({
         strokeWidth="1.75"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className={`${mounted && theme === "dark" ? "block" : "hidden"}${flipped ? " tds-theme-toggle__icon--turn" : ""}`}
+        className={`${dark ? "block" : "hidden"}${turn}`}
       >
         <circle cx="12" cy="12" r="4" />
-        <line x1="12" y1="2" x2="12" y2="5" />
-        <line x1="12" y1="19" x2="12" y2="22" />
-        <line x1="2" y1="12" x2="5" y2="12" />
-        <line x1="19" y1="12" x2="22" y2="12" />
-        <line x1="4.93" y1="4.93" x2="6.99" y2="6.99" />
-        <line x1="17.01" y1="17.01" x2="19.07" y2="19.07" />
-        <line x1="4.93" y1="19.07" x2="6.99" y2="17.01" />
-        <line x1="17.01" y1="6.99" x2="19.07" y2="4.93" />
+        {SUN_RAYS.map(([x1, y1, x2, y2]) => (
+          <line key={`${x1}-${y1}`} x1={x1} y1={y1} x2={x2} y2={y2} />
+        ))}
       </svg>
     </button>
   );
 }
+

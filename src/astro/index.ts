@@ -568,3 +568,33 @@ export const hoverTipScript: string = `(function () {
   });
   document.addEventListener("astro:before-swap", dismiss);
 })();`;
+
+/**
+ * The Astro integration that registers `client:when`. Typed structurally so
+ * this package needs no dependency on `astro`. The directive itself is
+ * `./astro/client-when` (`src/astro/clientWhen.ts`), which documents the
+ * conditions.
+ *
+ * Each site also declares the attribute for `astro check`:
+ *
+ *   declare module "astro" {
+ *     interface AstroClientDirectives { "client:when"?: string }
+ *   }
+ */
+export function tdsClientDirectives() {
+  return {
+    name: "tds-client-directives",
+    hooks: {
+      "astro:config:setup": ({
+        addClientDirective,
+      }: {
+        addClientDirective: (directive: { name: string; entrypoint: string }) => void;
+      }) => {
+        addClientDirective({
+          name: "when",
+          entrypoint: "@tracht-digital-solutions/tds-shared/astro/client-when",
+        });
+      },
+    },
+  };
+}

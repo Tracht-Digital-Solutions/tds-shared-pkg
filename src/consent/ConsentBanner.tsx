@@ -11,6 +11,7 @@ import {
 import {
   CONSENT_OPEN_EVENT,
   readConsent,
+  takeConsentOpenRequest,
   writeConsent,
 } from "./store";
 
@@ -97,9 +98,13 @@ export default function ConsentBanner({
   // roots — there is no shared provider to hang state on.
   useEffect(() => {
     const open = () => {
+      takeConsentOpenRequest();
       setInitial(readConsent()?.choices ?? necessaryOnly());
       setSettingsOpen(true);
     };
+    // A request made before this banner existed — the click that loaded it
+    // under `client:when="consent"`.
+    if (takeConsentOpenRequest()) open();
     window.addEventListener(CONSENT_OPEN_EVENT, open);
     return () => window.removeEventListener(CONSENT_OPEN_EVENT, open);
   }, []);

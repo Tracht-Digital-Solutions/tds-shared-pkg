@@ -95,6 +95,11 @@
       "import": "./dist/astro/index.js",
       "require": "./dist/astro/index.cjs"
     },
+    "./astro/client-when": {
+      "types": "./dist/astro/client-when.d.ts",
+      "import": "./dist/astro/client-when.js",
+      "require": "./dist/astro/client-when.cjs"
+    },
     "./styles/base.css": "./styles/base.css",
     "./styles/app-shell.css": "./styles/app-shell.css",
     "./styles/app.css": "./styles/app.css",
@@ -122,6 +127,11 @@
       "types": "./dist/theme/index.d.ts",
       "import": "./dist/theme/index.js",
       "require": "./dist/theme/index.cjs"
+    },
+    "./dom": {
+      "types": "./dist/dom/index.d.ts",
+      "import": "./dist/dom/index.js",
+      "require": "./dist/dom/index.cjs"
     },
     "./toast": {
       "types": "./dist/toast/index.d.ts",

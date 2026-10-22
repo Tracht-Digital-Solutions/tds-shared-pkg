@@ -36,7 +36,8 @@ function importsOf(file: string): string[] {
 
 function resolveLocal(from: string, spec: string): string | null {
   if (!spec.startsWith(".")) return null;
-  const base = resolve(dirname(from), spec);
+  // `./x.js` names the TypeScript source `./x.ts` (NodeNext-style specifiers).
+  const base = resolve(dirname(from), spec.replace(/\.js$/, ""));
   for (const candidate of [`${base}.ts`, `${base}.tsx`, `${base}/index.ts`, `${base}/index.tsx`]) {
     try {
       readFileSync(candidate, "utf8");
@@ -98,5 +99,21 @@ describe("the consent store entry point", () => {
     for (const name of ["consentGranted", "readConsent", "onConsentChange", "CONSENT_EVENT"]) {
       expect(store, `missing ${name}`).toHaveProperty(name);
     }
+  });
+});
+
+/**
+ * The plain-DOM toggle and consent link (`./dom`) and the `client:when`
+ * directive exist so a public page can do without React (tds-blog-frontend#27).
+ * One stray import of a component file would quietly bring it back.
+ */
+describe.each([
+  ["./dom", "../dom/index.ts"],
+  ["./astro/client-when", "../astro/clientWhen.ts"],
+])("the %s entry point", (_name, path) => {
+  it("reaches no React module, however indirectly", () => {
+    const { bare, files } = graph(resolve(here, path));
+    const react = [...bare].filter((s) => s === "react" || s.startsWith("react/") || s === "react-dom");
+    expect(react, `React reached. Files in the graph:\n${files.join("\n")}`).toEqual([]);
   });
 });

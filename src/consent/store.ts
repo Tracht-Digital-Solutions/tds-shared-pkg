@@ -193,12 +193,31 @@ export function onConsentChange(fn: (record: ConsentRecord) => void): () => void
  * banner are separate Astro islands with separate React roots, so there is no
  * common provider to hang state on. The banner listens; if none is mounted the
  * call is a no-op rather than an error.
+ *
+ * The request is also REMEMBERED until a banner takes it (0.60): with
+ * `client:when="consent"` a visitor who already decided gets no banner code at
+ * all until they ask, so the click that asks is what loads it — and the event
+ * has fired before the banner exists to hear it. A window property rather than
+ * a module variable, because the link and the banner may be bundled into
+ * different chunks with their own copy of this module.
  */
 export function openConsentSettings(): void {
   if (typeof window === "undefined") return;
+  (window as unknown as Record<symbol, boolean>)[OPEN_PENDING] = true;
   try {
     window.dispatchEvent(new CustomEvent(CONSENT_OPEN_EVENT));
   } catch {
     /* ignore */
   }
+}
+
+const OPEN_PENDING = Symbol.for("tds.consent.open-pending");
+
+/** True once per unanswered `openConsentSettings()` call; the banner's half. */
+export function takeConsentOpenRequest(): boolean {
+  if (typeof window === "undefined") return false;
+  const slot = window as unknown as Record<symbol, boolean>;
+  const pending = slot[OPEN_PENDING] === true;
+  slot[OPEN_PENDING] = false;
+  return pending;
 }

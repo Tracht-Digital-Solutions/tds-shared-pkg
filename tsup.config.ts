@@ -42,8 +42,14 @@ export default defineConfig({
     // Plain DOM, no React: it runs in every public layout.
     "analytics/index": "src/analytics/index.ts",
     "astro/index": "src/astro/index.ts",
+    // The `client:when` hydration directive (0.60). Its own entry because Astro
+    // loads a directive by module specifier, inline in every page that uses it.
+    "astro/client-when": "src/astro/clientWhen.ts",
     "design/index": "src/design/index.ts",
     "theme/index": "src/theme/index.ts",
+    // Plain-DOM theme toggle and consent link for the public sites (0.60): the
+    // same behaviour as the React islands, without React on the page.
+    "dom/index": "src/dom/index.ts",
     // Cross-site visitor preferences (cookie + account sync).
     "prefs/index": "src/prefs/index.ts",
     // App-shell mechanics for the public sites on a phone (tab bar, sheets).
