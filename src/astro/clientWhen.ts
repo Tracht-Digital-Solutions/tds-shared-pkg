@@ -26,6 +26,12 @@ import { apiFetch } from "../api/index.js";
  * - `chat:<frontend>[:<lang>]` — the widget's config says it is enabled with at
  *   least one tab, and this visitor has not hidden it. The widget repeats the
  *   config read once it is loaded; only a page with chat on pays for that.
+ * - `intent:<selector>` (0.61) — the visitor reaches for a control that needs
+ *   the island: a pointer over it, keyboard focus on it, or a press, on any
+ *   element matching the selector (the landing page's assistant buttons). The
+ *   island also loads the moment it becomes visible, so a dialog opened some
+ *   other way (a `#hash` link) never shows an unhydrated form for long.
+ *   Hovering is the early signal: by the click the code is usually there.
  *
  * Anything else hydrates like `client:idle`, so a typo costs bytes, not a
  * missing control. Register it with `tdsClientDirectives()` from `./astro`.
@@ -61,16 +67,44 @@ async function chatWanted(frontend: string, lang: string): Promise<boolean> {
   }
 }
 
-export default function clientWhen(load: Load, options: { value: string }): void {
-  const [condition = "", ...args] = String(options.value ?? "").split(":");
+/** Load on the first sign of intent towards `selector`, or once `el` shows. */
+function onIntent(selector: string, el: HTMLElement, start: () => void): void {
+  const events = ["pointerover", "focusin", "pointerdown"] as const;
+  let observer: IntersectionObserver | null = null;
+  const fire = () => {
+    for (const type of events) document.removeEventListener(type, listener, true);
+    observer?.disconnect();
+    start();
+  };
+  const listener = (event: Event) => {
+    const target = event.target;
+    if (target instanceof Element && target.closest(selector)) fire();
+  };
+  for (const type of events) document.addEventListener(type, listener, { capture: true, passive: true });
+  if ("IntersectionObserver" in window) {
+    // `astro-island` is `display: contents`; watch what it renders.
+    const watched = Array.from(el.children);
+    observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) fire();
+    });
+    for (const child of watched) observer.observe(child);
+  }
+}
+
+export default function clientWhen(load: Load, options: { value: string }, el?: HTMLElement): void {
+  const raw = String(options.value ?? "");
+  const [condition = "", ...args] = raw.split(":");
   let started = false;
-  const start = () => {
+  const start = (now = false) => {
     if (started) return;
     started = true;
-    whenIdle(async () => {
+    const run = async () => {
       const hydrate = await load();
       await hydrate();
-    });
+    };
+    // An explicit intent does not wait for idle: the visitor is reaching for it.
+    if (now) void run();
+    else whenIdle(() => void run());
   };
 
   switch (condition) {
@@ -82,7 +116,12 @@ export default function clientWhen(load: Load, options: { value: string }): void
         start();
         return;
       }
-      window.addEventListener(CONSENT_OPEN_EVENT, start, { once: true });
+      window.addEventListener(CONSENT_OPEN_EVENT, () => start(true), { once: true });
+      return;
+    case "intent":
+      // The selector may itself contain colons (`:not()`), so it is the rest.
+      if (el) onIntent(raw.slice(raw.indexOf(":") + 1), el, () => start(true));
+      else start();
       return;
     case "chat":
       void chatWanted(args[0] ?? "", args[1] ?? "de").then((wanted) => {

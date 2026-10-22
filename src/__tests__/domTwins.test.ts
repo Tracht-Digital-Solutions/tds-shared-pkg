@@ -98,11 +98,11 @@ describe("plain-DOM consent link", () => {
 });
 
 describe("client:when", () => {
-  const run = async (value: string) => {
+  const run = async (value: string, el?: HTMLElement) => {
     const hydrate = vi.fn(async () => {});
     const load = vi.fn(async () => hydrate);
     vi.stubGlobal("requestIdleCallback", (cb: () => void) => cb());
-    clientWhen(load, { value });
+    clientWhen(load, { value }, el);
     await new Promise((r) => setTimeout(r, 0));
     return { load, hydrate };
   };
@@ -146,5 +146,37 @@ describe("client:when", () => {
     vi.stubGlobal("fetch", fetchSpy);
     expect((await run("chat:blog:de")).load).not.toHaveBeenCalled();
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  describe("intent", () => {
+    const setup = () => {
+      document.body.innerHTML = '<button data-open><span>Assistent</span></button><button data-other></button>';
+      const island = document.createElement("astro-island");
+      island.innerHTML = "<form></form>";
+      document.body.append(island);
+      return island;
+    };
+
+    it("waits until the visitor reaches for a matching control", async () => {
+      const island = setup();
+      const { load } = await run("intent:[data-open]", island);
+      document.querySelector("[data-other]")!.dispatchEvent(new Event("pointerover", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 0));
+      expect(load).not.toHaveBeenCalled();
+      // A hover on a child of the control counts.
+      document.querySelector("[data-open] span")!.dispatchEvent(new Event("pointerover", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 0));
+      expect(load).toHaveBeenCalledOnce();
+    });
+
+    it("counts keyboard focus as intent, once", async () => {
+      const island = setup();
+      const { load } = await run("intent:[data-open]", island);
+      const button = document.querySelector<HTMLButtonElement>("[data-open]")!;
+      button.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+      button.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 0));
+      expect(load).toHaveBeenCalledOnce();
+    });
   });
 });

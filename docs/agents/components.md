@@ -202,5 +202,6 @@ A React island costs a page the whole runtime (~200 KB), even when it renders no
 - **`client:when`** (register `tdsClientDirectives()` in `astro.config`, declare the attribute in a site `.d.ts`)
   hydrates only on need: `"session"` for `AccountMenu`, `"consent"` for `ConsentBanner` (also on
   `openConsentSettings()`; the banner takes the pending request on mount), `"chat:<frontend>:<lang>"` for
-  `LiveChatCta`. Unknown values hydrate like `client:idle`.
+  `LiveChatCta`, `"intent:<selector>"` (0.61) for an island behind a control — loads on hover, focus or press of a
+  match, or once it becomes visible. Unknown values hydrate like `client:idle`.
 - `consentStoreEntry.test.ts` fails if either entry reaches React.
