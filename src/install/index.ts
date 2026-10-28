@@ -17,6 +17,7 @@ export {
   auth,
   blog,
   cards,
+  opensource,
   landingpage,
   profiles,
   shop,

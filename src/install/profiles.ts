@@ -173,6 +173,25 @@ export const cards: SiteProfile = {
   pairing: true,
 };
 
+/**
+ * The open-source project sites (`tds-ext-opensource`), one profile for all of them
+ * — the same shape as `cards`: the pairing profile is `opensource` on every
+ * project site, and the project is the connection's resource id
+ * (`opensource/<slug>`). Today there is one site, WParted.
+ *
+ * The probe reads the project the site shows. `project` is an object, so its
+ * key count is the answer; `{project: null}` (404) is "not published".
+ */
+export const opensource: SiteProfile = {
+  id: "opensource",
+  name: "Open-Source-Seite",
+  origins: ["https://wparted.tracht-digital.de"],
+  publicRoutes: [{ method: "GET", path: "/opensource/projects/wparted", countKey: "project" }],
+  probeBase: "api",
+  runtimeKeys: ["apiBase"],
+  pairing: true,
+};
+
 /** `auth.tracht-digital.de` — the central login. */
 export const auth: SiteProfile = {
   id: "auth",
@@ -193,6 +212,6 @@ export const auth: SiteProfile = {
 };
 
 /** Every profile, by id. Used by the tests; sites import their own by name. */
-export const profiles = { landingpage, blog, tools, shop, cards, auth } as const;
+export const profiles = { landingpage, blog, tools, shop, cards, opensource, auth } as const;
 
 export type ProfileId = keyof typeof profiles;
