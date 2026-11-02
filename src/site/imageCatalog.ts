@@ -34,6 +34,32 @@ export interface ImageCatalogOptions {
   about?: "webpage" | "page";
 }
 
+/** Where the terms for the group's images stand. One page, on the marketing site. */
+export const IMAGE_RIGHTS_URL: Record<Lang, string> = {
+  de: "https://tracht-digital.de/bildrechte",
+  en: "https://tracht-digital.de/en/image-rights",
+};
+
+/**
+ * The licence fields Google's image metadata report asks for: `creator`,
+ * `creditText`, `copyrightNotice`, `license`, `acquireLicensePage`. Spread into
+ * every `ImageObject` a site emits, so the wording has one source.
+ *
+ * Every picture except the owner's portrait was generated with ChatGPT, which
+ * is what `creator` says. Pass `{ portrait: true }` for the portrait.
+ */
+export function imageRights(lang: Lang, { portrait = false }: { portrait?: boolean } = {}) {
+  return {
+    creator: portrait
+      ? { "@type": "Person" as const, name: "Julian Tracht" }
+      : { "@type": "Organization" as const, name: "ChatGPT (OpenAI)", url: "https://chatgpt.com" },
+    creditText: "Tracht Digital Solutions",
+    copyrightNotice: "© Tracht Digital Solutions",
+    license: IMAGE_RIGHTS_URL[lang],
+    acquireLicensePage: IMAGE_RIGHTS_URL[lang],
+  };
+}
+
 export function createImageCatalog(raw: Record<string, unknown>, { origin, about = "webpage" }: ImageCatalogOptions) {
   const assets = Object.values(raw) as CatalogAsset[];
 
@@ -79,7 +105,7 @@ export function createImageCatalog(raw: Record<string, unknown>, { origin, about
       height: image.height,
       encodingFormat: "image/webp",
       digitalSourceType: image.digitalSourceType,
-      creditText: "Tracht Digital Solutions",
+      ...imageRights(lang),
       about: { "@id": about === "webpage" ? pageUrl + "#webpage" : pageUrl },
     };
   };

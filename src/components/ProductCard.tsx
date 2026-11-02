@@ -57,12 +57,12 @@ export interface ProductCardProps {
   /** Fired before the browser follows an offer link. For the click beacon. */
   onOfferClick?: (offer: ShopOffer, product: ShopProductRef) => void;
   /**
-   * The shop's own catalogue only: an own offer gets an add-to-basket button
-   * (`data-add-to-cart`, wired by the page) as its filled button, and the
-   * one-product checkout becomes the quiet "Direkt zur Kasse" link beside it.
-   * Off everywhere else, because the basket lives on the shop's origin.
+   * The shop's own catalogue only: where an own offer's "Angebot anfordern"
+   * leads, and its price becomes switchable (`data-price-*`, wired by the page).
+   * Own services are quoted, never bought from a card. Elsewhere an own offer
+   * links to its product page.
    */
-  addToCart?: boolean;
+  quoteHref?: (product: ShopProductRef) => string;
   className?: string;
   style?: CSSProperties;
 }
@@ -75,9 +75,10 @@ const TX = {
     asOf: "Stand",
     toOffer: "Zum Angebot",
     toProduct: "Ansehen",
-    buy: "Kaufen",
-    addToCart: "In den Warenkorb",
-    buyNow: "Direkt zur Kasse",
+    details: "Details ansehen",
+    requestQuote: "Angebot anfordern",
+    inclVat: "inkl. 19 % MwSt.",
+    exclVat: "zzgl. 19 % MwSt.",
     from: "ab",
     outOfStock: "Derzeit nicht verfügbar",
     amazonNote:
@@ -90,9 +91,10 @@ const TX = {
     asOf: "as of",
     toOffer: "View offer",
     toProduct: "View",
-    buy: "Buy",
-    addToCart: "Add to basket",
-    buyNow: "Buy now",
+    details: "View details",
+    requestQuote: "Request a quote",
+    inclVat: "incl. 19% VAT",
+    exclVat: "plus 19% VAT",
     from: "from",
     outOfStock: "Currently unavailable",
     amazonNote:
@@ -128,19 +130,22 @@ function OfferRow({
   lang,
   now,
   onOfferClick,
-  addToCart = false,
+  quoteHref,
 }: {
   offer: ShopOffer;
   product: ShopProductRef;
   lang: "de" | "en";
   now: number;
   onOfferClick?: ProductCardProps["onOfferClick"];
-  addToCart?: boolean;
+  quoteHref?: ProductCardProps["quoteHref"];
 }) {
   const tx = TX[lang];
   const price = displayPrice(offer, now);
   const affiliate = offer.kind === "affiliate";
-  const toBasket = addToCart && !affiliate;
+  // Own offers state a gross price. The net figure is the API's where it serves
+  // one, otherwise derived at the standard rate.
+  const netCents = (offer as ShopOffer & { netCents?: number | null }).netCents ?? (price ? Math.round(price.cents / 1.19) : 0);
+  const switchable = Boolean(quoteHref && !affiliate && price);
 
   // Info first, actions last: the button is the offer's final element and the
   // offer sits at the foot of the card, so every button in a grid row lines up
@@ -157,8 +162,27 @@ function OfferRow({
               is a starting price and says so. A partner's price is the
               merchant's and carries no prefix. */}
           {price && !affiliate ? <span className="tds-product-price__from">{tx.from} </span> : null}
-          {price ? formatPrice(price.cents, price.currency, lang) : tx.checkPrice}
+          {price ? (
+            switchable ? (
+              <span
+                data-price-amount
+                data-price-gross={formatPrice(price.cents, price.currency, lang)}
+                data-price-net={formatPrice(netCents, price.currency, lang)}
+              >
+                {formatPrice(price.cents, price.currency, lang)}
+              </span>
+            ) : (
+              formatPrice(price.cents, price.currency, lang)
+            )
+          ) : (
+            tx.checkPrice
+          )}
         </span>
+        {switchable ? (
+          <span className="tds-product-offer__asof" data-price-note data-price-gross={tx.inclVat} data-price-net={tx.exclVat}>
+            {tx.inclVat}
+          </span>
+        ) : null}
         {price && offer.priceCheckedAt ? (
           <span className="tds-product-offer__asof">
             {tx.asOf} {formatChecked(offer.priceCheckedAt, lang)}
@@ -169,32 +193,32 @@ function OfferRow({
         ) : null}
       </div>
       <div className="tds-product-offer__actions">
-        {toBasket ? (
-          <>
-            <button
-              type="button"
-              className="btn btn-primary tds-product-offer__cta"
-              data-add-to-cart={product.slug}
-              data-product-title={product.title}
-            >
-              {tx.addToCart}
-            </button>
-            <a className="tds-product-offer__direct" href={offer.url} onClick={() => onOfferClick?.(offer, product)}>
-              {tx.buyNow}
-            </a>
-          </>
-        ) : (
+        {affiliate ? (
           <a
             className="btn btn-primary tds-product-offer__cta"
             href={offer.url}
             // `sponsored` is the correct value for paid/affiliate links and
             // `nofollow` keeps older crawlers honest; `noopener` closes the
             // window.opener hole on target=_blank.
-            rel={affiliate ? "sponsored nofollow noopener" : "noopener"}
-            target={affiliate ? "_blank" : undefined}
+            rel="sponsored nofollow noopener"
+            target="_blank"
             onClick={() => onOfferClick?.(offer, product)}
           >
-            {affiliate ? tx.toOffer : tx.buy}
+            {tx.toOffer}
+          </a>
+        ) : quoteHref ? (
+          <a
+            className="btn btn-primary tds-product-offer__cta"
+            href={quoteHref(product)}
+            rel="nofollow"
+            data-quote-request={product.slug}
+            onClick={() => onOfferClick?.(offer, product)}
+          >
+            {tx.requestQuote}
+          </a>
+        ) : (
+          <a className="btn btn-primary tds-product-offer__cta" href={product.url}>
+            {tx.details}
           </a>
         )}
       </div>
@@ -210,7 +234,7 @@ export default function ProductCard({
   affiliateLabel,
   now = Date.now(),
   onOfferClick,
-  addToCart = false,
+  quoteHref,
   className,
   style,
 }: ProductCardProps) {
@@ -241,7 +265,7 @@ export default function ProductCard({
             lang={lang}
             now={now}
             onOfferClick={onOfferClick}
-            addToCart={addToCart}
+            quoteHref={quoteHref}
           />
         ) : null}
       </div>
@@ -283,7 +307,7 @@ export default function ProductCard({
               lang={lang}
               now={now}
               onOfferClick={onOfferClick}
-              addToCart={addToCart}
+              quoteHref={quoteHref}
             />
           ))
         ) : primary ? (
@@ -293,7 +317,7 @@ export default function ProductCard({
             lang={lang}
             now={now}
             onOfferClick={onOfferClick}
-            addToCart={addToCart}
+            quoteHref={quoteHref}
           />
         ) : (
           <a className="btn btn-ghost" href={product.url}>

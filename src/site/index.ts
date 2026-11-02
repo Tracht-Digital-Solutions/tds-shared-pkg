@@ -37,6 +37,8 @@ export {
 } from "./sitemapExclusions";
 export {
   createImageCatalog,
+  imageRights,
+  IMAGE_RIGHTS_URL,
   type CatalogAsset,
   type CatalogVariant,
   type ImageCatalogOptions,

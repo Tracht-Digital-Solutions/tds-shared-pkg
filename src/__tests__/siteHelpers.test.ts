@@ -167,3 +167,16 @@ describe("shipped scripts", () => {
     expect(script).toContain('"scripts/geo-audit.profile.mjs"');
   });
 });
+
+describe("imageRights", () => {
+  it("fills every licence field Google reports, in both languages", async () => {
+    const { imageRights } = await import("../site");
+    for (const lang of ["de", "en"] as const) {
+      const rights = imageRights(lang);
+      expect(rights.creator.name).toContain("ChatGPT");
+      expect(rights.copyrightNotice).toContain("Tracht Digital Solutions");
+      expect(rights.license).toBe(rights.acquireLicensePage);
+    }
+    expect(imageRights("de", { portrait: true }).creator).toEqual({ "@type": "Person", name: "Julian Tracht" });
+  });
+});
