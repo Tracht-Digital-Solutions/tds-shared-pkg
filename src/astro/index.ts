@@ -452,7 +452,8 @@ export const offscreenAnimationScript: string = `(function () {
  *
  * The tip is `aria-hidden`: everything it says is already the control's name
  * or visible text, so a screen reader would hear it twice. One element, shown
- * as a manual popover so it sits above an open `<dialog>`.
+ * as a manual popover so it sits above an open `<dialog>`. It stands beside the
+ * pointer and follows it, flipped before it would leave the window.
  *
  * Inline next to the other bootstrap scripts in every public layout:
  * `<script is:inline set:html={hoverTipScript} />`. Styles: `.tds-hover-tip`
@@ -462,9 +463,9 @@ export const hoverTipScript: string = `(function () {
   if (window.__tdsHoverTip || !window.matchMedia) return;
   window.__tdsHoverTip = true;
   var fine = window.matchMedia("(hover: hover) and (pointer: fine)");
-  var DELAY = 700, WARM = 400, GAP = 8;
+  var DELAY = 700, WARM = 400, GAP = 8, OFFSET = 16;
   var SEL = "button, [role=button], [role=tab], summary, input[type=submit], input[type=button], input[type=reset], [data-tip], .btn, a[class*=btn], a[class*=button], a[class*=cta], a[class*=action], a[aria-label]";
-  var tip = null, current = null, timer = 0, warmUntil = 0;
+  var tip = null, current = null, timer = 0, warmUntil = 0, px = 0, py = 0;
   function de() { return (document.documentElement.lang || "de").toLowerCase().indexOf("en") !== 0; }
   function norm(s) { return (s || "").toLowerCase().split(/[^a-z0-9äöüß]+/).join(" ").trim(); }
   function linkHint(a) {
@@ -510,16 +511,14 @@ export const hoverTipScript: string = `(function () {
     document.body.appendChild(tip);
     return tip;
   }
-  function place(el) {
-    var r = el.getBoundingClientRect();
+  function place() {
     var w = tip.offsetWidth, h = tip.offsetHeight;
     var vw = document.documentElement.clientWidth || window.innerWidth, vh = window.innerHeight;
-    var top = r.top - h - GAP, side = "top";
-    if (top < GAP) { top = r.bottom + GAP; side = "bottom"; }
-    var left = Math.max(GAP, Math.min(r.left + r.width / 2 - w / 2, vw - w - GAP));
-    tip.style.left = Math.round(left) + "px";
-    tip.style.top = Math.round(Math.max(GAP, Math.min(top, vh - h - GAP))) + "px";
-    tip.setAttribute("data-side", side);
+    var left = px + OFFSET + w + GAP > vw ? px - OFFSET - w : px + OFFSET;
+    var top = py + OFFSET + h + GAP > vh ? py - OFFSET - h : py + OFFSET;
+    tip.style.left = Math.round(Math.max(GAP, left)) + "px";
+    tip.style.top = Math.round(Math.max(GAP, top)) + "px";
+    tip.setAttribute("data-side", top < py ? "top" : "bottom");
   }
   function show(el, text) {
     ensure();
@@ -528,7 +527,7 @@ export const hoverTipScript: string = `(function () {
       try { if (tip.matches(":popover-open")) tip.hidePopover(); tip.showPopover(); } catch (e) {}
     }
     tip.setAttribute("data-open", "");
-    place(el);
+    place();
   }
   function hide() {
     clearTimeout(timer);
@@ -544,8 +543,16 @@ export const hoverTipScript: string = `(function () {
     hide();
     warmUntil = 0;
   }
+  document.addEventListener("pointermove", function (e) {
+    if (e.pointerType !== "mouse") return;
+    px = e.clientX;
+    py = e.clientY;
+    if (tip && tip.hasAttribute("data-open")) place();
+  }, { capture: true, passive: true });
   document.addEventListener("pointerover", function (e) {
     if (e.pointerType !== "mouse" || !fine.matches) return;
+    px = e.clientX;
+    py = e.clientY;
     var t = e.target;
     var el = t && t.closest ? t.closest(SEL) : null;
     if (el && el === current) return;
