@@ -43,3 +43,4 @@ export {
   type CatalogVariant,
   type ImageCatalogOptions,
 } from "./imageCatalog";
+export { tdsPlaceholder, tdsPlaceholderSvg, placeholderHash, type PlaceholderOptions } from "./placeholder";

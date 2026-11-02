@@ -52,8 +52,8 @@ describe("PostCover", () => {
 
   it("falls back to the abstract geometry", () => {
     const { container } = render(<PostCover slug="s" coverHint={null} />);
-    expect(container.querySelector("img")).toBeNull();
-    expect(container.firstElementChild?.getAttribute("aria-hidden")).toBe("true");
+    expect(container.querySelector("img")?.getAttribute("src")).toMatch(/^data:image/);
+    expect(container.querySelector("img")?.getAttribute("aria-hidden")).toBe("true");
   });
 });
 
@@ -65,13 +65,8 @@ describe("AbstractCover", () => {
     }
   });
 
-  // `--tds-flat-tint` is declared in styles/surfaces/blog.css ONLY. On the
-  // landingpage (marketing) and in the panel it resolves to nothing, and an
-  // undefined custom property in `background` paints nothing at all — a blank
-  // cover, no error, no failing test. The literal fallback is the guard.
-  it("never references --tds-flat-tint without a fallback", () => {
-    const bare = source.match(/var\(--tds-flat-tint\s*\)/g);
-    expect(bare).toBeNull();
-    expect(source).toContain("var(--tds-flat-tint, color-mix(");
+  it("draws through the shared placeholder generator", () => {
+    const { container } = render(<AbstractCover variant={2} />);
+    expect(container.querySelector("img")?.getAttribute("src")).toMatch(/^data:image\/svg\+xml/);
   });
 });

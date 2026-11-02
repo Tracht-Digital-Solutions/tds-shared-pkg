@@ -21,7 +21,7 @@ describe("propertyNav", () => {
           names[lang],
           "Ratgeber",
           "Online-Tools",
-          "Digitalmarkt",
+          "Shop",
         ]);
       }
     }

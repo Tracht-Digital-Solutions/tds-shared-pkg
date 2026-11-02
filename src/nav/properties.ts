@@ -41,7 +41,7 @@ export const PROPERTY_ORIGINS: Readonly<Record<PublicProperty, string>> = {
 /**
  * The link names. Since 2026-10-19 the three properties carry descriptive
  * names instead of "TD" + a generic word (TDShop, TD Tools): Ratgeber,
- * Online-Tools, Digitalmarkt. A name that says what the site is helps search
+ * Online-Tools, Shop. A name that says what the site is helps search
  * engines and assistants place it; the TD mark in front of each wordmark and
  * "… von Tracht Digital Solutions" in titles and structured data keep the
  * brand. They are proper names and stay the same in both languages. The main
@@ -52,7 +52,7 @@ export const PROPERTY_ORIGINS: Readonly<Record<PublicProperty, string>> = {
 const LABELS: Readonly<Record<PublicProperty, Record<"de" | "en", string>>> = {
   journal: { de: "Ratgeber", en: "Ratgeber" },
   tools: { de: "Online-Tools", en: "Online-Tools" },
-  shop: { de: "Digitalmarkt", en: "Digitalmarkt" },
+  shop: { de: "Shop", en: "Shop" },
   main: { de: "Startseite", en: "Home" },
 };
 

@@ -6,6 +6,7 @@ import type { ShopOffer, ShopProductRef } from "../schemas/shopBlocks";
 // card is in the barrel every site hydrates (see `../schemas/shopPrice`).
 import { displayPrice } from "../schemas/shopPrice";
 import { formatPrice } from "../format";
+import { tdsPlaceholder } from "../site/placeholder";
 
 /**
  * The one TDShop product card, rendered by all three surfaces: the shop itself,
@@ -282,6 +283,10 @@ export default function ProductCard({
               hence a plain <img> against the remote host rather than any
               local optimisation pipeline. */}
           <img src={product.imageUrl} alt={image?.alt ?? product.title} loading="lazy" decoding="async" {...image} />
+        </a>
+      ) : variant === "card" ? (
+        <a className="tds-product-card__media" href={product.url} tabIndex={-1} aria-hidden="true">
+          <img src={tdsPlaceholder({ seed: product.slug, monogram: product.title.charAt(0) })} alt="" loading="lazy" decoding="async" />
         </a>
       ) : null}
 

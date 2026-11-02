@@ -84,7 +84,7 @@ Fixed bottom chrome publishes its measured height; anything else pinned there ad
 
 ## Shared site bar (journal, tools, shop): `.tds-sitebar*` + `propertyNav()`
 
-- **The list is `propertyNav()`** (Startseite · Ratgeber · Online-Tools · Digitalmarkt — the home page first since
+- **The list is `propertyNav()`** (Startseite · Ratgeber · Online-Tools · Shop — the home page first since
   0.58); a header adds only its extras and marks itself current. The main site's label is `propertyLabel`
   ("Startseite" / "Home").
 - **Logomark | name (0.58):** `.tds-sitebar__brand > .brand-logo + span` draws a hairline between the TD mark and

@@ -247,7 +247,7 @@ describe("mountOfflineList", () => {
     const pages: Record<string, string> = {
       "https://s/tools/a": "<title>Tool A — Online-Tools</title>",
       "https://s/en/tools/b": "<title>Tool B — Online-Tools</title>",
-      "https://s/produkt/c": "<title>Produkt C | Digitalmarkt</title>",
+      "https://s/produkt/c": "<title>Produkt C | Shop</title>",
       "https://s/": "<title>Start</title>",
     };
     vi.stubGlobal("caches", {

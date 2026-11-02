@@ -17,6 +17,6 @@ describe('responsive image attributes', () => {
   });
   it('preserves default descriptions and the abstract fallback', () => {
     expect(renderToStaticMarkup(<ProductCard product={product}/>)).toContain('alt="Service"');
-    expect(renderToStaticMarkup(<PostCover slug="test" image={{width:100}}/>)).not.toContain('<img');
+    expect(renderToStaticMarkup(<PostCover slug="test" image={{width:100}}/>)).toContain('data:image/svg+xml');
   });
 });
