@@ -113,8 +113,8 @@ and `/manifest.webmanifest` from **prerendered** endpoints so the worker version
 
 The toggle clones `<body>`'s children into `.tds-theme-preview__page[data-theme=<target>]` for one hover.
 
-- Running CSS transitions are not pinned (the copy renders their end state); finite animations are pinned at
-  their last keyframe, endless ones at their current value. Pinning a scroll reveal froze it mid-way.
+- Running CSS transitions are not pinned (the copy renders their end state); running time-based finite animations are pinned at
+  their last keyframe; endless and scroll-driven (`animation-timeline`) ones at their current value.
 - While open, a MutationObserver mirrors attribute changes from the page onto the copy (`data-revealed`,
   `data-scrolled` …): the toggle sits in fixed chrome, so the page can scroll under a parked pointer.
 - A dark rule written as `:root[data-theme="dark"] X` never reaches a dark copy, and keeps applying inside a

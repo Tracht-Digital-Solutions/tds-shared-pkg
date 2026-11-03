@@ -52,8 +52,13 @@ const PINNED = ["transform", "translate", "rotate", "scale", "opacity"] as const
  *   running: the cards that had just come into view were missing from the
  *   circle ("Komponenten, die erst auftauchen, werden nicht im Hover-Theme
  *   angezeigt").
- * - A **finite** animation (an entrance) is pinned at its LAST keyframe, for
- *   the same reason: the real one arrives there a moment later.
+ * - A **finite, time-based** animation that is running (an entrance) is pinned
+ *   at its LAST keyframe, for the same reason: the real one arrives there a
+ *   moment later.
+ * - A **scroll-driven** animation (`animation-timeline: view()`) is pinned at
+ *   its current value: its "end" is a scroll position, not a moment. Pinning
+ *   it at the last keyframe lifted the landingpage's hero carousel by 72px in
+ *   the circle ("das andere Theme mit verschobenen Komponenten").
  * - An **endless** animation (the floating hero shapes) is pinned at its
  *   current value, so the copy lines up with what is on screen.
  */
@@ -65,7 +70,10 @@ function collectPins(): Map<Element, Pin> {
     if (!element) continue;
     if ("transitionProperty" in animation) continue;
     const iterations = effect.getComputedTiming?.().iterations ?? Infinity;
-    const frames = Number.isFinite(iterations) ? (effect.getKeyframes?.() ?? []) : [];
+    const timeBased =
+      typeof DocumentTimeline === "undefined" || !animation.timeline || animation.timeline instanceof DocumentTimeline;
+    const entering = Number.isFinite(iterations) && timeBased && animation.playState === "running";
+    const frames = entering ? (effect.getKeyframes?.() ?? []) : [];
     const last = frames[frames.length - 1];
     if (last && PINNED.some((key) => key in last)) {
       if (!pins.has(element)) pins.set(element, last);
@@ -224,10 +232,13 @@ function buildClone(target: Theme): {
     syncCloneState(node, copy, pins, scrolled, twins);
     page.appendChild(copy);
   }
-  for (const stray of page.querySelectorAll('script, link, [name], [data-theme-preview="skip"]')) {
+  for (const stray of page.querySelectorAll('script, link, [name], [data-theme-preview="skip"], .tds-hover-tip')) {
     if (
       stray.tagName === "SCRIPT" ||
       stray.tagName === "LINK" ||
+      // The hover tip lives in the top layer as an open popover; a copy is not
+      // open and would paint at the page's corner inside the circle.
+      stray.classList.contains("tds-hover-tip") ||
       (stray as HTMLElement).dataset?.themePreview === "skip"
     ) {
       stray.remove();
