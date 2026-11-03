@@ -212,6 +212,26 @@ describe("ThemeToggle", () => {
       }
     });
 
+    it("follows attribute changes on the page while the preview is open", async () => {
+      finePointer();
+      // A section that reveals after the copy was taken (the visitor scrolls
+      // with the pointer still on the fixed toggle).
+      const page = document.createElement("main");
+      page.innerHTML = '<section id="late" data-reveal>Karte</section>';
+      document.body.appendChild(page);
+      try {
+        const { getByRole } = render(<ThemeToggle />);
+        fireEvent.pointerEnter(getByRole("button"), { clientX: 10, clientY: 10 });
+        const copy = () => preview()?.querySelector(".tds-theme-preview__page #late");
+        expect(copy()?.hasAttribute("data-revealed")).toBe(false);
+        document.getElementById("late")!.setAttribute("data-revealed", "");
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(copy()?.hasAttribute("data-revealed"), "the copy reveals with the page").toBe(true);
+      } finally {
+        page.remove();
+      }
+    });
+
     it("leaves out what a consumer marks as unclonable", () => {
       finePointer();
       // The landingpage's custom cursor: two fixed dots a script moves on every

@@ -37,6 +37,45 @@ export interface ThemeToggleOptions {
 /** A scrolled box in the copy and the offsets its original had. */
 type ScrollState = [copy: Element, left: number, top: number];
 
+/** How an animated element's copy is pinned: its current value, or where the animation ends. */
+type Pin = "current" | Keyframe;
+
+const PINNED = ["transform", "translate", "rotate", "scale", "opacity"] as const;
+
+/**
+ * What to pin for each animated element (2026-11-03).
+ *
+ * - A CSS **transition** is not pinned at all. The copy carries the same
+ *   attributes and inline styles, and transitions are off inside it, so it
+ *   renders the transition's END state by itself. Pinning it froze a scroll
+ *   reveal mid-way, or at `opacity: 0` while its stagger delay was still
+ *   running: the cards that had just come into view were missing from the
+ *   circle ("Komponenten, die erst auftauchen, werden nicht im Hover-Theme
+ *   angezeigt").
+ * - A **finite** animation (an entrance) is pinned at its LAST keyframe, for
+ *   the same reason: the real one arrives there a moment later.
+ * - An **endless** animation (the floating hero shapes) is pinned at its
+ *   current value, so the copy lines up with what is on screen.
+ */
+function collectPins(): Map<Element, Pin> {
+  const pins = new Map<Element, Pin>();
+  for (const animation of document.getAnimations?.() ?? []) {
+    const effect = animation.effect as KeyframeEffect | null;
+    const element = effect?.target;
+    if (!element) continue;
+    if ("transitionProperty" in animation) continue;
+    const iterations = effect.getComputedTiming?.().iterations ?? Infinity;
+    const frames = Number.isFinite(iterations) ? (effect.getKeyframes?.() ?? []) : [];
+    const last = frames[frames.length - 1];
+    if (last && PINNED.some((key) => key in last)) {
+      if (!pins.has(element)) pins.set(element, last);
+    } else {
+      pins.set(element, "current");
+    }
+  }
+  return pins;
+}
+
 /**
  * Carries over the state `cloneNode` leaves behind. Walks the original and the
  * copy in parallel — they have the same shape, because nothing has been
@@ -49,24 +88,54 @@ type ScrollState = [copy: Element, left: number, top: number];
 function syncCloneState(
   original: Element,
   copy: Element,
-  animated: Set<Element>,
+  pins: Map<Element, Pin>,
   scrolled: ScrollState[],
+  twins: Map<Element, Element>,
 ): void {
+  twins.set(original, copy);
   if (original.scrollLeft || original.scrollTop) {
     scrolled.push([copy, original.scrollLeft, original.scrollTop]);
   }
-  if (animated.has(original) && (copy instanceof HTMLElement || copy instanceof SVGElement)) {
-    const cs = getComputedStyle(original);
+  const pin = pins.get(original);
+  if (pin && (copy instanceof HTMLElement || copy instanceof SVGElement)) {
     const style = copy.style;
-    style.setProperty("transform", cs.transform);
-    style.setProperty("translate", cs.translate);
-    style.setProperty("rotate", cs.rotate);
-    style.setProperty("scale", cs.scale);
-    style.setProperty("opacity", cs.opacity);
+    if (pin === "current") {
+      const cs = getComputedStyle(original);
+      for (const key of PINNED) style.setProperty(key, cs[key]);
+    } else {
+      for (const key of PINNED) {
+        const value = pin[key];
+        if (value != null) style.setProperty(key, String(value));
+      }
+    }
   }
   const a = original.children;
   const b = copy.children;
-  for (let i = 0; i < a.length && i < b.length; i++) syncCloneState(a[i]!, b[i]!, animated, scrolled);
+  for (let i = 0; i < a.length && i < b.length; i++) syncCloneState(a[i]!, b[i]!, pins, scrolled, twins);
+}
+
+/**
+ * Keeps the copy's attributes in step with the page while the preview is open
+ * (2026-11-03). The toggle sits in fixed chrome, so a visitor can scroll with
+ * the pointer still on it: sections reveal (`data-revealed`), a header turns
+ * solid (`data-scrolled`), and the copy taken at `pointerenter` showed none of
+ * it. Attributes only — the structure is the one from the hover's start.
+ * Returns the disconnect.
+ */
+function mirrorAttributes(twins: Map<Element, Element>): () => void {
+  if (typeof MutationObserver === "undefined") return () => {};
+  const observer = new MutationObserver((records) => {
+    for (const record of records) {
+      const copy = twins.get(record.target as Element);
+      const name = record.attributeName;
+      if (!copy || !name || name === "name") continue;
+      const value = (record.target as Element).getAttribute(name);
+      if (value === null) copy.removeAttribute(name);
+      else copy.setAttribute(name, value);
+    }
+  });
+  observer.observe(document.body, { attributes: true, subtree: true });
+  return () => observer.disconnect();
 }
 
 /** The theme the document is in right now. Never a cached value — see `openPreview`. */
@@ -135,23 +204,24 @@ export function currentTheme(): Theme {
  * across hovers would mean tracking every DOM change on the page for the sake
  * of a preview.
  */
-function buildClone(target: Theme): { page: HTMLElement; restoreScroll: () => void } {
+function buildClone(target: Theme): {
+  page: HTMLElement;
+  restoreScroll: () => void;
+  twins: Map<Element, Element>;
+} {
   const page = document.createElement("div");
   page.className = "tds-theme-preview__page";
   page.setAttribute("data-theme", target);
-  const animated = new Set<Element>();
+  const pins = collectPins();
   const scrolled: ScrollState[] = [];
-  for (const animation of document.getAnimations?.() ?? []) {
-    const element = (animation.effect as KeyframeEffect | null)?.target;
-    if (element) animated.add(element);
-  }
+  const twins = new Map<Element, Element>();
   for (const node of Array.from(document.body.children)) {
     // The overlay itself is a child of body by the time a second one opens.
     if (node instanceof HTMLElement && node.classList.contains("tds-theme-preview")) continue;
     if (node.tagName === "SCRIPT" || node.tagName === "LINK") continue;
     if (node instanceof HTMLElement && node.dataset.themePreview === "skip") continue;
     const copy = node.cloneNode(true) as Element;
-    syncCloneState(node, copy, animated, scrolled);
+    syncCloneState(node, copy, pins, scrolled, twins);
     page.appendChild(copy);
   }
   for (const stray of page.querySelectorAll('script, link, [name], [data-theme-preview="skip"]')) {
@@ -172,7 +242,7 @@ function buildClone(target: Theme): { page: HTMLElement; restoreScroll: () => vo
   const restoreScroll = () => {
     for (const [copy, left, top] of scrolled) copy.scrollTo?.({ left, top, behavior: "instant" });
   };
-  return { page, restoreScroll };
+  return { page, restoreScroll, twins };
 }
 
 /**
@@ -197,6 +267,7 @@ export function attachThemeToggle(
   let frame = 0;
   let removeTimer = 0;
   let point = { x: 0, y: 0 };
+  let stopMirror = () => {};
 
   /** Lines the clone up with the real page at the current scroll position. */
   const alignClone = () => {
@@ -226,6 +297,8 @@ export function attachThemeToggle(
       cancelAnimationFrame(frame);
       frame = 0;
     }
+    stopMirror();
+    stopMirror = () => {};
     preview?.remove();
     preview = null;
   };
@@ -277,6 +350,7 @@ export function attachThemeToggle(
       el.appendChild(clone.page);
       document.body.appendChild(el);
       clone.restoreScroll();
+      stopMirror = mirrorAttributes(clone.twins);
       preview = el;
     }
     // Place it BEFORE it becomes visible, or the first frame fades in at the
