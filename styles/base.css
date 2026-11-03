@@ -1295,6 +1295,11 @@ input[type="radio"] {
   max-width: 34rem;
   max-height: min(80vh, 44rem);
   overflow-y: auto;
+  /* Never sideways (2026-11-03). `overflow-y: auto` turns the x axis into
+     `auto` as well, and the close button's quarter turn on hover pokes its
+     corners past the panel's edge mid-turn: a horizontal scrollbar appeared
+     for the length of the turn and the whole dialog jumped. */
+  overflow-x: hidden;
   overscroll-behavior: contain;
 }
 /* Top-right close. Sits in the panel's padding rather than in the flow,

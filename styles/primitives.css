@@ -3466,6 +3466,33 @@ button.tds-row:focus-visible {
   background: none;
   color: var(--color-accent);
 }
+/* The purposes in the marketing language (2026-11-03): borderless rounded
+   rows on a fill that parts from the paper in both themes, the title in the
+   display face, and "Immer aktiv" as a small pill. The checkbox is the shared
+   pressed-in one; a ticked purpose fills its row's edge in the accent. */
+[data-surface="marketing"] .consent-dialog__panel .tds-modal__title {
+  font-family: var(--font-display);
+  padding-inline-end: 2.5rem;
+}
+[data-surface="marketing"] .consent-row {
+  padding: 0.75rem 1rem 0.875rem;
+  border: 0;
+  border-radius: var(--tds-radius-card);
+  background: color-mix(in srgb, var(--color-ink) 6%, var(--color-paper));
+}
+[data-surface="marketing"] .consent-row:has(.consent-row__input:checked:not(:disabled)) {
+  background: color-mix(in srgb, var(--color-accent-pink) 18%, var(--color-paper));
+}
+[data-surface="marketing"] .consent-row__badge {
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--tds-radius-pill);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-weight: 600;
+}
+[data-surface="marketing"] .consent-dialog__actions .btn {
+  border-radius: var(--tds-radius-pill);
+}
 @media (prefers-reduced-motion: no-preference) {
   [data-surface="marketing"] .consent-dialog__close:hover {
     transform: rotate(90deg);
