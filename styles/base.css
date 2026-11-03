@@ -1254,8 +1254,26 @@ input[type="radio"] {
     font-size: 0.75rem;
     line-height: 1.45;
   }
+  /* The three decisions share one row on a phone too (2026-11-03, asked
+     for): equal widths, a smaller label, no wrap. Only the narrowest screens
+     (below 22rem) let them wrap again. */
   .cookie-notice-actions {
     flex-basis: 100%;
+    flex-wrap: nowrap;
+    gap: 0.375rem;
+  }
+  .cookie-notice-actions .cookie-notice-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0.5rem 0.5rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    text-align: center;
+  }
+}
+@media (max-width: 22rem) {
+  .cookie-notice-actions {
+    flex-wrap: wrap;
   }
 }
 

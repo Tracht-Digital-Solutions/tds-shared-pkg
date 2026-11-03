@@ -3493,6 +3493,97 @@ button.tds-row:focus-visible {
 [data-surface="marketing"] .consent-dialog__actions .btn {
   border-radius: var(--tds-radius-pill);
 }
+/* The dialog in the site's card language (2026-11-03, asked for): a little
+   wider so the three decisions share one row, each purpose with a pill
+   switch instead of a square box. */
+[data-surface="marketing"] .consent-dialog {
+  width: min(100% - 2rem, 38rem);
+}
+[data-surface="marketing"] .consent-dialog__panel {
+  container-type: inline-size;
+  max-width: none;
+  padding: 1.5rem 1.5rem 1.25rem;
+  border-radius: var(--tds-radius-card);
+}
+[data-surface="marketing"] .consent-dialog__links {
+  margin-bottom: 0;
+}
+/* One row of three equal pills where the panel is wide enough; stacked,
+   the considered action first, on a narrow phone. */
+[data-surface="marketing"] .consent-dialog__actions {
+  flex-wrap: nowrap;
+  gap: 0.625rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-line);
+}
+[data-surface="marketing"] .consent-dialog__actions .btn {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  padding-inline: 0.875rem;
+  white-space: nowrap;
+}
+@container (max-width: 27rem) {
+  [data-surface="marketing"] .consent-dialog__actions {
+    flex-direction: column-reverse;
+  }
+  [data-surface="marketing"] .consent-dialog__actions .btn {
+    flex: none;
+    width: 100%;
+  }
+}
+[data-surface="marketing"] .consent-row__head {
+  gap: 0.75rem;
+}
+[data-surface="marketing"] .consent-row__input {
+  order: 2;
+  position: relative;
+  width: 2.75rem;
+  height: 1.5rem;
+  border: 0;
+  border-radius: var(--tds-radius-pill);
+  background: color-mix(in srgb, var(--color-ink) 14%, var(--color-paper));
+  box-shadow: var(--tds-shadow-inset);
+  place-content: center start;
+  padding-inline: 0.1875rem;
+}
+[data-surface="marketing"] .consent-row__input::before {
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: var(--tds-radius-pill);
+  background: var(--color-paper);
+  clip-path: none;
+  transform: none;
+  transition: translate var(--tds-dur-fast) var(--tds-ease-out);
+}
+[data-surface="marketing"] .consent-row__input:checked {
+  background: var(--color-accent);
+  box-shadow: none;
+}
+[data-surface="marketing"] .consent-row__input:checked::before {
+  translate: 1.25rem 0;
+  transform: none;
+}
+[data-surface="marketing"] .consent-row__input:disabled {
+  opacity: 0.55;
+}
+[data-surface="marketing"] .consent-row__input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+/* "Immer aktiv" stands before the switch it explains. */
+[data-surface="marketing"] .consent-row__label {
+  flex: 1 1 auto;
+}
+[data-surface="marketing"] .consent-row__badge {
+  order: 1;
+  margin-inline-start: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-surface="marketing"] .consent-row__input::before {
+    transition: none;
+  }
+}
 @media (prefers-reduced-motion: no-preference) {
   [data-surface="marketing"] .consent-dialog__close:hover {
     transform: rotate(90deg);

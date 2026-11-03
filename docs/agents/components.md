@@ -81,6 +81,9 @@ Fixed bottom chrome publishes its measured height; anything else pinned there ad
     `tds-dropdown__(trigger|item)`). It carries geometry only.
   - The panel host is a documented non-consumer (its off-canvas drawer stays).
   - `--tds-dur-none` exists only for the `visibility` step.
+- **Consent: the three decisions share one row** (0.64.5). The marketing settings dialog is 38rem wide, its
+  actions don't wrap and stack only below a 27rem panel (container query); purposes use a pill switch. The banner
+  keeps its three buttons in one row on phones down to 22rem. Accept and "Nur notwendige" stay visually equal.
 
 ## Shared site bar (journal, tools, shop): `.tds-sitebar*` + `propertyNav()`
 
