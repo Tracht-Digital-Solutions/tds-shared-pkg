@@ -3297,6 +3297,22 @@ button.tds-row:focus-visible {
   color: var(--color-muted);
 }
 
+/* In a grid the card is a pointer to the product page, not the product page:
+   two lines of teaser, and a flatter picture. A long teaser made one card of a
+   row twice as tall as its neighbours and pushed the next shelf off-screen.
+   The full text stays in the DOM for crawlers and on the product page; the
+   `list` variant keeps it whole. */
+.tds-product-card--card .tds-product-card__teaser {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.tds-product-card--card .tds-product-card__media {
+  aspect-ratio: 16 / 9;
+}
+
 /* --- offers ------------------------------------------------------- */
 
 /* Two parts: the facts (merchant, price, timestamp) as a left-aligned column,

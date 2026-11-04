@@ -126,6 +126,8 @@ Fixed bottom chrome publishes its measured height; anything else pinned there ad
   on top, per the shop terms). Partner prices carry no prefix.
 - `addToCart` (shop only): an own offer's filled button becomes `button[data-add-to-cart=<slug>]`, wired by the page,
   and the checkout link becomes the quiet `.tds-product-offer__direct` beside it (`wrap-reverse`, so it wraps above).
+- The `card` variant clamps its teaser to two lines and uses a 16:9 picture (0.64.6): a long teaser made one card twice
+  its neighbours' height. The text stays in the DOM; `list` keeps it whole.
 
 ## Language switch (`.tds-lang-toggle`)
 
