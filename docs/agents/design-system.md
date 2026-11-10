@@ -65,6 +65,11 @@ surface. `--color-border` is an accepted alias of `--color-line` (27 call sites)
     fill counterparts. Don't mix `currentColor` in the wash (lightningcss emits a solid `currentColor` fallback), and never
     select `.chip` wholesale (it would override the coloured variants).
   - A nested `.tds-card` gets its own counterpart (one level).
+  - `[data-flat] .field-boxed` also draws a 1px bottom edge at ink 55 % (2026-11-10): the fill and inset alone
+    measured 1.08–1.43:1 against the paper, under WCAG 1.4.11's 3:1. A consumer's `border-color` still hides it.
+- **Disabled buttons on the public surfaces** (marketing, blog) are a flat ink-10 % slab with an ink-70 % label and no
+  offset, not 50 % opacity: the faded label measured ~2:1, and the shop's disabled order button carries the § 312j
+  wording. `aria-busy` is excluded; the panels keep the opacity.
   - `--tds-elevation-raised` stays (overlays need depth); the card's hover lift is switched off in `app.css`.
   - It is `data-flat`, not `data-frontend="tools"`: `data-frontend` is the panel's accent axis.
 

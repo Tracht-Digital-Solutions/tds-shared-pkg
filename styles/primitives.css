@@ -371,6 +371,22 @@ button.chip[aria-pressed="true"] {
   opacity: 0.5;
   cursor: not-allowed;
 }
+/* A DISABLED BUTTON STILL HAS TO BE READ (2026-11-10). Half opacity over a
+   filled button measured 2.03:1 for the label in light and 1.87:1 in dark on
+   the shop's checkout — whose disabled button carries the § 312j wording
+   "Zahlungspflichtig bestellen" the visitor must read before ticking the box
+   that enables it. On the public surfaces a disabled button is therefore a
+   flat grey slab with a readable label and no offset (nothing to press), not a
+   faded copy of the live one. Busy is excluded: it is the active control and
+   keeps its own look. The panels keep the opacity. */
+:is([data-surface="marketing"], [data-surface="blog"]) .btn:disabled:not([aria-busy="true"]) {
+  opacity: 1;
+  background: color-mix(in srgb, var(--color-ink) 10%, var(--color-paper));
+  border-color: transparent;
+  color: color-mix(in srgb, var(--color-ink) 70%, var(--color-paper));
+  box-shadow: none;
+  translate: none;
+}
 /* In-flight state. Every island was inventing its own — a label swap
    ("Speichern …"), a bespoke inline SVG, or nothing at all — because the
    library offered only `:disabled`'s flat 50% opacity, which is
@@ -2886,6 +2902,14 @@ button.tds-row:focus-visible {
 }
 [data-flat] .field-boxed {
   background: color-mix(in srgb, var(--color-ink) 6%, var(--color-card));
+  /* THE FIELD'S EDGE (2026-11-10). The fill and the 2px inset alone measured
+     1.08:1 (fill) and 1.43:1 (inset edge) against the shop's paper, 1.37:1 in
+     dark — below WCAG 1.4.11's 3:1 for the boundary that says "type here",
+     so a checkout field read as a grey, possibly disabled patch. One line
+     along the bottom, as on a paper form, at ink 55 %: above 3:1 against the
+     paper and the fill in both themes. A width of its own, not the hairline
+     (0 on this surface); a consumer that sets `border-color` still hides it. */
+  border-bottom: 1px solid color-mix(in srgb, var(--color-ink) 55%, transparent);
 }
 
 [data-flat] .btn-ghost {
