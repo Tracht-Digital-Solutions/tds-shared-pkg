@@ -3496,14 +3496,13 @@ button.tds-row:focus-visible {
   box-shadow: none;
 }
 [data-surface="marketing"] .consent-dialog__close {
-  background: none;
   color: var(--color-ink);
   transition:
     color var(--tds-dur-base) var(--tds-ease-out),
     transform var(--tds-dur-slow) var(--tds-ease-out);
 }
 [data-surface="marketing"] .consent-dialog__close:hover {
-  background: none;
+  background-image: none;
   color: var(--color-accent);
 }
 /* The purposes in the marketing language (2026-11-03): borderless rounded

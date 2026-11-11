@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.64.16] — 2026-11-11
+
+### Fixed
+- **The consent dialog's close button no longer has text running through it** while the purposes
+  scroll: it carries the panel's background (corner concentric with the panel's), the heading and its
+  focus ring stay above it. Unscrolled, only the glyphs' antialiasing differs.
+
 ## [0.64.15] — 2026-11-11
 
 ### Changed

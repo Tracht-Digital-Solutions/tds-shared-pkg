@@ -1342,15 +1342,31 @@ input[type="radio"] {
   line-height: 1;
   border: 0;
   border-radius: var(--tds-radius-btn);
-  background: none;
+  /* The panel's own background (0.64.16): the button stays where it is while
+     the purposes scroll, and text passing under it must not show through.
+     Unscrolled it is the colour already behind it. */
+  background: inherit;
+  z-index: 2;
+  /* Concentric with the panel's corner, 0.25rem in: a square background
+     would paint over the panel's rounding. */
+  border-start-end-radius: max(var(--tds-radius-btn), calc(var(--tds-radius-card) - 0.25rem));
   color: var(--color-muted);
   cursor: pointer;
 }
 .consent-dialog__close:hover {
   color: var(--color-ink);
-  background: color-mix(in srgb, var(--color-ink) 8%, transparent);
+  background-image: linear-gradient(
+    color-mix(in srgb, var(--color-ink) 8%, transparent),
+    color-mix(in srgb, var(--color-ink) 8%, transparent)
+  );
 }
 
+/* Above the close button's patch (0.64.16), so the heading's focus ring, which
+   runs the full width, is drawn over it as it always was. */
+.consent-dialog__panel .tds-modal__title {
+  position: relative;
+  z-index: 3;
+}
 .consent-dialog__intro {
   margin: 0 0 1rem;
   font-size: 0.875rem;
