@@ -3594,15 +3594,17 @@ button.tds-row:focus-visible {
   background: var(--color-paper);
   clip-path: none;
   transform: none;
-  transition: translate var(--tds-dur-fast) var(--tds-ease-out);
+  transition: transform var(--tds-dur-fast) var(--tds-ease-out);
 }
 [data-surface="marketing"] .consent-row__input:checked {
   background: var(--color-accent);
   box-shadow: none;
 }
+/* `transform`, not `translate` + `transform: none`: lightningcss folds the
+   two into one `transform: none` for older targets, and the knob never moved
+   (0.64.10). Travel = 2.75rem track - 2 x 0.1875rem padding - 1.125rem knob. */
 [data-surface="marketing"] .consent-row__input:checked::before {
-  translate: 1.25rem 0;
-  transform: none;
+  transform: translateX(1.25rem);
 }
 [data-surface="marketing"] .consent-row__input:disabled {
   opacity: 0.55;
