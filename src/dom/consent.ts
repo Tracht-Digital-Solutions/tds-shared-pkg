@@ -261,7 +261,10 @@ function mount({
 
   function openSettings() {
     takeConsentOpenRequest();
+    // A dialog still playing its exit (closed < 450 ms ago) goes now, rather
+    // than staying in the DOM once its removal timer is cleared.
     window.clearTimeout(exitTimer);
+    host.querySelectorAll("dialog.consent-dialog:not([open])").forEach((old) => old.remove());
     // Re-seeded on every open: an abandoned edit is never remembered.
     dialog?.remove();
     const d = buildDialog(readConsent()?.choices ?? necessaryOnly());

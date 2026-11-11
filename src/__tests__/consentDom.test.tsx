@@ -173,7 +173,9 @@ describe("the plain-DOM banner behaves like the React one", () => {
     host.querySelectorAll<HTMLInputElement>("dialog input[type=checkbox]")[1]!.click();
     click(host.querySelector('dialog [aria-label="Schließen"]'));
     openConsentSettings();
-    const boxes = host.querySelectorAll<HTMLInputElement>("dialog[open] input[type=checkbox]");
+    // Reopened within the exit transition: exactly one dialog remains.
+    expect(host.querySelectorAll("dialog")).toHaveLength(1);
+    const boxes = host.querySelectorAll<HTMLInputElement>("dialog input[type=checkbox]");
     expect(boxes[1]!.checked).toBe(false);
   });
 });
