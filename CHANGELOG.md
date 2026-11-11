@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.64.15] — 2026-11-11
+
+### Changed
+- **The consent dialog's decisions stay in view.** The row sticks to the panel's bottom edge and the
+  purposes scroll underneath it (three purposes on the blog, every phone). Layout is unchanged when
+  nothing scrolls; on marketing the separator keeps its width and its pixel.
+
 ## [0.64.14] — 2026-11-11
 
 ### Changed

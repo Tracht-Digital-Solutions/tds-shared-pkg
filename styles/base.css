@@ -1383,6 +1383,20 @@ input[type="radio"] {
   flex-wrap: nowrap;
   gap: 0.5rem;
   justify-content: flex-end;
+  /* Always in view (0.64.15): the purposes and their explanations are often
+     taller than the panel (three purposes on the blog, every phone), and a
+     decision that has to be scrolled to is one that gets missed. The row
+     sticks to the panel's bottom edge and carries the panel's own background
+     out to its edges, so the text scrolls underneath it. The negative margins
+     and matching padding leave the layout exactly as it was when nothing
+     scrolls. */
+  position: sticky;
+  bottom: calc(-1 * var(--consent-pad-b, 1.25rem));
+  z-index: 1;
+  margin: 0 calc(-1 * var(--consent-pad-x, 1.25rem)) calc(-1 * var(--consent-pad-b, 1.25rem));
+  padding: 0.75rem var(--consent-pad-x, 1.25rem) var(--consent-pad-b, 1.25rem);
+  background: inherit;
+  box-shadow: 0 -1px 0 var(--color-line);
 }
 .consent-dialog__actions .btn {
   flex: 1 1 0;
