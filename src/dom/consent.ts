@@ -301,3 +301,60 @@ function mount({
     dialog = null;
   };
 }
+
+/* ---------------- server-rendered host ---------------- */
+
+const attr = (value: string): string =>
+  value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+export type ConsentBannerHostOptions = Omit<MountConsentBannerOptions, "host" | "immediate">;
+
+/**
+ * The banner's place in a server-rendered page, carrying its options (0.64.11).
+ * `display: contents` like the `<astro-island>` it replaces, so the banner's
+ * fixed position and stacking are unchanged.
+ *
+ *   <Fragment set:html={consentBannerHostMarkup({ lang, categories: ["analytics"], privacyUrl })} />
+ *   <script>
+ *     import { mountConsentBannerHost } from "@tracht-digital-solutions/tds-shared/dom";
+ *     mountConsentBannerHost();
+ *   </script>
+ *
+ * Values the server knows (a locale, a legal path, whether ads run) stay on
+ * the server; the layout's script carries none of them.
+ */
+export function consentBannerHostMarkup({
+  lang = "de",
+  categories = [],
+  variant = "site",
+  privacyUrl = DEFAULT_PRIVACY_URL,
+  imprintUrl,
+}: ConsentBannerHostOptions = {}): string {
+  return (
+    `<div data-tds-consent-banner data-lang="${attr(lang)}" data-categories="${attr(categories.join(","))}"` +
+    ` data-variant="${attr(variant)}" data-privacy="${attr(privacyUrl)}"` +
+    (imprintUrl ? ` data-imprint="${attr(imprintUrl)}"` : "") +
+    ` style="display: contents"></div>`
+  );
+}
+
+const OPTIONAL = new Set<string>(["functional", "analytics", "marketing"]);
+
+/** Mount the banner into the first `consentBannerHostMarkup()` host under `root`; none → no-op. */
+export function mountConsentBannerHost(
+  root: ParentNode = document,
+  { immediate = false }: { immediate?: boolean } = {},
+): () => void {
+  const host = root.querySelector<HTMLElement>("[data-tds-consent-banner]");
+  if (!host) return () => {};
+  const d = host.dataset;
+  return mountConsentBanner({
+    host,
+    lang: d.lang === "en" ? "en" : "de",
+    categories: (d.categories ?? "").split(",").filter((c): c is OptionalCategory => OPTIONAL.has(c)),
+    variant: d.variant === "panel" ? "panel" : "site",
+    privacyUrl: d.privacy || DEFAULT_PRIVACY_URL,
+    imprintUrl: d.imprint || undefined,
+    immediate,
+  });
+}

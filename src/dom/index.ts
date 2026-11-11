@@ -131,5 +131,5 @@ export function mountConsentLinks(root: ParentNode = document): () => void {
   };
 }
 
-export { mountConsentBanner } from "./consent.js";
-export type { MountConsentBannerOptions } from "./consent.js";
+export { consentBannerHostMarkup, mountConsentBanner, mountConsentBannerHost } from "./consent.js";
+export type { ConsentBannerHostOptions, MountConsentBannerOptions } from "./consent.js";

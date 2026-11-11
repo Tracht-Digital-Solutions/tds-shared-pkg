@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act, cleanup, render } from "@testing-library/react";
 import ConsentBanner from "../consent/ConsentBanner";
-import { mountConsentBanner, type MountConsentBannerOptions } from "../dom";
+import { consentBannerHostMarkup, mountConsentBanner, mountConsentBannerHost, type MountConsentBannerOptions } from "../dom";
 import { CONSENT_KEY, openConsentSettings, readConsent, takeConsentOpenRequest, writeConsent } from "../consent/store";
 import { necessaryOnly, type OptionalCategory } from "../consent/categories";
 
@@ -177,5 +177,35 @@ describe("the plain-DOM banner behaves like the React one", () => {
     expect(host.querySelectorAll("dialog")).toHaveLength(1);
     const boxes = host.querySelectorAll<HTMLInputElement>("dialog input[type=checkbox]");
     expect(boxes[1]!.checked).toBe(false);
+  });
+});
+
+describe("the server-rendered host", () => {
+  it("carries the options and mounts the same banner from them", () => {
+    const props = { ...asking, lang: "en" as const, privacyUrl: "/en/legal/privacy", imprintUrl: "/en/legal/imprint" };
+    const { container } = render(<ConsentBanner {...props} />);
+    const react = normalise(container.querySelector("aside")!);
+    cleanup();
+    document.body.innerHTML = consentBannerHostMarkup(props);
+    stop = mountConsentBannerHost(document, { immediate: true });
+    expect(document.querySelector("[data-tds-consent-banner] > aside")).not.toBeNull();
+    expect(normalise(document.querySelector("aside")!)).toBe(react);
+  });
+
+  it("escapes what it writes and drops unknown categories", () => {
+    document.body.innerHTML = consentBannerHostMarkup({ privacyUrl: '"><img>', categories: ["analytics"] });
+    expect(document.querySelector("img")).toBeNull();
+    const host = document.querySelector<HTMLElement>("[data-tds-consent-banner]")!;
+    expect(host.dataset.privacy).toBe('"><img>');
+    expect(host.style.display).toBe("contents");
+    host.dataset.categories = "analytics,bogus";
+    stop = mountConsentBannerHost(document, { immediate: true });
+    expect(host.querySelectorAll(".cookie-notice-btn")).toHaveLength(3);
+    host.querySelector<HTMLButtonElement>(".cookie-notice-btn--ghost")!.click();
+    expect(host.querySelectorAll("dialog input[type=checkbox]")).toHaveLength(2);
+  });
+
+  it("is a no-op without a host", () => {
+    expect(() => mountConsentBannerHost()()).not.toThrow();
   });
 });
