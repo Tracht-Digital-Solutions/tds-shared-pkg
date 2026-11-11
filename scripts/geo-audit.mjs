@@ -393,7 +393,10 @@ for (const url of pageUrls) {
   }
 
   const words = text(body.slice(body.indexOf("<main"), body.indexOf("</main>"))).split(" ").length;
-  if (words < PROFILE.minWords) warn(path, `only ${words} words in <main>`);
+  // A page kind may lower the floor (0.64.12): a contact card or a rights
+  // notice is short by design, and padding it would serve no reader.
+  const minWords = kind.minWords ?? PROFILE.minWords;
+  if (words < minWords) warn(path, `only ${words} words in <main>`);
 
   pages.set(path, { title, description, alternates, words });
 }
