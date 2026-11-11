@@ -63,7 +63,8 @@ Server-side helpers the public sites used to copy; no `node:` imports; never re-
   the tools site, translated taxonomy segments on the journal). Fail-soft: nothing excluded.
 - `renderUrlset(urls)` / `renderSitemapUrl` take absolute URLs; the site maps its own entry shape.
   `defineSitemapSections([...])` gives `sections`, `isSection`, `sectionPath`, `paths` (what the cache rebuilds).
-- `createImageCatalog(json, { origin, about })` for the generated `imageCatalog.json`.
+- `createImageCatalog(json, { origin, about, absoluteSrcSet })` for the generated `imageCatalog.json`. `srcset` is
+  site-relative by default; a site whose images live on another host (the blog) passes `absoluteSrcSet: true`.
 - `./i18n`: `OG_LOCALE`, `neutralPath`, `localizedPath` (same-slug `/en/` trees). `./nav`: `LEGAL_LINKS`.
 - `./pwa`: `mountOfflineList(list, { match, english, empty })` for the offline fallback page.
 - **Bins:** `tds-geo-audit` (each site keeps only `scripts/geo-audit.profile.mjs`, default export) and

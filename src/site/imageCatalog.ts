@@ -32,6 +32,14 @@ export interface ImageCatalogOptions {
    * page declares a WebPage node with that id), `"page"` → the bare page URL.
    */
   about?: "webpage" | "page";
+  /**
+   * Write `srcset` candidates as absolute URLs on `origin`. Needed when the
+   * images live on ANOTHER host than the page (the blog shows pictures served
+   * by tracht-digital.de): a site-relative candidate resolves against the
+   * page's own host and 404s. Default `false`, which keeps dev and CI servers
+   * from fetching variants off the live origin.
+   */
+  absoluteSrcSet?: boolean;
 }
 
 /** Where the terms for the group's images stand. One page, on the marketing site. */
@@ -60,7 +68,7 @@ export function imageRights(lang: Lang, { portrait = false }: { portrait?: boole
   };
 }
 
-export function createImageCatalog(raw: Record<string, unknown>, { origin, about = "webpage" }: ImageCatalogOptions) {
+export function createImageCatalog(raw: Record<string, unknown>, { origin, about = "webpage", absoluteSrcSet = false }: ImageCatalogOptions) {
   const assets = Object.values(raw) as CatalogAsset[];
 
   const imageInfo = (src?: string | null): CatalogAsset | undefined => {
@@ -86,7 +94,10 @@ export function createImageCatalog(raw: Record<string, unknown>, { origin, about
       // fetched every variant from the LIVE origin — and when that host was
       // slow, the shop's accessibility audit never reached `networkidle`
       // (2026-10-21). Only the JSON-LD below needs the absolute URL.
-      srcSet: image.variants.map((v) => `${v.src}?v=${v.hash} ${v.width}w`).join(", "),
+      // Cross-host consumers opt into absolute URLs with `absoluteSrcSet`.
+      srcSet: image.variants
+        .map((v) => `${absoluteSrcSet ? origin : ""}${v.src}?v=${v.hash} ${v.width}w`)
+        .join(", "),
       sizes,
       decoding: "async" as const,
     };

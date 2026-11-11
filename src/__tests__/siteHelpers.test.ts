@@ -98,6 +98,12 @@ describe("image catalogue", () => {
       "@id": "https://s/p",
     });
   });
+
+  it("writes an absolute srcset on request, for images served by another host", () => {
+    const c = createImageCatalog(raw, { origin: "https://s", absoluteSrcSet: true });
+    expect(c.imageHints("/img/a.webp", "en")?.srcSet).toBe("https://s/img/a-800.webp?v=h1 800w");
+    expect(c.imageHints("https://s/img/a.webp", "de")?.alt).toBe("Bild");
+  });
 });
 
 describe("language paths and legal links", () => {
