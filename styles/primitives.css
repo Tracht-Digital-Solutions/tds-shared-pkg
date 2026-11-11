@@ -2439,12 +2439,17 @@ button.tds-row:focus-visible {
    for the whole document. Engines without either feature skip the block and
    keep the instant open. Promoted from the landingpage FAQ, which had the only
    copy. */
-.tds-disclosure {
+/* Since 0.65 every `<details>` grows this way (quality-of-life pass); the class
+   stays for markup that already names it. `data-snap` opts one out, e.g. a
+   details whose content is an absolutely positioned menu. */
+.tds-disclosure,
+:where(details:not([data-snap])) {
   interpolate-size: allow-keywords;
 }
 @media (prefers-reduced-motion: no-preference) {
   @supports selector(::details-content) {
-    .tds-disclosure::details-content {
+    .tds-disclosure::details-content,
+    :where(details:not([data-snap]))::details-content {
       block-size: 0;
       overflow: clip;
       opacity: 0;
@@ -2453,10 +2458,69 @@ button.tds-row:focus-visible {
         opacity var(--tds-dur-base) var(--tds-ease-out),
         content-visibility var(--tds-dur-slow) allow-discrete;
     }
-    .tds-disclosure[open]::details-content {
+    .tds-disclosure[open]::details-content,
+    :where(details[open]:not([data-snap]))::details-content {
       block-size: auto;
       opacity: 1;
     }
+  }
+}
+
+/* === Quality-of-life motion (0.65) =================================
+   Small answers to the visitor's own actions, on every site and panel. None
+   of it is decoration: nothing moves unless something was pressed, opened or
+   jumped to, nothing ships hidden, and every rule sits at zero specificity
+   (`:where`) so a component's own transition or transform always wins.
+
+   1. PRESS. Any button-like control that is not a `.btn` (which has its own
+      press scale) dips slightly while held. It uses the independent `scale`
+      property, so it composes with whatever `transform` the control already
+      has instead of replacing it. `data-press="off"` opts out. */
+@media (prefers-reduced-motion: no-preference) {
+  :where(
+      button:not(.btn),
+      [role="button"]:not(.btn),
+      [role="tab"],
+      summary,
+      label:has(> input[type="checkbox"], > input[type="radio"]),
+      .tds-tile,
+      .tds-dropdown__item
+    ):where(:not(:disabled, [aria-disabled="true"], [aria-busy="true"], [data-press="off"])) {
+    transition-property: scale, color, background-color, border-color, opacity;
+    transition-duration: var(--tds-dur-fast);
+    transition-timing-function: var(--tds-ease-out);
+  }
+  :where(
+      button:not(.btn),
+      [role="button"]:not(.btn),
+      [role="tab"],
+      summary,
+      .tds-tile,
+      .tds-dropdown__item
+    ):where(:not(:disabled, [aria-disabled="true"], [aria-busy="true"], [data-press="off"])):active {
+    scale: 0.97;
+  }
+
+  /* 2. LINKS. Colour and underline ease instead of flipping on hover. */
+  :where(a) {
+    transition:
+      color var(--tds-dur-fast) var(--tds-ease-out),
+      text-decoration-color var(--tds-dur-fast) var(--tds-ease-out);
+  }
+
+  /* 3. ARRIVAL. A heading reached through an in-page link (table of
+        contents, "jump to" links, a shared `#anchor` URL) lights up once, so
+        the eye finds where the page landed. Background only, no movement. */
+  :where(h1, h2, h3, h4, [data-target-flash]):target {
+    animation: tds-target-flash var(--tds-dur-draw) var(--tds-ease-out) 1;
+  }
+}
+@keyframes tds-target-flash {
+  from {
+    background-color: color-mix(in srgb, var(--color-accent, currentColor) 18%, transparent);
+  }
+  to {
+    background-color: transparent;
   }
 }
 

@@ -2221,8 +2221,11 @@ describe("page motion (CSS)", () => {
     expect(primitives).toMatch(
       /prefers-reduced-motion: no-preference\)\s*\{\s*@supports selector\(::details-content\)\s*\{\s*\.tds-disclosure::details-content/,
     );
-    // Scoped to disclosures, not flipped document-wide.
-    expect(ruleBlock(primitives, ".tds-disclosure")).toMatch(/interpolate-size:\s*allow-keywords/);
+    // Scoped to disclosures and <details> (0.65), never flipped document-wide.
+    expect(primitives).toMatch(
+      /\.tds-disclosure,\s*:where\(details:not\(\[data-snap\]\)\)\s*\{\s*interpolate-size:\s*allow-keywords/,
+    );
+    expect(primitives).not.toMatch(/:root\s*\{[^}]*interpolate-size/);
   });
 
   it("the filter bar's count takes no room while empty, and a pressed chip reads as active", () => {

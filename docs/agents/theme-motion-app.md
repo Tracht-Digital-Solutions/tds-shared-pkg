@@ -121,3 +121,14 @@ The toggle clones `<body>`'s children into `.tds-theme-preview__page[data-theme=
   light copy on a dark page. Write it as
   `:is(:root, .tds-theme-preview__page)[data-theme="dark"] X:not(:where([data-theme="dark"] [data-theme="light"] *))`
   (same specificity as the `:root` form; the nearest `data-theme` wins).
+
+## Quality-of-life motion (0.65, `primitives.css`)
+
+Zero-specificity (`:where`) defaults that answer the visitor's own action, on every site and panel, all inside
+`prefers-reduced-motion: no-preference`:
+
+- **Press:** non-`.btn` buttons, `[role=button|tab]`, `summary`, `.tds-tile`, `.tds-dropdown__item` dip to `scale: 0.97`
+  while held. The independent `scale` property composes with a control's own `transform`; `data-press="off"` opts out.
+- **Every `<details>`** grows open like `.tds-disclosure`; `data-snap` opts out (menus with positioned content).
+- **Links** ease colour and underline colour.
+- **Arrival:** a `:target` heading (or `[data-target-flash]`) flashes an accent tint once (`tds-target-flash`).
