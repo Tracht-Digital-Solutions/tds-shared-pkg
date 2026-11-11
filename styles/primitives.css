@@ -3533,44 +3533,21 @@ button.tds-row:focus-visible {
 [data-surface="marketing"] .consent-dialog__actions .btn {
   border-radius: var(--tds-radius-pill);
 }
-/* The dialog in the site's card language (2026-11-03, asked for): a little
-   wider so the three decisions share one row, each purpose with a pill
-   switch instead of a square box. */
-[data-surface="marketing"] .consent-dialog {
-  width: min(100% - 2rem, 38rem);
-}
+/* The dialog in the site's card language (2026-11-03, asked for): each
+   purpose with a pill switch instead of a square box. Width and the one-row
+   decisions live in base.css for every surface since 0.64.14. */
 [data-surface="marketing"] .consent-dialog__panel {
-  container-type: inline-size;
-  max-width: none;
   padding: 1.5rem 1.5rem 1.25rem;
   border-radius: var(--tds-radius-card);
 }
 [data-surface="marketing"] .consent-dialog__links {
   margin-bottom: 0;
 }
-/* One row of three equal pills where the panel is wide enough; stacked,
-   the considered action first, on a narrow phone. */
+/* The row itself is base.css; marketing adds the rule above it. */
 [data-surface="marketing"] .consent-dialog__actions {
-  flex-wrap: nowrap;
   gap: 0.625rem;
   padding-top: 1rem;
   border-top: 1px solid var(--color-line);
-}
-[data-surface="marketing"] .consent-dialog__actions .btn {
-  flex: 1 1 0;
-  min-width: 0;
-  justify-content: center;
-  padding-inline: 0.875rem;
-  white-space: nowrap;
-}
-@container (max-width: 27rem) {
-  [data-surface="marketing"] .consent-dialog__actions {
-    flex-direction: column-reverse;
-  }
-  [data-surface="marketing"] .consent-dialog__actions .btn {
-    flex: none;
-    width: 100%;
-  }
 }
 [data-surface="marketing"] .consent-row__head {
   gap: 0.75rem;

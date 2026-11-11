@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.64.14] — 2026-11-11
+
+### Changed
+- **The consent settings dialog puts its three decisions on one row on every surface**
+  (was marketing only). Without it, "Auswahl speichern" wrapped alone below the panel's edge on the
+  blog, tools, shop and sign-in pages. Stacked full width on a narrow phone. Marketing keeps its
+  pill shape and separator; its layout rules moved to base.css unchanged.
+
 ## [0.64.8 – 0.64.13] — 2026-11-11
 
 ### Added

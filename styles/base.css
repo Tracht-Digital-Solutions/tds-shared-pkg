@@ -1309,8 +1309,14 @@ input[type="radio"] {
    purposes with their explanations is taller than a phone in landscape,
    and a dialog whose actions sit below the fold is a dialog whose
    reject button cannot be found. */
+/* Wide enough that the three decisions share one row (0.64.14; the marketing
+   surface had it since 0.64.5). `.tds-modal` alone is 28rem. */
+.tds-modal.consent-dialog {
+  width: min(100% - 2rem, 38rem);
+}
 .consent-dialog__panel {
-  max-width: 34rem;
+  container-type: inline-size;
+  max-width: none;
   max-height: min(80vh, 44rem);
   overflow-y: auto;
   /* Never sideways (2026-11-03). `overflow-y: auto` turns the x axis into
@@ -1368,11 +1374,31 @@ input[type="radio"] {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+/* One row of three equal buttons where the panel is wide enough; stacked,
+   the considered action first, on a narrow phone. Wrapping (the old
+   behaviour) pushed "Auswahl speichern" alone onto a second line, below the
+   panel's edge on every page without the marketing surface (0.64.14). */
 .consent-dialog__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.5rem;
   justify-content: flex-end;
+}
+.consent-dialog__actions .btn {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  padding-inline: 0.875rem;
+  white-space: nowrap;
+}
+@container (max-width: 27rem) {
+  .consent-dialog__actions {
+    flex-direction: column-reverse;
+  }
+  .consent-dialog__actions .btn {
+    flex: none;
+    width: 100%;
+  }
 }
 
 /* --- one purpose ------------------------------------------------- */
