@@ -21,6 +21,10 @@ export interface ConsentSettingsProps {
 }
 
 /**
+ * @deprecated since 0.64.13 — `ConsentBanner` now hosts the plain-DOM banner
+ * (`mountConsentBanner`), whose dialog replaces this one. Kept only so an
+ * import does not break; nothing in tds-shared renders it.
+ *
  * The second consent layer: one switch per purpose.
  *
  * Built on the native `<dialog>` + `showModal()` for the same reason

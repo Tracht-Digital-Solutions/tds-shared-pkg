@@ -6,6 +6,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.64.8 – 0.64.13] — 2026-11-11
+
+### Added
+- **`mountConsentBanner()` in `./dom` — the consent banner without React.** Same
+  markup, classes and behaviour as `ConsentBanner`; mounts at idle, focuses only
+  when it asks something, publishes `--tds-bottom-lane`, honours
+  `openConsentSettings()` made before it existed. A first visit of a public page
+  no longer downloads React for the banner (landing page: 416 → 197 KB of JS).
+- **`consentBannerHostMarkup()` + `mountConsentBannerHost()`** for layouts whose
+  options are known on the server (0.64.11).
+- **`pageKind().minWords`** in `tds-geo-audit`: a site can lower the word floor
+  for pages that are short by design (0.64.12).
+
+### Changed
+- **`ConsentBanner` (React) is a host for `mountConsentBanner`** (0.64.13): one
+  implementation for both. `ConsentSettings` is deprecated and no longer used.
+
+### Fixed
+- **The marketing consent switch moves its knob again** (0.64.11). lightningcss
+  folded `translate` + `transform: none` in one rule into `transform: none`.
+- The settings dialog no longer stays in the DOM twice when reopened within its
+  exit transition (0.64.9).
+- 0.64.10 is identical to 0.64.9 (built from the previous commit by a dispatch
+  race); use 0.64.11 or later.
+
+## [0.21.0 – 0.64.7] — 2026-08 to 2026-11
+
+Collected here while the file was not kept per version; the entries below are
+released, not pending.
+
 ### Changed
 - **"Komfort" / "Convenience" names the journal's reading suggestions.** The
   blog now gates its `tds-interests` cookie on `functional`, so the category's

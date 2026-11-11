@@ -212,9 +212,8 @@ A React island costs a page the whole runtime (~200 KB), even when it renders no
 - `consentStoreEntry.test.ts` fails if either entry reaches React.
 - **The consent banner has a plain-DOM twin** (0.64.8): `mountConsentBanner({ lang, categories, privacyUrl, … })`
   from `./dom` (`src/dom/consent.ts`), called once from a layout `<script>`. It mounts at idle like
-  `client:when="consent"`, and saves a first visit the React runtime the island cost. **Its markup must stay the
-  React banner's**: `consentDom.test.tsx` compares banner and dialog node for node — change both together, or
-  retire the React one once no consumer uses it. Sites with server-known options use
+  `client:when="consent"`, and saves a first visit the React runtime the island cost. Since 0.64.13 the React
+  `ConsentBanner` only hosts it, so there is one implementation; `ConsentSettings` is deprecated. Sites with server-known options use
   `consentBannerHostMarkup()` (a `display: contents` host carrying them) + `mountConsentBannerHost()` (0.64.11).
   The marketing switch knob moves by `transform`, never `translate` beside a `transform` in the same rule —
   lightningcss folds the pair into `transform: none` (0.64.11).

@@ -1,19 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { translations, type Language } from "../i18n/translations";
-import ConsentSettings from "./ConsentSettings";
-import {
-  grantShown,
-  necessaryOnly,
-  restrictToShown,
-  type ConsentChoices,
-  type OptionalCategory,
-} from "./categories";
-import {
-  CONSENT_OPEN_EVENT,
-  readConsent,
-  takeConsentOpenRequest,
-  writeConsent,
-} from "./store";
+import { useEffect, useRef } from "react";
+import { mountConsentBanner } from "../dom/consent.js";
+import type { Language } from "../i18n/translations";
+import type { OptionalCategory } from "./categories";
 
 export interface ConsentBannerProps {
   /** UI language. Defaults to German. */
@@ -69,6 +57,11 @@ const DEFAULT_PRIVACY_URL = "https://tracht-digital.de/legal/datenschutz";
  *
  * Nothing renders until the mount effect has read storage, so a returning
  * visitor never sees a flash of a banner they already dismissed.
+ *
+ * **One implementation (0.64.13).** This component is a thin React host for
+ * `mountConsentBanner` (`src/dom/consent.ts`): the markup, the decisions,
+ * the settings dialog and the bottom lane all live there, so the React and
+ * the plain-DOM banner can no longer drift. Change behaviour there.
  */
 export default function ConsentBanner({
   lang = "de",
@@ -77,158 +70,25 @@ export default function ConsentBanner({
   privacyUrl = DEFAULT_PRIVACY_URL,
   imprintUrl,
 }: ConsentBannerProps = {}) {
-  const t = translations[lang].consent;
-  const notice = translations[lang].cookieNotice;
-  const asks = categories.length > 0;
-
-  const [decided, setDecided] = useState<boolean | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [initial, setInitial] = useState<ConsentChoices>(necessaryOnly);
-  const ref = useRef<HTMLElement>(null);
-  const focused = useRef(false);
-
+  const host = useRef<HTMLSpanElement>(null);
+  // The options are read once, like the island's props: a consent banner
+  // does not change its purposes while the page is open.
+  const key = `${lang}|${categories.join(",")}|${variant}|${privacyUrl}|${imprintUrl ?? ""}`;
   useEffect(() => {
-    const record = readConsent();
-    if (record) setInitial(record.choices);
-    setDecided(record !== null);
-  }, []);
+    if (!host.current) return;
+    return mountConsentBanner({
+      host: host.current,
+      lang,
+      categories,
+      variant,
+      privacyUrl,
+      imprintUrl,
+      // The island already waited for idle (`client:when="consent"`/`client:idle`).
+      immediate: true,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
-  // The footer's "Cookie-Einstellungen" and any in-text link reach us through a
-  // window event, because they are separate Astro islands with their own React
-  // roots — there is no shared provider to hang state on.
-  useEffect(() => {
-    const open = () => {
-      takeConsentOpenRequest();
-      setInitial(readConsent()?.choices ?? necessaryOnly());
-      setSettingsOpen(true);
-    };
-    // A request made before this banner existed — the click that loaded it
-    // under `client:when="consent"`.
-    if (takeConsentOpenRequest()) open();
-    window.addEventListener(CONSENT_OPEN_EVENT, open);
-    return () => window.removeEventListener(CONSENT_OPEN_EVENT, open);
-  }, []);
-
-  const visible = decided === false;
-
-  /**
-   * Publish the height this banner occupies, so the toast stack and the chat
-   * launcher sit above it rather than on it (`--tds-bottom-lane`, read by
-   * `.tds-toast-host` in base.css). Measured, not guessed: the banner is one
-   * line on a wide screen and four on a phone.
-   */
-  useEffect(() => {
-    const el = ref.current;
-    if (!visible || !el || typeof window === "undefined") return;
-    const root = document.documentElement;
-    const publish = () => {
-      root.style.setProperty("--tds-bottom-lane", `${Math.ceil(el.getBoundingClientRect().height)}px`);
-    };
-    publish();
-    const ro = typeof ResizeObserver === "function" ? new ResizeObserver(publish) : null;
-    ro?.observe(el);
-    window.addEventListener("resize", publish);
-    return () => {
-      ro?.disconnect();
-      window.removeEventListener("resize", publish);
-      root.style.removeProperty("--tds-bottom-lane");
-    };
-  }, [visible]);
-
-  /**
-   * Move focus to the banner once, and only when there is a real question.
-   *
-   * The tradeoff, stated plainly: an unannounced focus move on load is
-   * normally something to avoid. Here the alternative is worse — a
-   * screen-reader user would otherwise work down a page while a pending
-   * decision about their data sits silently at the bottom of it, and the
-   * banner is not in the reading order near the top. Three keystrokes dismiss
-   * it either way.
-   *
-   * The informational variant does NOT take focus: interrupting someone to
-   * tell them nothing is being collected buys nothing.
-   */
-  useEffect(() => {
-    if (!visible || !asks || focused.current) return;
-    focused.current = true;
-    ref.current?.focus();
-  }, [visible, asks]);
-
-  const save = useCallback(
-    (choices: ConsentChoices) => {
-      const stored = restrictToShown(choices, categories);
-      writeConsent(stored, lang);
-      setInitial(stored);
-      setSettingsOpen(false);
-      setDecided(true);
-    },
-    [lang, categories],
-  );
-
-  return (
-    <>
-      {visible ? (
-        <aside
-          ref={ref}
-          className="cookie-notice"
-          role="region"
-          aria-label={asks ? t.label : notice.label}
-          tabIndex={-1}
-        >
-          <p className="cookie-notice-text">
-            {asks ? t.intro : variant === "panel" ? notice.panelText : notice.siteText}{" "}
-            <a className="cookie-notice-link" href={privacyUrl}>
-              {asks ? t.privacy : notice.privacy}
-            </a>
-          </p>
-          {asks ? (
-            <div className="cookie-notice-actions">
-              <button
-                type="button"
-                className="cookie-notice-btn cookie-notice-btn--ghost"
-                onClick={() => setSettingsOpen(true)}
-              >
-                {t.settings}
-              </button>
-              {/* Same class as "Alle akzeptieren" below, and that is the
-                  point: the two DECISIONS look identical. Only "Einstellungen"
-                  above is quieter, because it decides nothing — it opens a
-                  second layer. A filled accept beside an outlined reject is
-                  the single most frequently criticised construction in German
-                  consent-banner enforcement; do not reintroduce it. */}
-              <button
-                type="button"
-                className="cookie-notice-btn"
-                onClick={() => save(necessaryOnly())}
-              >
-                {t.necessaryOnly}
-              </button>
-              <button
-                type="button"
-                className="cookie-notice-btn"
-                onClick={() => save(grantShown(categories))}
-              >
-                {t.acceptAll}
-              </button>
-            </div>
-          ) : (
-            <button type="button" className="cookie-notice-btn" onClick={() => save(necessaryOnly())}>
-              {notice.accept}
-            </button>
-          )}
-        </aside>
-      ) : null}
-
-      <ConsentSettings
-        open={settingsOpen}
-        lang={lang}
-        categories={categories}
-        initial={initial}
-        privacyUrl={privacyUrl}
-        imprintUrl={imprintUrl}
-        onSave={save}
-        onClose={() => setSettingsOpen(false)}
-      />
-    </>
-  );
+  // `display: contents`: the banner and dialog keep their own fixed position.
+  return <span ref={host} style={{ display: "contents" }} />;
 }
