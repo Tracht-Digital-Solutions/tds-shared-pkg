@@ -2524,6 +2524,61 @@ button.tds-row:focus-visible {
   }
 }
 
+/* === Microinteractions (0.66) ======================================
+   The second quality-of-life batch. Same contract as above: zero
+   specificity, reduced motion turns every one of them off, nothing ships
+   hidden, and nothing runs unless the visitor did something.
+
+   4. FOCUS. The keyboard focus ring settles in from a wider offset instead
+      of popping. A single `from` keyframe animates to whatever outline the
+      control already declares, so no component loses its own ring.
+   5. FIELDS. Border and background ease when a field turns valid, invalid
+      or focused (the shake on refusal stays with `errorBounceScript`).
+   6. TICKS. A checkbox or radio dips while pressed, like a button.
+   7. CONFIRM. `data-copied` or `data-done` on a control pulses it once in
+      the success colour: "copied", "saved", "sent". Set it from JS for the
+      confirmation's lifetime (`flagConfirmed()` in `./motion/dom`). */
+@media (prefers-reduced-motion: no-preference) {
+  :where(:focus-visible) {
+    animation: tds-focus-in var(--tds-dur-fast) var(--tds-ease-out) 1;
+  }
+
+  :where(input:not([type="checkbox"], [type="radio"], [type="range"]), textarea, select) {
+    transition:
+      border-color var(--tds-dur-fast) var(--tds-ease-out),
+      background-color var(--tds-dur-fast) var(--tds-ease-out);
+  }
+
+  :where(input[type="checkbox"], input[type="radio"]):where(:not(:disabled)) {
+    transition: scale var(--tds-dur-fast) var(--tds-ease-out);
+  }
+  :where(input[type="checkbox"], input[type="radio"]):where(:not(:disabled)):active {
+    scale: 0.9;
+  }
+
+  :where([data-copied], [data-done]) {
+    animation: tds-confirm var(--tds-dur-bounce) var(--tds-ease-bounce-in) 1;
+  }
+}
+@keyframes tds-focus-in {
+  from {
+    outline-offset: 6px;
+    outline-color: transparent;
+  }
+}
+@keyframes tds-confirm {
+  0% {
+    scale: 1;
+  }
+  40% {
+    scale: 1.06;
+    color: var(--color-success-ink, currentColor);
+  }
+  100% {
+    scale: 1;
+  }
+}
+
 /* === Filter bar ==================================================== */
 
 /* A collapsible filter panel for a listing (journal index, shop catalogue,

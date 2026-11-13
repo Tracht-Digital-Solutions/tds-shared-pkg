@@ -132,3 +132,16 @@ Zero-specificity (`:where`) defaults that answer the visitor's own action, on ev
 - **Every `<details>`** grows open like `.tds-disclosure`; `data-snap` opts out (menus with positioned content).
 - **Links** ease colour and underline colour.
 - **Arrival:** a `:target` heading (or `[data-target-flash]`) flashes an accent tint once (`tds-target-flash`).
+
+## Microinteractions (0.66, `primitives.css` + `./motion/dom`)
+
+Same contract as the 0.65 batch (zero specificity, reduced motion off, nothing hidden, only after an action):
+
+- **Focus:** `:focus-visible` rings settle in from a wider offset (`tds-focus-in`, a single `from` keyframe, so each
+  control keeps its own ring). A component that declares its own `animation` wins and simply skips it.
+- **Fields** ease border and background colour; **checkboxes/radios** dip to `scale: 0.9` while pressed.
+- **Confirm:** `data-copied` / `data-done` pulse a control once in the success ink (`tds-confirm`). Set them with
+  `flagConfirmed(el, "copied" | "done")` from `./motion/dom` (restarts on repeat, returns a clear function).
+- **`countUp(el)`** (`./motion/dom`): counts the first number in an element's text up from 0 when it scrolls in. The
+  SSR text keeps the final value; under reduced motion or when already on screen nothing changes. Not for years.
+  Tests: `microinteractions.test.ts`.

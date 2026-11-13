@@ -2228,6 +2228,25 @@ describe("page motion (CSS)", () => {
     expect(primitives).not.toMatch(/:root\s*\{[^}]*interpolate-size/);
   });
 
+  it("microinteractions (0.66) stay zero-specificity, reduced-motion gated and token-timed", () => {
+    const start = primitives.indexOf(":where(:focus-visible)");
+    expect(start).toBeGreaterThan(-1);
+    const gate = primitives.lastIndexOf("@media (prefers-reduced-motion: no-preference)", start);
+    expect(gate).toBeGreaterThan(-1);
+    const block = primitives.slice(gate, primitives.indexOf("@keyframes tds-focus-in", start));
+    for (const selector of [
+      ":where(:focus-visible)",
+      ":where([data-copied], [data-done])",
+      ":where(input[type=\"checkbox\"], input[type=\"radio\"])",
+    ]) {
+      expect(block, selector).toContain(selector);
+    }
+    expect(block).not.toMatch(/\d+ms|\d+(\.\d+)?s\b(?![-\w])/);
+    // A focus ring that starts hidden would hide focus under a stalled
+    // animation; the keyframe only offsets it and fades the colour in.
+    expect(primitives).toMatch(/@keyframes tds-focus-in\s*\{\s*from\s*\{[^}]*outline-offset/);
+  });
+
   it("the filter bar's count takes no room while empty, and a pressed chip reads as active", () => {
     // The SSR markup ships an empty count; it must not render as a blank badge.
     expect(primitives).toMatch(/\.tds-filterbar__count:empty\s*\{\s*display:\s*none/);
