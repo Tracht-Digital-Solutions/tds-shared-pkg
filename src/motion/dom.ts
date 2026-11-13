@@ -108,8 +108,14 @@ export function countUp(
     const start = performance.now();
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / durationMs);
+      // The last frame puts the server's text back verbatim: rounding and
+      // re-formatting would turn "8,5" into "9".
+      if (t >= 1) {
+        el.textContent = text;
+        return;
+      }
       render(from + (target - from) * (1 - (1 - t) ** 3));
-      if (t < 1) frame = requestAnimationFrame(tick);
+      frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
   });

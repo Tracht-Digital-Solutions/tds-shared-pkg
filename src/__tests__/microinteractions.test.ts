@@ -85,6 +85,26 @@ describe("countUp", () => {
     expect(observed).toHaveLength(1);
   });
 
+  it("ends on the server text verbatim, decimals included", () => {
+    let now = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => frames.push(cb));
+    const el = document.createElement("span");
+    el.textContent = "8,5 Jahre";
+    placeOffScreen(el);
+    countUp(el, { durationMs: 100 });
+    observed[0]!([{ isIntersecting: true }]);
+    now = 50;
+    frames.shift()!(now);
+    expect(el.textContent).not.toBe("8,5 Jahre");
+    now = 200;
+    frames.shift()!(now);
+    expect(el.textContent).toBe("8,5 Jahre");
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   it("restores the server text on cleanup", () => {
     const el = document.createElement("span");
     el.textContent = "1.234 Stunden";
